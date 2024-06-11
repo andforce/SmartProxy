@@ -1,14 +1,16 @@
 buildscript {
     repositories {
+        google()
         mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:0.9.+'
+        classpath 'com.android.tools.build:gradle:7.4.2'
     }
 }
 apply plugin: 'android'
 
 repositories {
+    google()
     mavenCentral()
 
     maven {
@@ -17,12 +19,13 @@ repositories {
 }
 
 android {
-    compileSdkVersion 19
-    buildToolsVersion "19.0.3"
+    compileSdk 34
 
+    useLibrary 'org.apache.http.legacy'
     defaultConfig {
-        minSdkVersion 14
-        targetSdkVersion 19
+        minSdkVersion 27
+        //noinspection ExpiredTargetSdkVersion
+        targetSdkVersion 27
         versionCode 7
         versionName "1.6"
     }
@@ -38,7 +41,7 @@ android {
 
     buildTypes {
         release {
-            runProguard false
+            //runProguard false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
             signingConfig signingConfigs.release
         }
@@ -46,7 +49,7 @@ android {
 }
 
 dependencies {
-    compile 'com.embarkmobile:zxing-android-minimal:2.0.0@aar'
-    compile 'com.embarkmobile:zxing-android-integration:2.0.0@aar'
-    compile 'com.google.zxing:core:3.0.1'
+    implementation 'com.embarkmobile:zxing-android-minimal:2.0.0@aar'
+    implementation 'com.embarkmobile:zxing-android-integration:2.0.0@aar'
+    implementation 'com.google.zxing:core:3.0.1'
 }
