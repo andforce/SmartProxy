@@ -7,7 +7,7 @@ buildscript {
         classpath 'com.android.tools.build:gradle:7.4.2'
     }
 }
-apply plugin: 'android'
+apply plugin: 'com.android.application'
 
 repositories {
     google()
@@ -30,20 +30,11 @@ android {
         versionName "1.6"
     }
 
-    signingConfigs {
-        release {
-            storeFile file("[android.keystore]")
-            storePassword  System.getenv("KSTOREPWD")
-            keyAlias "[smartproxy]"
-            keyPassword  System.getenv("KEYPWD")
-        }
-    }
-
     buildTypes {
         release {
             //runProguard false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
-            signingConfig signingConfigs.release
+            //signingConfig signingConfigs.release
         }
     }
 }
@@ -51,5 +42,5 @@ android {
 dependencies {
     implementation 'com.embarkmobile:zxing-android-minimal:2.0.0@aar'
     implementation 'com.embarkmobile:zxing-android-integration:2.0.0@aar'
-    implementation 'com.google.zxing:core:3.0.1'
+    implementation 'com.google.zxing:core:3.5.3'
 }
