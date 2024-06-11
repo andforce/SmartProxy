@@ -29,6 +29,7 @@ import android.net.VpnService;
 import android.os.Build;
 import android.os.Handler;
 import android.os.ParcelFileDescriptor;
+import android.util.Log;
 
 public class LocalVpnService extends VpnService implements Runnable {
 
@@ -54,6 +55,8 @@ public class LocalVpnService extends VpnService implements Runnable {
 	private Handler m_Handler;
 	private long m_SentBytes;
 	private long m_ReceivedBytes;
+
+	public static final boolean IS_ENABLE_REMOTE_PROXY = false;
 	
 	public LocalVpnService() {
 		ID++;
@@ -183,28 +186,30 @@ public class LocalVpnService extends VpnService implements Runnable {
 				if (IsRunning) {
 					//加载配置文件
 					writeLog("Load config from %s ...", ConfigUrl);
-					try {
-						ProxyConfig.Instance.loadFromUrl(ConfigUrl);
-						if(ProxyConfig.Instance.getDefaultProxy()==null){
-							throw new Exception("Invalid config file.");
+					if (IS_ENABLE_REMOTE_PROXY) {
+						try {
+							ProxyConfig.Instance.loadFromUrl(ConfigUrl);
+							if (ProxyConfig.Instance.getDefaultProxy() == null) {
+								throw new Exception("Invalid config file.");
+							}
+							writeLog("PROXY %s", ProxyConfig.Instance.getDefaultProxy());
+						} catch (Exception e) {
+							String errString = e.getMessage();
+							if (errString == null || errString.isEmpty()) {
+								errString = e.toString();
+							}
+
+							IsRunning = false;
+							onStatusChanged(errString, false);
+							continue;
 						}
-						writeLog("PROXY %s", ProxyConfig.Instance.getDefaultProxy());
-					} catch (Exception e) {
-						String errString=e.getMessage();
-						if(errString==null||errString.isEmpty()){
-							errString=e.toString();
+
+
+						writeLog("Load config success.");
+						String welcomeInfoString = ProxyConfig.Instance.getWelcomeInfo();
+						if (welcomeInfoString != null && !welcomeInfoString.isEmpty()) {
+							writeLog("%s", ProxyConfig.Instance.getWelcomeInfo());
 						}
-						
-						IsRunning=false;
-						onStatusChanged(errString, false);
-						continue;
-					}
-					
-					
-					writeLog("Load config success.");
-					String welcomeInfoString=ProxyConfig.Instance.getWelcomeInfo();
-					if(welcomeInfoString!=null&&!welcomeInfoString.isEmpty()){
-						writeLog("%s", ProxyConfig.Instance.getWelcomeInfo());
 					}
  
 					runVPN();
@@ -252,6 +257,7 @@ public class LocalVpnService extends VpnService implements Runnable {
 				if (tcpHeader.getSourcePort() == m_TcpProxyServer.Port) {
 					NatSession session =NatSessionManager.getSession(tcpHeader.getDestinationPort());
 					if (session != null) {
+						Log.d("LocalVpnService", "onIPPacketReceived: 收到本地 TcpProxyServer 服务器数据, " + ipHeader.toString() + " " + tcpHeader.toString());
 						ipHeader.setSourceIP(ipHeader.getDestinationIP());
 						tcpHeader.setSourcePort(session.RemotePort);
 						ipHeader.setDestinationIP(LOCAL_IP);
@@ -289,6 +295,7 @@ public class LocalVpnService extends VpnService implements Runnable {
 					}
  
 					// 转发给本地 TcpProxyServer 服务器
+					Log.d("LocalVpnService", "onIPPacketReceived: 转发给本地 TcpProxyServer 服务器, " + ipHeader.toString() + " " + tcpHeader.toString());
 					ipHeader.setSourceIP(ipHeader.getDestinationIP());
 					ipHeader.setDestinationIP(LOCAL_IP);
 					tcpHeader.setDestinationPort(m_TcpProxyServer.Port);

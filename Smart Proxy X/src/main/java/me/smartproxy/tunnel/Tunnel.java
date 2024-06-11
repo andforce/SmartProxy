@@ -1,6 +1,7 @@
 package me.smartproxy.tunnel;
 
 import android.annotation.SuppressLint;
+import android.util.Log;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -137,6 +138,7 @@ public abstract class Tunnel {
 		} catch (Exception e) {
 			e.printStackTrace();
 			this.dispose();
+			Log.e("Tunnel", "onReadable: ", e);
 		}
 	}
 

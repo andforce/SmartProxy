@@ -166,10 +166,14 @@ public class ProxyConfig {
     }
     
     public String getSessionName(){
-    	if(m_session_name==null){
-    		m_session_name=getDefaultProxy().ServerAddress.getHostName();
-    	}
-    	return m_session_name;
+		if (LocalVpnService.IS_ENABLE_REMOTE_PROXY) {
+			if(m_session_name==null){
+				m_session_name=getDefaultProxy().ServerAddress.getHostName();
+			}
+			return m_session_name;
+		} else {
+			return "m_session_name";
+		}
     }
     
     public String getUserAgent(){
@@ -206,6 +210,9 @@ public class ProxyConfig {
 	}
 	
     public boolean needProxy(String host,int ip){
+		if (!LocalVpnService.IS_ENABLE_REMOTE_PROXY) {
+			return false;
+		}
     	if(host!=null){
     		Boolean stateBoolean=getDomainState(host);
     		if(stateBoolean!=null){

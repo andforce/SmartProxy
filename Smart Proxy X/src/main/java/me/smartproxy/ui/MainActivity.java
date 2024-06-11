@@ -98,6 +98,9 @@ public class MainActivity extends Activity implements
     }
 
     boolean isValidUrl(String url) {
+        if (!LocalVpnService.IS_ENABLE_REMOTE_PROXY) {
+            return true;
+        }
         try {
             if (url == null || url.isEmpty())
                 return false;
