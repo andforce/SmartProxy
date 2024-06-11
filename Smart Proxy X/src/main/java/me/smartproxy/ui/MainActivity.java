@@ -19,8 +19,10 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.*;
 import android.widget.CompoundButton.OnCheckedChangeListener;
+
 import com.google.zxing.integration.android.IntentIntegrator;
 import com.google.zxing.integration.android.IntentResult;
+
 import me.smartproxy.R;
 import me.smartproxy.core.LocalVpnService;
 
@@ -201,7 +203,7 @@ public class MainActivity extends Activity implements
                 mCalendar.get(Calendar.SECOND),
                 logString);
 
-        System.out.println(logString);
+        Log.i(TAG, logString);
 
         if (textViewLog.getLineCount() > 200) {
             textViewLog.setText("");
