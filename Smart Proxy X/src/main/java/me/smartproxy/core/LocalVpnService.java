@@ -248,7 +248,8 @@ public class LocalVpnService extends VpnService implements Runnable {
 			TCPHeader tcpHeader =m_TCPHeader;
 			tcpHeader.m_Offset=ipHeader.getHeaderLength();
 			if (ipHeader.getSourceIP() == LOCAL_IP) {
-				if (tcpHeader.getSourcePort() == m_TcpProxyServer.Port) {// 收到本地TCP服务器数据
+				// 收到本地 TcpProxyServer 服务器数据
+				if (tcpHeader.getSourcePort() == m_TcpProxyServer.Port) {
 					NatSession session =NatSessionManager.getSession(tcpHeader.getDestinationPort());
 					if (session != null) {
 						ipHeader.setSourceIP(ipHeader.getDestinationIP());
@@ -287,7 +288,7 @@ public class LocalVpnService extends VpnService implements Runnable {
 						}
 					}
  
-					// 转发给本地TCP服务器
+					// 转发给本地 TcpProxyServer 服务器
 					ipHeader.setSourceIP(ipHeader.getDestinationIP());
 					ipHeader.setDestinationIP(LOCAL_IP);
 					tcpHeader.setDestinationPort(m_TcpProxyServer.Port);
