@@ -4,20 +4,11 @@
     android:layout_height="fill_parent">
 
     <androidx.appcompat.widget.SwitchCompat
+        android:id="@+id/proxy_switch"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/proxy_switch"/>
-
-    <Button
-        android:id="@+id/btn_exit"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="退出"
-        android:layout_marginTop="8dp"
-        android:layout_marginBottom="8dp"/>
+        android:layout_height="wrap_content" />
 
     <LinearLayout
-        android:visibility="gone"
         android:id="@+id/configUrlLayout"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

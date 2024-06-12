@@ -42,8 +42,8 @@ open class MainActivity : AppCompatActivity() {
                     arrayOf<CharSequence>(
                         getString(R.string.config_url_manual)
                     )
-                ) { dialogInterface: DialogInterface?, i: Int ->
-                    if (i == 1) {
+                ) { _: DialogInterface?, i: Int ->
+                    if (i == 0) {
                         showConfigUrlInputDialog()
                     }
                 }
@@ -73,25 +73,6 @@ open class MainActivity : AppCompatActivity() {
                     }
                 }
             }
-        }
-
-        viewBinding.btnExit.setOnClickListener {
-            if (!localVpnViewModel.isRunning()) {
-                finish()
-                return@setOnClickListener
-            }
-            AlertDialog.Builder(this@MainActivity)
-                .setTitle(R.string.menu_item_exit)
-                .setMessage(R.string.exit_confirm_info)
-                .setPositiveButton(R.string.btn_ok) { dialog: DialogInterface?, which: Int ->
-//                        LocalVpnService.Instance.setRunning(false);
-//                        LocalVpnService.Instance.disconnectVPN();
-                    stopService(Intent(this@MainActivity, LocalVpnService::class.java))
-                    System.runFinalization()
-                    System.exit(0)
-                }
-                .setNegativeButton(R.string.btn_cancel, null)
-                .show()
         }
     }
 
