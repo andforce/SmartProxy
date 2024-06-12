@@ -1,6 +1,5 @@
 package me.smartproxy.ui;
 
-import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -10,10 +9,7 @@ import android.os.Bundle;
 import android.text.InputType;
 import android.text.TextUtils;
 import android.util.Log;
-import android.view.View;
 import android.widget.Button;
-import android.widget.CompoundButton;
-import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.EditText;
 import android.widget.ScrollView;
 import android.widget.TextView;
@@ -24,14 +20,12 @@ import androidx.appcompat.widget.SwitchCompat;
 
 import java.io.File;
 import java.util.Calendar;
+import java.util.Locale;
 
 import me.smartproxy.R;
 import me.smartproxy.core.LocalVpnService;
 
-public class MainActivity extends AppCompatActivity implements
-        View.OnClickListener,
-        OnCheckedChangeListener,
-        LocalVpnService.onStatusChangedListener {
+public class MainActivity extends AppCompatActivity {
 
     private static String GL_HISTORY_LOGS;
 
@@ -49,6 +43,34 @@ public class MainActivity extends AppCompatActivity implements
 
     private Button mExitButton;
 
+    private final LocalVpnService.onStatusChangedListener listener = new LocalVpnService.onStatusChangedListener() {
+        @Override
+        public void onStatusChanged(String status, Boolean isRunning) {
+            switchProxy.setEnabled(true);
+            switchProxy.setChecked(isRunning);
+            Toast.makeText(MainActivity.this, status, Toast.LENGTH_SHORT).show();
+        }
+
+        @Override
+        public void onLogReceived(String logString) {
+            mCalendar.setTimeInMillis(System.currentTimeMillis());
+            logString = String.format(Locale.ENGLISH, "[%1$02d:%2$02d:%3$02d] %4$s\n",
+                    mCalendar.get(Calendar.HOUR_OF_DAY),
+                    mCalendar.get(Calendar.MINUTE),
+                    mCalendar.get(Calendar.SECOND),
+                    logString);
+
+            Log.i(TAG, logString);
+
+            if (textViewLog.getLineCount() > 200) {
+                textViewLog.setText("");
+            }
+            textViewLog.append(logString);
+            scrollViewLog.fullScroll(ScrollView.FOCUS_DOWN);
+            GL_HISTORY_LOGS = textViewLog.getText() == null ? "" : textViewLog.getText().toString();
+        }
+    };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -56,7 +78,22 @@ public class MainActivity extends AppCompatActivity implements
 
         scrollViewLog = findViewById(R.id.scrollViewLog);
         textViewLog = findViewById(R.id.textViewLog);
-        findViewById(R.id.configUrlLayout).setOnClickListener(this);
+        findViewById(R.id.configUrlLayout).setOnClickListener(v -> {
+            if (switchProxy.isChecked()) {
+                return;
+            }
+
+            new AlertDialog.Builder(MainActivity.this)
+                    .setTitle(R.string.config_url)
+                    .setItems(new CharSequence[]{
+                            getString(R.string.config_url_manual)
+                    }, (dialogInterface, i) -> {
+                        if (i == 1) {
+                            showConfigUrlInputDialog();
+                        }
+                    })
+                    .show();
+        });
 
         textViewConfigUrl = findViewById(R.id.textViewConfigUrl);
         String configUrl = readConfigUrl();
@@ -70,11 +107,25 @@ public class MainActivity extends AppCompatActivity implements
         scrollViewLog.fullScroll(ScrollView.FOCUS_DOWN);
 
         mCalendar = Calendar.getInstance();
-        LocalVpnService.addOnStatusChangedListener(this);
+        LocalVpnService.addOnStatusChangedListener(listener);
 
         switchProxy = findViewById(R.id.proxy_switch);
         switchProxy.setChecked(LocalVpnService.IsRunning);
-        switchProxy.setOnCheckedChangeListener(this);
+        switchProxy.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (LocalVpnService.IsRunning != isChecked) {
+                switchProxy.setEnabled(false);
+                if (isChecked) {
+                    Intent intent = LocalVpnService.prepare(MainActivity.this);
+                    if (intent == null) {
+                        startVPNService();
+                    } else {
+                        startActivityForResult(intent, START_VPN_SERVICE_REQUEST_CODE);
+                    }
+                } else {
+                    LocalVpnService.IsRunning = false;
+                }
+            }
+        });
 
         mExitButton = findViewById(R.id.btnConfigUrl);
         mExitButton.setOnClickListener(v -> {
@@ -122,11 +173,9 @@ public class MainActivity extends AppCompatActivity implements
             if (url.startsWith("/")) {//file path
                 File file = new File(url);
                 if (!file.exists()) {
-                    onLogReceived(String.format("File(%s) not exists.", url));
                     return false;
                 }
                 if (!file.canRead()) {
-                    onLogReceived(String.format("File(%s) can't read.", url));
                     return false;
                 }
             } else { //url
@@ -141,25 +190,6 @@ public class MainActivity extends AppCompatActivity implements
             return false;
         }
     }
-
-    @Override
-    public void onClick(View v) {
-        if (switchProxy.isChecked()) {
-            return;
-        }
-
-        new AlertDialog.Builder(this)
-                .setTitle(R.string.config_url)
-                .setItems(new CharSequence[]{
-                        getString(R.string.config_url_manual)
-                }, (dialogInterface, i) -> {
-                    if (i == 1) {
-                        showConfigUrlInputDialog();
-                    }
-                })
-                .show();
-    }
-
 
     private void showConfigUrlInputDialog() {
         final EditText editText = new EditText(this);
@@ -187,50 +217,7 @@ public class MainActivity extends AppCompatActivity implements
                 .show();
     }
 
-    @SuppressLint("DefaultLocale")
-    @Override
-    public void onLogReceived(String logString) {
-        mCalendar.setTimeInMillis(System.currentTimeMillis());
-        logString = String.format("[%1$02d:%2$02d:%3$02d] %4$s\n",
-                mCalendar.get(Calendar.HOUR_OF_DAY),
-                mCalendar.get(Calendar.MINUTE),
-                mCalendar.get(Calendar.SECOND),
-                logString);
 
-        Log.i(TAG, logString);
-
-        if (textViewLog.getLineCount() > 200) {
-            textViewLog.setText("");
-        }
-        textViewLog.append(logString);
-        scrollViewLog.fullScroll(ScrollView.FOCUS_DOWN);
-        GL_HISTORY_LOGS = textViewLog.getText() == null ? "" : textViewLog.getText().toString();
-    }
-
-    @Override
-    public void onStatusChanged(String status, Boolean isRunning) {
-        switchProxy.setEnabled(true);
-        switchProxy.setChecked(isRunning);
-        onLogReceived(status);
-        Toast.makeText(this, status, Toast.LENGTH_SHORT).show();
-    }
-
-    @Override
-    public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-        if (LocalVpnService.IsRunning != isChecked) {
-            switchProxy.setEnabled(false);
-            if (isChecked) {
-                Intent intent = LocalVpnService.prepare(this);
-                if (intent == null) {
-                    startVPNService();
-                } else {
-                    startActivityForResult(intent, START_VPN_SERVICE_REQUEST_CODE);
-                }
-            } else {
-                LocalVpnService.IsRunning = false;
-            }
-        }
-    }
 
     private void startVPNService() {
         String configUrl = readConfigUrl();
@@ -245,7 +232,6 @@ public class MainActivity extends AppCompatActivity implements
 
         textViewLog.setText("");
         GL_HISTORY_LOGS = null;
-        onLogReceived("starting...");
         LocalVpnService.ConfigUrl = configUrl;
         startService(new Intent(this, LocalVpnService.class));
     }
@@ -258,7 +244,6 @@ public class MainActivity extends AppCompatActivity implements
             } else {
                 switchProxy.setChecked(false);
                 switchProxy.setEnabled(true);
-                onLogReceived("canceled.");
             }
             return;
         }
@@ -268,7 +253,7 @@ public class MainActivity extends AppCompatActivity implements
 
     @Override
     protected void onDestroy() {
-        LocalVpnService.removeOnStatusChangedListener(this);
+        LocalVpnService.removeOnStatusChangedListener(listener);
         super.onDestroy();
     }
 

@@ -38,11 +38,11 @@ public class LocalVpnService extends VpnService {
     private DnsProxy m_DnsProxy;
     private FileOutputStream m_VPNOutputStream;
 
-    private final byte[] m_Packet;
-    private final IPHeader m_IPHeader;
-    private final TCPHeader m_TCPHeader;
-    private final UDPHeader m_UDPHeader;
-    private final ByteBuffer m_DNSBuffer;
+    private final byte[] m_Packet = new byte[20000];
+    private final IPHeader m_IPHeader = new IPHeader(m_Packet, 0);
+    private final TCPHeader m_TCPHeader = new TCPHeader(m_Packet, 20);
+    private final UDPHeader m_UDPHeader = new UDPHeader(m_Packet, 20);
+    private final ByteBuffer m_DNSBuffer = ((ByteBuffer) ByteBuffer.wrap(m_Packet).position(28)).slice();
     private long m_SentBytes;
     private long m_ReceivedBytes;
 
@@ -50,13 +50,7 @@ public class LocalVpnService extends VpnService {
 
     public LocalVpnService() {
         ID++;
-        m_Packet = new byte[20000];
-        m_IPHeader = new IPHeader(m_Packet, 0);
-        m_TCPHeader = new TCPHeader(m_Packet, 20);
-        m_UDPHeader = new UDPHeader(m_Packet, 20);
-        m_DNSBuffer = ((ByteBuffer) ByteBuffer.wrap(m_Packet).position(28)).slice();
         Instance = this;
-
         Log.d(TAG, "New VPNService(" + ID + ")");
     }
 
