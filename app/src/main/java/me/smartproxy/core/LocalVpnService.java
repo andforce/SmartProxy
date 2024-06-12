@@ -10,7 +10,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 import me.smartproxy.R;
 import me.smartproxy.core.ProxyConfig.IPAddress;
@@ -30,8 +29,6 @@ public class LocalVpnService extends VpnService {
 
     private static int ID;
     private static int LOCAL_IP;
-    private static final ConcurrentHashMap<OnStatusChangedListener, Object> m_OnStatusChangedListeners = new ConcurrentHashMap<>();
-
     private Thread m_VPNThread;
     private ParcelFileDescriptor m_VPNInterface;
     private TcpProxyServer m_TcpProxyServer;
@@ -114,16 +111,6 @@ public class LocalVpnService extends VpnService {
     public int onStartCommand(Intent intent, int flags, int startId) {
         IsRunning = true;
         return super.onStartCommand(intent, flags, startId);
-    }
-
-    public static void addOnStatusChangedListener(OnStatusChangedListener listener) {
-        if (!m_OnStatusChangedListeners.containsKey(listener)) {
-            m_OnStatusChangedListeners.put(listener, 1);
-        }
-    }
-
-    public static void removeOnStatusChangedListener(OnStatusChangedListener listener) {
-        m_OnStatusChangedListeners.remove(listener);
     }
 
     public void sendUDPPacket(IPHeader ipHeader, UDPHeader udpHeader) {

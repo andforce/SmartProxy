@@ -108,7 +108,7 @@ public class MainActivity extends AppCompatActivity {
         scrollViewLog.fullScroll(ScrollView.FOCUS_DOWN);
 
         mCalendar = Calendar.getInstance();
-        LocalVpnService.addOnStatusChangedListener(listener);
+        //LocalVpnService.addOnStatusChangedListener(listener);
 
         switchProxy = findViewById(R.id.proxy_switch);
         switchProxy.setChecked(LocalVpnService.IsRunning);
@@ -254,7 +254,7 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
-        LocalVpnService.removeOnStatusChangedListener(listener);
+        //LocalVpnService.removeOnStatusChangedListener(listener);
         super.onDestroy();
     }
 
