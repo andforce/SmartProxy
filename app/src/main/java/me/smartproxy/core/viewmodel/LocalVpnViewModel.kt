@@ -49,4 +49,11 @@ class LocalVpnViewModel : ViewModel() {
     fun protect(socket: Socket): Boolean {
         return helper?.protect(socket) ?: false
     }
+
+    private val _requestResult = MutableSharedFlow<Int>(replay = 0, extraBufferCapacity = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
+    val vpnPermissionRequestResult: SharedFlow<Int> = _requestResult
+
+    fun updateRequestResult(it: Int) {
+        _requestResult.tryEmit(it)
+    }
 }

@@ -3,7 +3,6 @@ package me.smartproxy.ui
 import android.app.AlertDialog
 import android.content.DialogInterface
 import android.content.Intent
-import android.net.VpnService
 import android.os.Bundle
 import android.text.InputType
 import android.text.TextUtils
@@ -12,7 +11,9 @@ import android.widget.CompoundButton
 import android.widget.EditText
 import android.widget.ScrollView
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 import me.smartproxy.R
 import me.smartproxy.core.LocalVpnService
 import me.smartproxy.core.ProxyConfig
@@ -21,7 +22,7 @@ import me.smartproxy.databinding.ActivityMainBinding
 import me.smartproxy.ui.utils.UrlUtils.isValidUrl
 import org.koin.java.KoinJavaComponent.get
 
-open class MainActivity : AppCompatActivity() {
+open class MainActivity : RequestVpnPermissionActivity() {
 
     private val vpnViewModel = get<LocalVpnViewModel>(LocalVpnViewModel::class.java)
 
@@ -32,6 +33,16 @@ open class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(viewBinding.root)
+
+        lifecycleScope.launch {
+            vpnViewModel.vpnPermissionRequestResult.collectLatest {
+                if (it == RESULT_OK) {
+                    startVPNService()
+                } else {
+                    Toast.makeText(this@MainActivity, "你拒绝了VPN开启", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
 
         viewBinding.configUrlLayout.setOnClickListener { v: View? ->
             if (viewBinding.proxySwitch.isChecked) {
@@ -63,15 +74,10 @@ open class MainActivity : AppCompatActivity() {
 
         viewBinding.proxySwitch.isChecked = vpnViewModel.isRunning()
         viewBinding.proxySwitch.setOnCheckedChangeListener { buttonView: CompoundButton?, isChecked: Boolean ->
-            if (vpnViewModel.isRunning() != isChecked) {
-                if (isChecked) {
-                    val intent: Intent? = VpnService.prepare(this@MainActivity)
-                    if (intent == null) {
-                        startVPNService()
-                    } else {
-                        startActivityForResult(intent, START_VPN_SERVICE_REQUEST_CODE)
-                    }
-                }
+            if (isChecked) {
+                requestVpnPermission()
+            } else {
+                stopService(Intent(this, LocalVpnService::class.java))
             }
         }
     }
@@ -132,26 +138,13 @@ open class MainActivity : AppCompatActivity() {
         startService(Intent(this, LocalVpnService::class.java))
     }
 
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == START_VPN_SERVICE_REQUEST_CODE) {
-            if (resultCode == RESULT_OK) {
-                startVPNService()
-            } else {
-                viewBinding.proxySwitch.post {
-                    viewBinding.proxySwitch.isChecked = false
-                }
-            }
-        }
-    }
 
     companion object {
         private var GL_HISTORY_LOGS: String? = null
 
-        private val TAG: String = MainActivity::class.java.simpleName
+        private val TAG: String = "MainActivity"
 
         private const val CONFIG_URL_KEY = "CONFIG_URL_KEY"
 
-        private const val START_VPN_SERVICE_REQUEST_CODE = 1985
     }
 }
