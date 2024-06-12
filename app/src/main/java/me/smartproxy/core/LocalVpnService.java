@@ -1,24 +1,5 @@
 package me.smartproxy.core;
 
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.lang.reflect.Method;
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-
-import me.smartproxy.core.ProxyConfig.IPAddress;
-import me.smartproxy.dns.DnsPacket;
-import me.smartproxy.tcpip.CommonMethods;
-import me.smartproxy.tcpip.IPHeader;
-import me.smartproxy.tcpip.TCPHeader;
-import me.smartproxy.tcpip.UDPHeader;
-import me.smartproxy.ui.MainActivity;
-import me.smartproxy.R;
-
 import android.app.PendingIntent;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -31,6 +12,24 @@ import android.os.Handler;
 import android.os.ParcelFileDescriptor;
 import android.util.Log;
 
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+
+import me.smartproxy.R;
+import me.smartproxy.core.ProxyConfig.IPAddress;
+import me.smartproxy.dns.DNSUtils;
+import me.smartproxy.dns.DnsPacket;
+import me.smartproxy.tcpip.CommonMethods;
+import me.smartproxy.tcpip.IPHeader;
+import me.smartproxy.tcpip.TCPHeader;
+import me.smartproxy.tcpip.UDPHeader;
+import me.smartproxy.ui.MainActivity;
+
 public class LocalVpnService extends VpnService implements Runnable {
 
     private static final String TAG = "LocalVpnService";
@@ -40,7 +39,7 @@ public class LocalVpnService extends VpnService implements Runnable {
 
     private static int ID;
     private static int LOCAL_IP;
-    private static ConcurrentHashMap<onStatusChangedListener, Object> m_OnStatusChangedListeners = new ConcurrentHashMap<onStatusChangedListener, Object>();
+    private static final ConcurrentHashMap<onStatusChangedListener, Object> m_OnStatusChangedListeners = new ConcurrentHashMap<>();
 
     private Thread m_VPNThread;
     private ParcelFileDescriptor m_VPNInterface;
@@ -48,12 +47,12 @@ public class LocalVpnService extends VpnService implements Runnable {
     private DnsProxy m_DnsProxy;
     private FileOutputStream m_VPNOutputStream;
 
-    private byte[] m_Packet;
-    private IPHeader m_IPHeader;
-    private TCPHeader m_TCPHeader;
-    private UDPHeader m_UDPHeader;
-    private ByteBuffer m_DNSBuffer;
-    private Handler m_Handler;
+    private final byte[] m_Packet;
+    private final IPHeader m_IPHeader;
+    private final TCPHeader m_TCPHeader;
+    private final UDPHeader m_UDPHeader;
+    private final ByteBuffer m_DNSBuffer;
+    private final Handler m_Handler;
     private long m_SentBytes;
     private long m_ReceivedBytes;
 
@@ -88,9 +87,9 @@ public class LocalVpnService extends VpnService implements Runnable {
     }
 
     public interface onStatusChangedListener {
-        public void onStatusChanged(String status, Boolean isRunning);
+        void onStatusChanged(String status, Boolean isRunning);
 
-        public void onLogReceived(String logString);
+        void onLogReceived(String logString);
     }
 
     public static void addOnStatusChangedListener(onStatusChangedListener listener) {
@@ -100,30 +99,22 @@ public class LocalVpnService extends VpnService implements Runnable {
     }
 
     public static void removeOnStatusChangedListener(onStatusChangedListener listener) {
-        if (m_OnStatusChangedListeners.containsKey(listener)) {
-            m_OnStatusChangedListeners.remove(listener);
-        }
+        m_OnStatusChangedListeners.remove(listener);
     }
 
     private void onStatusChanged(final String status, final boolean isRunning) {
-        m_Handler.post(new Runnable() {
-            @Override
-            public void run() {
-                for (Map.Entry<onStatusChangedListener, Object> entry : m_OnStatusChangedListeners.entrySet()) {
-                    entry.getKey().onStatusChanged(status, isRunning);
-                }
+        m_Handler.post(() -> {
+            for (Map.Entry<onStatusChangedListener, Object> entry : m_OnStatusChangedListeners.entrySet()) {
+                entry.getKey().onStatusChanged(status, isRunning);
             }
         });
     }
 
     public void writeLog(final String format, Object... args) {
         final String logString = String.format(format, args);
-        m_Handler.post(new Runnable() {
-            @Override
-            public void run() {
-                for (Map.Entry<onStatusChangedListener, Object> entry : m_OnStatusChangedListeners.entrySet()) {
-                    entry.getKey().onLogReceived(logString);
-                }
+        m_Handler.post(() -> {
+            for (Map.Entry<onStatusChangedListener, Object> entry : m_OnStatusChangedListeners.entrySet()) {
+                entry.getKey().onLogReceived(logString);
             }
         });
     }
@@ -133,7 +124,7 @@ public class LocalVpnService extends VpnService implements Runnable {
             CommonMethods.ComputeUDPChecksum(ipHeader, udpHeader);
             this.m_VPNOutputStream.write(ipHeader.m_Data, ipHeader.m_Offset, ipHeader.getTotalLength());
         } catch (IOException e) {
-            e.printStackTrace();
+            Log.e(TAG, "sendUDPPacket: ", e);
         }
     }
 
@@ -144,7 +135,7 @@ public class LocalVpnService extends VpnService implements Runnable {
             appInstallID = UUID.randomUUID().toString();
             Editor editor = preferences.edit();
             editor.putString("AppInstallID", appInstallID);
-            editor.commit();
+            editor.apply();
         }
         return appInstallID;
     }
@@ -154,8 +145,7 @@ public class LocalVpnService extends VpnService implements Runnable {
             PackageManager packageManager = getPackageManager();
             // getPackageName()是你当前类的包名，0代表是获取版本信息
             PackageInfo packInfo = packageManager.getPackageInfo(getPackageName(), 0);
-            String version = packInfo.versionName;
-            return version;
+            return packInfo.versionName;
         } catch (Exception e) {
             return "0.0";
         }
@@ -259,7 +249,7 @@ public class LocalVpnService extends VpnService implements Runnable {
                     if (tcpHeader.getSourcePort() == m_TcpProxyServer.Port) {
                         NatSession session = NatSessionManager.getSession(tcpHeader.getDestinationPort());
                         if (session != null) {
-                            Log.d("LocalVpnService", "onIPPacketReceived: 收到本地 TcpProxyServer 服务器数据, " + ipHeader.toString() + " " + tcpHeader.toString());
+                            Log.d("LocalVpnService", "onIPPacketReceived: 收到本地 TcpProxyServer 服务器数据, " + ipHeader + " " + tcpHeader);
                             ipHeader.setSourceIP(ipHeader.getDestinationIP());
                             tcpHeader.setSourcePort(session.RemotePort);
                             ipHeader.setDestinationIP(LOCAL_IP);
@@ -297,7 +287,7 @@ public class LocalVpnService extends VpnService implements Runnable {
                         }
 
                         // 转发给本地 TcpProxyServer 服务器
-                        Log.d("LocalVpnService", "onIPPacketReceived: 转发给本地 TcpProxyServer 服务器, " + ipHeader.toString() + " " + tcpHeader.toString());
+                        Log.d("LocalVpnService", "onIPPacketReceived: 转发给本地 TcpProxyServer 服务器, " + ipHeader + " " + tcpHeader);
                         ipHeader.setSourceIP(ipHeader.getDestinationIP());
                         ipHeader.setDestinationIP(LOCAL_IP);
                         tcpHeader.setDestinationPort(m_TcpProxyServer.Port);
@@ -330,7 +320,7 @@ public class LocalVpnService extends VpnService implements Runnable {
             try {
                 Thread.sleep(100);
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                Log.e(TAG, "waitUntilPreapred: ", e);
             }
         }
     }
@@ -356,7 +346,7 @@ public class LocalVpnService extends VpnService implements Runnable {
             }
         }
 
-        if (ProxyConfig.Instance.getRouteList().size() > 0) {
+        if (!ProxyConfig.Instance.getRouteList().isEmpty()) {
             for (ProxyConfig.IPAddress routeAddress : ProxyConfig.Instance.getRouteList()) {
                 builder.addRoute(routeAddress.Address, routeAddress.PrefixLength);
                 if (ProxyConfig.IS_DEBUG) {
@@ -375,18 +365,19 @@ public class LocalVpnService extends VpnService implements Runnable {
             }
         }
 
+        Map<String, String> dnsMap = DNSUtils.INSTANCE.findAndroidPropDNS(this);
+        for (Map.Entry<String, String> entry : dnsMap.entrySet()) {
+            String host = entry.getValue();
+            String name = entry.getKey();
+            Log.d(TAG, "findAndroidPropDNS: " + name + " -> " + host);
 
-        Class<?> SystemProperties = Class.forName("android.os.SystemProperties");
-        Method method = SystemProperties.getMethod("get", new Class[]{String.class});
-        ArrayList<String> servers = new ArrayList<String>();
-        for (String name : new String[]{"net.dns1", "net.dns2", "net.dns3", "net.dns4",}) {
-            String value = (String) method.invoke(null, name);
-            if (value != null && !"".equals(value) && !servers.contains(value)) {
-                servers.add(value);
-                builder.addRoute(value, 32);
+            if (DNSUtils.INSTANCE.isIPv4Address(host)) {
+                builder.addRoute(host, 32);
                 if (ProxyConfig.IS_DEBUG) {
-                    Log.d(TAG, name + "=" + value);
+                    Log.d(TAG, "addRoute by DNS: " + host + "/32");
                 }
+            } else {
+                Log.d(TAG, "addRoute by DNS, 暂时忽略 IPv6 类型的DNS: " + host);
             }
         }
 

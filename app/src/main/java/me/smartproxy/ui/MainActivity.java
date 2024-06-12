@@ -1,7 +1,6 @@
 package me.smartproxy.ui;
 
 import android.annotation.SuppressLint;
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.DialogInterface.OnClickListener;
@@ -23,6 +22,7 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SwitchCompat;
 
 import java.io.File;
@@ -31,7 +31,7 @@ import java.util.Calendar;
 import me.smartproxy.R;
 import me.smartproxy.core.LocalVpnService;
 
-public class MainActivity extends Activity implements
+public class MainActivity extends AppCompatActivity implements
         View.OnClickListener,
         OnCheckedChangeListener,
         LocalVpnService.onStatusChangedListener {
@@ -57,11 +57,11 @@ public class MainActivity extends Activity implements
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main_2);
 
-        scrollViewLog = (ScrollView) findViewById(R.id.scrollViewLog);
-        textViewLog = (TextView) findViewById(R.id.textViewLog);
+        scrollViewLog = findViewById(R.id.scrollViewLog);
+        textViewLog = findViewById(R.id.textViewLog);
         findViewById(R.id.configUrlLayout).setOnClickListener(this);
 
-        textViewConfigUrl = (TextView) findViewById(R.id.textViewConfigUrl);
+        textViewConfigUrl = findViewById(R.id.textViewConfigUrl);
         String configUrl = readConfigUrl();
         if (TextUtils.isEmpty(configUrl)) {
             textViewConfigUrl.setText(R.string.config_not_set_value);
@@ -157,8 +157,9 @@ public class MainActivity extends Activity implements
                 Uri uri = Uri.parse(url);
                 if (!"http".equals(uri.getScheme()) && !"https".equals(uri.getScheme()))
                     return false;
-                if (uri.getHost() == null)
+                if (uri.getHost() == null) {
                     return false;
+                }
             }
             return true;
         } catch (Exception e) {
@@ -175,7 +176,6 @@ public class MainActivity extends Activity implements
         new AlertDialog.Builder(this)
                 .setTitle(R.string.config_url)
                 .setItems(new CharSequence[]{
-                        getString(R.string.config_url_scan),
                         getString(R.string.config_url_manual)
                 }, new OnClickListener() {
                     @Override
