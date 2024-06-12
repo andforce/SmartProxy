@@ -30,7 +30,7 @@ import me.smartproxy.tcpip.TCPHeader;
 import me.smartproxy.tcpip.UDPHeader;
 import me.smartproxy.ui.MainActivity;
 
-public class LocalVpnService extends VpnService implements Runnable {
+public class LocalVpnService extends VpnService {
 
     private static final String TAG = "LocalVpnService";
     public static LocalVpnService Instance;
@@ -75,7 +75,76 @@ public class LocalVpnService extends VpnService implements Runnable {
     public void onCreate() {
         Log.d(TAG, "VPNService created.");
         // Start a new session by creating a new thread.
-        m_VPNThread = new Thread(this, "VPNServiceThread");
+        m_VPNThread = new Thread(new Runnable() {
+            @Override
+            public synchronized void run() {
+                try {
+                    Log.d(TAG, "VPNService work thread is runing...");
+
+                    ProxyConfig.AppInstallID = getAppInstallID();//获取安装ID
+                    ProxyConfig.AppVersion = getVersionName();//获取版本号
+                    Log.d(TAG, "AppInstallID: " + ProxyConfig.AppInstallID);
+                    writeLog("Android version: %s", Build.VERSION.RELEASE);
+                    writeLog("App version: %s", ProxyConfig.AppVersion);
+
+
+                    ChinaIpMaskManager.loadFromFile(getResources().openRawResource(R.raw.ipmask));//加载中国的IP段，用于IP分流。
+                    waitUntilPreapred();//检查是否准备完毕。
+
+                    m_TcpProxyServer = new TcpProxyServer(0);
+                    m_TcpProxyServer.start();
+                    writeLog("LocalTcpServer started.");
+
+                    m_DnsProxy = new DnsProxy();
+                    m_DnsProxy.start();
+                    writeLog("LocalDnsProxy started.");
+
+                    while (true) {
+                        if (IsRunning) {
+                            //加载配置文件
+                            writeLog("Load config from %s ...", ConfigUrl);
+                            if (IS_ENABLE_REMOTE_PROXY) {
+                                try {
+                                    ProxyConfig.Instance.loadFromUrl(ConfigUrl);
+                                    if (ProxyConfig.Instance.getDefaultProxy() == null) {
+                                        throw new Exception("Invalid config file.");
+                                    }
+                                    writeLog("PROXY %s", ProxyConfig.Instance.getDefaultProxy());
+                                } catch (Exception e) {
+                                    String errString = e.getMessage();
+                                    if (errString == null || errString.isEmpty()) {
+                                        errString = e.toString();
+                                    }
+
+                                    IsRunning = false;
+                                    onStatusChanged(errString, false);
+                                    continue;
+                                }
+
+
+                                writeLog("Load config success.");
+                                String welcomeInfoString = ProxyConfig.Instance.getWelcomeInfo();
+                                if (welcomeInfoString != null && !welcomeInfoString.isEmpty()) {
+                                    writeLog("%s", ProxyConfig.Instance.getWelcomeInfo());
+                                }
+                            }
+
+                            runVPN();
+                        } else {
+                            Thread.sleep(100);
+                        }
+                    }
+                } catch (InterruptedException e) {
+                    Log.e(TAG, "Fatal error: ", e);
+                } catch (Exception e) {
+                    writeLog("Fatal error: %s", e.toString());
+                    Log.e(TAG, "Fatal error: ", e);
+                } finally {
+                    writeLog("SmartProxy terminated.");
+                    dispose();
+                }
+            }
+        }, "VPNServiceThread");
         m_VPNThread.start();
         super.onCreate();
     }
@@ -148,75 +217,6 @@ public class LocalVpnService extends VpnService implements Runnable {
             return packInfo.versionName;
         } catch (Exception e) {
             return "0.0";
-        }
-    }
-
-    @Override
-    public synchronized void run() {
-        try {
-            Log.d(TAG, "VPNService work thread is runing...");
-
-            ProxyConfig.AppInstallID = getAppInstallID();//获取安装ID
-            ProxyConfig.AppVersion = getVersionName();//获取版本号
-            Log.d(TAG, "AppInstallID: " + ProxyConfig.AppInstallID);
-            writeLog("Android version: %s", Build.VERSION.RELEASE);
-            writeLog("App version: %s", ProxyConfig.AppVersion);
-
-
-            ChinaIpMaskManager.loadFromFile(getResources().openRawResource(R.raw.ipmask));//加载中国的IP段，用于IP分流。
-            waitUntilPreapred();//检查是否准备完毕。
-
-            m_TcpProxyServer = new TcpProxyServer(0);
-            m_TcpProxyServer.start();
-            writeLog("LocalTcpServer started.");
-
-            m_DnsProxy = new DnsProxy();
-            m_DnsProxy.start();
-            writeLog("LocalDnsProxy started.");
-
-            while (true) {
-                if (IsRunning) {
-                    //加载配置文件
-                    writeLog("Load config from %s ...", ConfigUrl);
-                    if (IS_ENABLE_REMOTE_PROXY) {
-                        try {
-                            ProxyConfig.Instance.loadFromUrl(ConfigUrl);
-                            if (ProxyConfig.Instance.getDefaultProxy() == null) {
-                                throw new Exception("Invalid config file.");
-                            }
-                            writeLog("PROXY %s", ProxyConfig.Instance.getDefaultProxy());
-                        } catch (Exception e) {
-                            String errString = e.getMessage();
-                            if (errString == null || errString.isEmpty()) {
-                                errString = e.toString();
-                            }
-
-                            IsRunning = false;
-                            onStatusChanged(errString, false);
-                            continue;
-                        }
-
-
-                        writeLog("Load config success.");
-                        String welcomeInfoString = ProxyConfig.Instance.getWelcomeInfo();
-                        if (welcomeInfoString != null && !welcomeInfoString.isEmpty()) {
-                            writeLog("%s", ProxyConfig.Instance.getWelcomeInfo());
-                        }
-                    }
-
-                    runVPN();
-                } else {
-                    Thread.sleep(100);
-                }
-            }
-        } catch (InterruptedException e) {
-            Log.e(TAG, "Fatal error: ", e);
-        } catch (Exception e) {
-            writeLog("Fatal error: %s", e.toString());
-            Log.e(TAG, "Fatal error: ", e);
-        } finally {
-            writeLog("SmartProxy terminated.");
-            dispose();
         }
     }
 
