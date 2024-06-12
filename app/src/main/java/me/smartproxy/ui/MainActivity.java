@@ -14,22 +14,22 @@ import android.os.Bundle;
 import android.text.InputType;
 import android.text.TextUtils;
 import android.util.Log;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
-import android.widget.*;
+import android.widget.Button;
+import android.widget.CompoundButton;
 import android.widget.CompoundButton.OnCheckedChangeListener;
+import android.widget.EditText;
+import android.widget.ScrollView;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.widget.SwitchCompat;
 
-import com.google.zxing.integration.android.IntentIntegrator;
-import com.google.zxing.integration.android.IntentResult;
+import java.io.File;
+import java.util.Calendar;
 
 import me.smartproxy.R;
 import me.smartproxy.core.LocalVpnService;
-
-import java.io.File;
-import java.util.Calendar;
 
 public class MainActivity extends Activity implements
         View.OnClickListener,
@@ -181,9 +181,6 @@ public class MainActivity extends Activity implements
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
                         switch (i) {
-                            case 0:
-                                scanForConfigUrl();
-                                break;
                             case 1:
                                 showConfigUrlInputDialog();
                                 break;
@@ -193,12 +190,6 @@ public class MainActivity extends Activity implements
                 .show();
     }
 
-    private void scanForConfigUrl() {
-        new IntentIntegrator(this)
-                .setResultDisplayDuration(0)
-                .setPrompt(getString(R.string.config_url_scan_hint))
-                .initiateScan(IntentIntegrator.QR_CODE_TYPES);
-    }
 
     private void showConfigUrlInputDialog() {
         final EditText editText = new EditText(this);
@@ -308,71 +299,8 @@ public class MainActivity extends Activity implements
             return;
         }
 
-        IntentResult scanResult = IntentIntegrator.parseActivityResult(requestCode, resultCode, intent);
-        if (scanResult != null) {
-            String configUrl = scanResult.getContents();
-            if (isValidUrl(configUrl)) {
-                setConfigUrl(configUrl);
-                textViewConfigUrl.setText(configUrl);
-            } else {
-                Toast.makeText(MainActivity.this, R.string.err_invalid_url, Toast.LENGTH_SHORT).show();
-            }
-            return;
-        }
-
         super.onActivityResult(requestCode, resultCode, intent);
     }
-
-//    @Override
-//    public boolean onCreateOptionsMenu(Menu menu) {
-//        getMenuInflater().inflate(R.menu.main_activity_actions, menu);
-//
-//        MenuItem menuItem = menu.findItem(R.id.menu_item_switch);
-//        if (menuItem == null) {
-//            return false;
-//        }
-//
-//        switchProxy = (Switch) menuItem.getActionView();
-//        if (switchProxy == null) {
-//            return false;
-//        }
-//
-//        switchProxy.setChecked(LocalVpnService.IsRunning);
-//        switchProxy.setOnCheckedChangeListener(this);
-//
-//        return true;
-//    }
-
-//    @Override
-//    public boolean onOptionsItemSelected(MenuItem item) {
-//        switch (item.getItemId()) {
-//            case R.id.menu_item_exit:
-//                if (!LocalVpnService.IsRunning) {
-//                    finish();
-//                    return true;
-//                }
-//
-//                new AlertDialog.Builder(this)
-//                        .setTitle(R.string.menu_item_exit)
-//                        .setMessage(R.string.exit_confirm_info)
-//                        .setPositiveButton(R.string.btn_ok, new OnClickListener() {
-//                            @Override
-//                            public void onClick(DialogInterface dialog, int which) {
-//                                LocalVpnService.IsRunning = false;
-//                                LocalVpnService.Instance.disconnectVPN();
-//                                stopService(new Intent(MainActivity.this, LocalVpnService.class));
-//                                System.runFinalization();
-//                                System.exit(0);
-//                            }
-//                        })
-//                        .setNegativeButton(R.string.btn_cancel, null)
-//                        .show();
-//
-//                return true;
-//            default:
-//                return super.onOptionsItemSelected(item);
-//        }
-//    }
 
     @Override
     protected void onDestroy() {
