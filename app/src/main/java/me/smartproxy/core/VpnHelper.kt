@@ -140,7 +140,7 @@ class VpnHelper(private val context: Context, private val service: LocalVpnServi
                 waitUntilPrepared() //检查是否准备完毕。
 
                 //加载配置文件
-                if (LocalVpnService.IS_ENABLE_REMOTE_PROXY) {
+                if (IS_ENABLE_REMOTE_PROXY) {
                     try {
                         ProxyConfig.Instance.loadFromUrl(ProxyConfig.ConfigUrl)
                         if (ProxyConfig.Instance.defaultProxy == null) {

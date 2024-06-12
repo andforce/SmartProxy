@@ -4,7 +4,6 @@ import android.app.AlertDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
-import android.net.Uri;
 import android.os.Bundle;
 import android.text.InputType;
 import android.text.TextUtils;
@@ -20,7 +19,6 @@ import androidx.appcompat.widget.SwitchCompat;
 
 import org.koin.java.KoinJavaComponent;
 
-import java.io.File;
 import java.util.Calendar;
 import java.util.Locale;
 
@@ -29,6 +27,7 @@ import me.smartproxy.core.LocalVpnService;
 import me.smartproxy.core.OnStatusChangedListener;
 import me.smartproxy.core.ProxyConfig;
 import me.smartproxy.core.viewmodel.LocalVpnViewModel;
+import me.smartproxy.ui.utils.UrlUtils;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -166,34 +165,7 @@ public class MainActivity extends AppCompatActivity {
         editor.apply();
     }
 
-    boolean isValidUrl(String url) {
-        if (!LocalVpnService.IS_ENABLE_REMOTE_PROXY) {
-            return true;
-        }
-        try {
-            if (url == null || url.isEmpty())
-                return false;
 
-            if (url.startsWith("/")) {//file path
-                File file = new File(url);
-                if (!file.exists()) {
-                    return false;
-                }
-                if (!file.canRead()) {
-                    return false;
-                }
-            } else { //url
-                Uri uri = Uri.parse(url);
-                if (!"http".equals(uri.getScheme()) && !"https".equals(uri.getScheme())) {
-                    return false;
-                }
-                return uri.getHost() != null;
-            }
-            return true;
-        } catch (Exception e) {
-            return false;
-        }
-    }
 
     private void showConfigUrlInputDialog() {
         final EditText editText = new EditText(this);
@@ -210,7 +182,7 @@ public class MainActivity extends AppCompatActivity {
                     }
 
                     String configUrl = editText.getText().toString().trim();
-                    if (isValidUrl(configUrl)) {
+                    if (UrlUtils.INSTANCE.isValidUrl(configUrl)) {
                         setConfigUrl(configUrl);
                         textViewConfigUrl.setText(configUrl);
                     } else {
@@ -225,7 +197,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void startVPNService() {
         String configUrl = readConfigUrl();
-        if (!isValidUrl(configUrl)) {
+        if (!UrlUtils.INSTANCE.isValidUrl(configUrl)) {
             Toast.makeText(this, R.string.err_invalid_url, Toast.LENGTH_SHORT).show();
             switchProxy.post(() -> {
                 switchProxy.setChecked(false);
@@ -254,11 +226,4 @@ public class MainActivity extends AppCompatActivity {
 
         super.onActivityResult(requestCode, resultCode, intent);
     }
-
-    @Override
-    protected void onDestroy() {
-        //LocalVpnService.removeOnStatusChangedListener(listener);
-        super.onDestroy();
-    }
-
 }

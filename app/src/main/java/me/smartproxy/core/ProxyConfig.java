@@ -169,7 +169,7 @@ public class ProxyConfig {
     }
 
     public String getSessionName() {
-        if (LocalVpnService.IS_ENABLE_REMOTE_PROXY) {
+        if (VpnHelper.IS_ENABLE_REMOTE_PROXY) {
             if (m_session_name == null) {
                 m_session_name = getDefaultProxy().ServerAddress.getHostName();
             }
@@ -213,7 +213,7 @@ public class ProxyConfig {
     }
 
     public boolean needProxy(String host, int ip) {
-        if (!LocalVpnService.IS_ENABLE_REMOTE_PROXY) {
+        if (!VpnHelper.IS_ENABLE_REMOTE_PROXY) {
             return false;
         }
         if (host != null) {
