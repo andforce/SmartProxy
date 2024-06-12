@@ -2,12 +2,9 @@ package me.smartproxy.ui;
 
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
-import android.content.DialogInterface;
-import android.content.DialogInterface.OnClickListener;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
-import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.InputType;
@@ -80,31 +77,25 @@ public class MainActivity extends AppCompatActivity implements
         switchProxy.setOnCheckedChangeListener(this);
 
         mExitButton = findViewById(R.id.btnConfigUrl);
-        mExitButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                //finish();
-                if (!LocalVpnService.IsRunning) {
-                    finish();
-                    return ;
-                }
-
-                new AlertDialog.Builder(MainActivity.this)
-                        .setTitle(R.string.menu_item_exit)
-                        .setMessage(R.string.exit_confirm_info)
-                        .setPositiveButton(R.string.btn_ok, new OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                LocalVpnService.IsRunning = false;
-                                LocalVpnService.Instance.disconnectVPN();
-                                stopService(new Intent(MainActivity.this, LocalVpnService.class));
-                                System.runFinalization();
-                                System.exit(0);
-                            }
-                        })
-                        .setNegativeButton(R.string.btn_cancel, null)
-                        .show();
+        mExitButton.setOnClickListener(v -> {
+            //finish();
+            if (!LocalVpnService.IsRunning) {
+                finish();
+                return ;
             }
+
+            new AlertDialog.Builder(MainActivity.this)
+                    .setTitle(R.string.menu_item_exit)
+                    .setMessage(R.string.exit_confirm_info)
+                    .setPositiveButton(R.string.btn_ok, (dialog, which) -> {
+                        LocalVpnService.IsRunning = false;
+                        LocalVpnService.Instance.disconnectVPN();
+                        stopService(new Intent(MainActivity.this, LocalVpnService.class));
+                        System.runFinalization();
+                        System.exit(0);
+                    })
+                    .setNegativeButton(R.string.btn_cancel, null)
+                    .show();
         });
     }
 
@@ -117,22 +108,7 @@ public class MainActivity extends AppCompatActivity implements
         SharedPreferences preferences = getSharedPreferences("SmartProxy", MODE_PRIVATE);
         Editor editor = preferences.edit();
         editor.putString(CONFIG_URL_KEY, configUrl);
-        editor.commit();
-    }
-
-    String getVersionName() {
-        PackageManager packageManager = getPackageManager();
-        if (packageManager == null) {
-            Log.e(TAG, "null package manager is impossible");
-            return null;
-        }
-
-        try {
-            return packageManager.getPackageInfo(getPackageName(), 0).versionName;
-        } catch (PackageManager.NameNotFoundException e) {
-            Log.e(TAG, "package not found is impossible", e);
-            return null;
-        }
+        editor.apply();
     }
 
     boolean isValidUrl(String url) {
@@ -155,11 +131,10 @@ public class MainActivity extends AppCompatActivity implements
                 }
             } else { //url
                 Uri uri = Uri.parse(url);
-                if (!"http".equals(uri.getScheme()) && !"https".equals(uri.getScheme()))
-                    return false;
-                if (uri.getHost() == null) {
+                if (!"http".equals(uri.getScheme()) && !"https".equals(uri.getScheme())) {
                     return false;
                 }
+                return uri.getHost() != null;
             }
             return true;
         } catch (Exception e) {
@@ -177,14 +152,9 @@ public class MainActivity extends AppCompatActivity implements
                 .setTitle(R.string.config_url)
                 .setItems(new CharSequence[]{
                         getString(R.string.config_url_manual)
-                }, new OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialogInterface, int i) {
-                        switch (i) {
-                            case 1:
-                                showConfigUrlInputDialog();
-                                break;
-                        }
+                }, (dialogInterface, i) -> {
+                    if (i == 1) {
+                        showConfigUrlInputDialog();
                     }
                 })
                 .show();
@@ -200,20 +170,17 @@ public class MainActivity extends AppCompatActivity implements
         new AlertDialog.Builder(this)
                 .setTitle(R.string.config_url)
                 .setView(editText)
-                .setPositiveButton(R.string.btn_ok, new OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        if (editText.getText() == null) {
-                            return;
-                        }
+                .setPositiveButton(R.string.btn_ok, (dialog, which) -> {
+                    if (editText.getText() == null) {
+                        return;
+                    }
 
-                        String configUrl = editText.getText().toString().trim();
-                        if (isValidUrl(configUrl)) {
-                            setConfigUrl(configUrl);
-                            textViewConfigUrl.setText(configUrl);
-                        } else {
-                            Toast.makeText(MainActivity.this, R.string.err_invalid_url, Toast.LENGTH_SHORT).show();
-                        }
+                    String configUrl = editText.getText().toString().trim();
+                    if (isValidUrl(configUrl)) {
+                        setConfigUrl(configUrl);
+                        textViewConfigUrl.setText(configUrl);
+                    } else {
+                        Toast.makeText(MainActivity.this, R.string.err_invalid_url, Toast.LENGTH_SHORT).show();
                     }
                 })
                 .setNegativeButton(R.string.btn_cancel, null)
@@ -269,12 +236,9 @@ public class MainActivity extends AppCompatActivity implements
         String configUrl = readConfigUrl();
         if (!isValidUrl(configUrl)) {
             Toast.makeText(this, R.string.err_invalid_url, Toast.LENGTH_SHORT).show();
-            switchProxy.post(new Runnable() {
-                @Override
-                public void run() {
-                    switchProxy.setChecked(false);
-                    switchProxy.setEnabled(true);
-                }
+            switchProxy.post(() -> {
+                switchProxy.setChecked(false);
+                switchProxy.setEnabled(true);
             });
             return;
         }
