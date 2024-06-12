@@ -1,19 +1,71 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/main"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    tools:context=".HomeMainActivity">
+<TableLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent">
 
-    <TextView
+    <androidx.appcompat.widget.SwitchCompat
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Hello World!"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        android:id="@+id/proxy_switch"/>
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+    <Button
+        android:id="@+id/btn_exit"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="退出"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp"/>
+
+    <LinearLayout
+        android:visibility="gone"
+        android:id="@+id/configUrlLayout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="13dp">
+
+        <TextView
+            android:id="@+id/textViewConfigUrlTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/config_url"
+            android:textAppearance="?android:attr/textAppearanceMedium" />
+
+        <TextView
+            android:id="@+id/textViewConfigUrl"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/config_not_set_value"
+            android:textAppearance="?android:attr/textAppearanceSmall" />
+
+    </LinearLayout>
+
+    <View
+        android:layout_width="fill_parent"
+        android:layout_height="1dp"
+        android:layout_marginLeft="8dp"
+        android:layout_marginRight="8dp"
+        android:alpha="0.4"
+        android:background="@android:color/darker_gray" />
+
+    <ScrollView
+        android:id="@+id/scrollViewLog"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/textViewLog"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="13dp"
+                android:textAppearance="?android:attr/textAppearanceSmall" />
+
+        </LinearLayout>
+    </ScrollView>
+
+</TableLayout>
