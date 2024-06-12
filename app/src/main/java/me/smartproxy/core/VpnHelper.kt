@@ -47,7 +47,6 @@ class VpnHelper(private val context: Context, private val service: LocalVpnServi
     private val m_DNSBuffer: ByteBuffer =
         (ByteBuffer.wrap(m_Packet).position(28) as ByteBuffer).slice()
 
-    @Throws(java.lang.Exception::class)
     private fun establishVPN(): ParcelFileDescriptor? {
         val builder: VpnService.Builder = service.Builder()
         builder.setMtu(ProxyConfig.Instance.mtu)
@@ -72,7 +71,7 @@ class VpnHelper(private val context: Context, private val service: LocalVpnServi
             }
         }
 
-        if (!ProxyConfig.Instance.routeList.isEmpty()) {
+        if (ProxyConfig.Instance.routeList.isNotEmpty()) {
             for (routeAddress in ProxyConfig.Instance.routeList) {
                 builder.addRoute(routeAddress.Address, routeAddress.PrefixLength)
                 if (ProxyConfig.IS_DEBUG) {
@@ -136,7 +135,7 @@ class VpnHelper(private val context: Context, private val service: LocalVpnServi
             try {
                 Log.d(TAG, "VPNService work thread is runing...")
 
-                ChinaIpMaskManager.loadFromFile(context.getResources().openRawResource(R.raw.ipmask)) //加载中国的IP段，用于IP分流。
+                ChinaIpMaskManager.loadFromFile(context.resources.openRawResource(R.raw.ipmask)) //加载中国的IP段，用于IP分流。
                 waitUntilPrepared() //检查是否准备完毕。
 
                 //加载配置文件
@@ -156,27 +155,34 @@ class VpnHelper(private val context: Context, private val service: LocalVpnServi
                     }
                 }
 
-                m_VPNInterface = establishVPN()
-                m_VPNOutputStream = FileOutputStream(m_VPNInterface!!.fileDescriptor)
+                establishVPN()?.let {vpnInterface->
+                    m_VPNInterface = vpnInterface
 
-                val `in` = FileInputStream(m_VPNInterface!!.fileDescriptor)
+                    FileOutputStream(vpnInterface.fileDescriptor).use { fos->
+                        m_VPNOutputStream = fos
 
-                var size: Int
-                while (IsRunning) {
-                    size = `in`.read(m_Packet)
-                    if (size <= 0) {
-                        Thread.sleep(10)
-                        continue
+                        FileInputStream(vpnInterface.fileDescriptor).use {fis->
+                            var size: Int
+                            while (IsRunning) {
+                                size = fis.read(m_Packet)
+                                if (size <= 0) {
+                                    Thread.sleep(10)
+                                    continue
+                                }
+                                if (m_DnsProxy?.Stopped == true || m_TcpProxyServer?.Stopped == true) {
+                                    fis.close()
+                                    throw Exception("LocalServer stopped.")
+                                }
+                                onIPPacketReceived(m_IPHeader, size)
+                            }
+
+                            disconnectVPN()
+                        }
                     }
-                    if (m_DnsProxy!!.Stopped || m_TcpProxyServer!!.Stopped) {
-                        `in`.close()
-                        throw Exception("LocalServer stopped.")
-                    }
-                    onIPPacketReceived(m_IPHeader, size)
+
+                } ?: run {
+                    throw Exception("VPNInterface is null.")
                 }
-
-                `in`.close()
-                disconnectVPN()
             } catch (e: Exception) {
                 Log.e(TAG, "Fatal error: ", e)
             } finally {
@@ -279,40 +285,42 @@ class VpnHelper(private val context: Context, private val service: LocalVpnServi
                             )
                         }
 
-                        session!!.LastNanoTime = System.nanoTime()
-                        session!!.PacketSent++ //注意顺序
+                        session?.let {
+                            session.LastNanoTime = System.nanoTime()
+                            session.PacketSent++ //注意顺序
 
-                        val tcpDataSize = ipHeader.dataLength - tcpHeader.headerLength
-                        if (session!!.PacketSent == 2 && tcpDataSize == 0) {
-                            return  //丢弃tcp握手的第二个ACK报文。因为客户端发数据的时候也会带上ACK，这样可以在服务器Accept之前分析出HOST信息。
-                        }
-
-                        //分析数据，找到host
-                        if (session!!.BytesSent == 0 && tcpDataSize > 10) {
-                            val dataOffset = tcpHeader.m_Offset + tcpHeader.headerLength
-                            val host = HttpHostHeaderParser.parseHost(
-                                tcpHeader.m_Data,
-                                dataOffset,
-                                tcpDataSize
-                            )
-                            if (host != null) {
-                                session!!.RemoteHost = host
+                            val tcpDataSize = ipHeader.dataLength - tcpHeader.headerLength
+                            if (session.PacketSent == 2 && tcpDataSize == 0) {
+                                return  //丢弃tcp握手的第二个ACK报文。因为客户端发数据的时候也会带上ACK，这样可以在服务器Accept之前分析出HOST信息。
                             }
+
+                            //分析数据，找到host
+                            if (session.BytesSent == 0 && tcpDataSize > 10) {
+                                val dataOffset = tcpHeader.m_Offset + tcpHeader.headerLength
+                                val host = HttpHostHeaderParser.parseHost(
+                                    tcpHeader.m_Data,
+                                    dataOffset,
+                                    tcpDataSize
+                                )
+                                if (host != null) {
+                                    session.RemoteHost = host
+                                }
+                            }
+
+                            // 转发给本地 TcpProxyServer 服务器
+                            Log.d(
+                                "LocalVpnService",
+                                "onIPPacketReceived: 转发给本地 TcpProxyServer 服务器, $ipHeader $tcpHeader"
+                            )
+                            ipHeader.sourceIP = ipHeader.destinationIP
+                            ipHeader.destinationIP = LOCAL_IP
+                            tcpHeader.destinationPort = m_TcpProxyServer!!.Port
+
+                            CommonMethods.ComputeTCPChecksum(ipHeader, tcpHeader)
+                            m_VPNOutputStream?.write(ipHeader.m_Data, ipHeader.m_Offset, size)
+                            session.BytesSent += tcpDataSize //注意顺序
+                            m_SentBytes += size.toLong()
                         }
-
-                        // 转发给本地 TcpProxyServer 服务器
-                        Log.d(
-                            "LocalVpnService",
-                            "onIPPacketReceived: 转发给本地 TcpProxyServer 服务器, $ipHeader $tcpHeader"
-                        )
-                        ipHeader.sourceIP = ipHeader.destinationIP
-                        ipHeader.destinationIP = LOCAL_IP
-                        tcpHeader.destinationPort = m_TcpProxyServer!!.Port
-
-                        CommonMethods.ComputeTCPChecksum(ipHeader, tcpHeader)
-                        m_VPNOutputStream?.write(ipHeader.m_Data, ipHeader.m_Offset, size)
-                        session!!.BytesSent += tcpDataSize //注意顺序
-                        m_SentBytes += size.toLong()
                     }
                 }
             }
