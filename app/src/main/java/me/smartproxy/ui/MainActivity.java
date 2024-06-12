@@ -24,6 +24,7 @@ import java.util.Locale;
 
 import me.smartproxy.R;
 import me.smartproxy.core.LocalVpnService;
+import me.smartproxy.core.OnStatusChangedListener;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -43,7 +44,7 @@ public class MainActivity extends AppCompatActivity {
 
     private Button mExitButton;
 
-    private final LocalVpnService.onStatusChangedListener listener = new LocalVpnService.onStatusChangedListener() {
+    private final OnStatusChangedListener listener = new OnStatusChangedListener() {
         @Override
         public void onStatusChanged(String status, Boolean isRunning) {
             switchProxy.setEnabled(true);

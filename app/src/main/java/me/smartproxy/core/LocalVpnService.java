@@ -30,7 +30,7 @@ public class LocalVpnService extends VpnService {
 
     private static int ID;
     private static int LOCAL_IP;
-    private static final ConcurrentHashMap<onStatusChangedListener, Object> m_OnStatusChangedListeners = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<OnStatusChangedListener, Object> m_OnStatusChangedListeners = new ConcurrentHashMap<>();
 
     private Thread m_VPNThread;
     private ParcelFileDescriptor m_VPNInterface;
@@ -116,19 +116,13 @@ public class LocalVpnService extends VpnService {
         return super.onStartCommand(intent, flags, startId);
     }
 
-    public interface onStatusChangedListener {
-        void onStatusChanged(String status, Boolean isRunning);
-
-        void onLogReceived(String logString);
-    }
-
-    public static void addOnStatusChangedListener(onStatusChangedListener listener) {
+    public static void addOnStatusChangedListener(OnStatusChangedListener listener) {
         if (!m_OnStatusChangedListeners.containsKey(listener)) {
             m_OnStatusChangedListeners.put(listener, 1);
         }
     }
 
-    public static void removeOnStatusChangedListener(onStatusChangedListener listener) {
+    public static void removeOnStatusChangedListener(OnStatusChangedListener listener) {
         m_OnStatusChangedListeners.remove(listener);
     }
 
