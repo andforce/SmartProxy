@@ -53,7 +53,9 @@ public class LocalVpnService extends VpnService {
 
     @Override
     public void onCreate() {
+        super.onCreate();
         Log.d(TAG, "VPNService created.");
+
         // Start a new session by creating a new thread.
         m_VPNThread = new Thread(new Runnable() {
             @Override
@@ -91,7 +93,23 @@ public class LocalVpnService extends VpnService {
                                 }
                             }
 
-                            runVPN();
+                            m_VPNInterface = establishVPN();
+                            m_VPNOutputStream = new FileOutputStream(m_VPNInterface.getFileDescriptor());
+
+                            FileInputStream in = new FileInputStream(m_VPNInterface.getFileDescriptor());
+                            int size = 0;
+                            while (size != -1 && IsRunning) {
+                                while ((size = in.read(m_Packet)) > 0 && IsRunning) {
+                                    if (m_DnsProxy.Stopped || m_TcpProxyServer.Stopped) {
+                                        in.close();
+                                        throw new Exception("LocalServer stopped.");
+                                    }
+                                    onIPPacketReceived(m_IPHeader, size);
+                                }
+                                Thread.sleep(100);
+                            }
+                            in.close();
+                            disconnectVPN();
                         } else {
                             Thread.sleep(100);
                         }
@@ -104,7 +122,6 @@ public class LocalVpnService extends VpnService {
             }
         }, "VPNServiceThread");
         m_VPNThread.start();
-        super.onCreate();
     }
 
     @Override
@@ -122,24 +139,6 @@ public class LocalVpnService extends VpnService {
         }
     }
 
-    private void runVPN() throws Exception {
-        this.m_VPNInterface = establishVPN();
-        this.m_VPNOutputStream = new FileOutputStream(m_VPNInterface.getFileDescriptor());
-        FileInputStream in = new FileInputStream(m_VPNInterface.getFileDescriptor());
-        int size = 0;
-        while (size != -1 && IsRunning) {
-            while ((size = in.read(m_Packet)) > 0 && IsRunning) {
-                if (m_DnsProxy.Stopped || m_TcpProxyServer.Stopped) {
-                    in.close();
-                    throw new Exception("LocalServer stopped.");
-                }
-                onIPPacketReceived(m_IPHeader, size);
-            }
-            Thread.sleep(100);
-        }
-        in.close();
-        disconnectVPN();
-    }
 
     void onIPPacketReceived(IPHeader ipHeader, int size) throws IOException {
         switch (ipHeader.getProtocol()) {
