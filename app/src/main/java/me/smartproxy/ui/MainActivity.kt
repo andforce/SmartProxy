@@ -22,7 +22,8 @@ import me.smartproxy.ui.utils.UrlUtils.isValidUrl
 import org.koin.java.KoinJavaComponent.get
 
 open class MainActivity : AppCompatActivity() {
-    private val localVpnViewModel = get<LocalVpnViewModel>(LocalVpnViewModel::class.java)
+
+    private val vpnViewModel = get<LocalVpnViewModel>(LocalVpnViewModel::class.java)
 
     private val viewBinding by lazy {
         ActivityMainBinding.inflate(layoutInflater)
@@ -60,10 +61,9 @@ open class MainActivity : AppCompatActivity() {
         viewBinding.textViewLog.text = GL_HISTORY_LOGS
         viewBinding.scrollViewLog.fullScroll(ScrollView.FOCUS_DOWN)
 
-        viewBinding.proxySwitch.isChecked = localVpnViewModel.isRunning()
+        viewBinding.proxySwitch.isChecked = vpnViewModel.isRunning()
         viewBinding.proxySwitch.setOnCheckedChangeListener { buttonView: CompoundButton?, isChecked: Boolean ->
-            if (localVpnViewModel.isRunning() != isChecked) {
-                viewBinding.proxySwitch.isEnabled = false
+            if (vpnViewModel.isRunning() != isChecked) {
                 if (isChecked) {
                     val intent: Intent? = VpnService.prepare(this@MainActivity)
                     if (intent == null) {
@@ -122,7 +122,6 @@ open class MainActivity : AppCompatActivity() {
             Toast.makeText(this, R.string.err_invalid_url, Toast.LENGTH_SHORT).show()
             viewBinding.proxySwitch.post {
                 viewBinding.proxySwitch.isChecked = false
-                viewBinding.proxySwitch.isEnabled = true
             }
             return
         }
@@ -141,7 +140,6 @@ open class MainActivity : AppCompatActivity() {
             } else {
                 viewBinding.proxySwitch.post {
                     viewBinding.proxySwitch.isChecked = false
-                    viewBinding.proxySwitch.isEnabled = true
                 }
             }
         }
