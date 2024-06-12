@@ -18,6 +18,8 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SwitchCompat;
 
+import org.koin.java.KoinJavaComponent;
+
 import java.io.File;
 import java.util.Calendar;
 import java.util.Locale;
@@ -25,9 +27,12 @@ import java.util.Locale;
 import me.smartproxy.R;
 import me.smartproxy.core.LocalVpnService;
 import me.smartproxy.core.OnStatusChangedListener;
+import me.smartproxy.core.ProxyConfig;
+import me.smartproxy.core.viewmodel.LocalVpnViewModel;
 
 public class MainActivity extends AppCompatActivity {
 
+    private LocalVpnViewModel localVpnViewModel = KoinJavaComponent.get(LocalVpnViewModel.class);
     private static String GL_HISTORY_LOGS;
 
     private static final String TAG = MainActivity.class.getSimpleName();
@@ -111,9 +116,9 @@ public class MainActivity extends AppCompatActivity {
         //LocalVpnService.addOnStatusChangedListener(listener);
 
         switchProxy = findViewById(R.id.proxy_switch);
-        switchProxy.setChecked(LocalVpnService.IsRunning);
+        switchProxy.setChecked(localVpnViewModel.isRunning());
         switchProxy.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            if (LocalVpnService.IsRunning != isChecked) {
+            if (localVpnViewModel.isRunning() != isChecked) {
                 switchProxy.setEnabled(false);
                 if (isChecked) {
                     Intent intent = LocalVpnService.prepare(MainActivity.this);
@@ -122,8 +127,6 @@ public class MainActivity extends AppCompatActivity {
                     } else {
                         startActivityForResult(intent, START_VPN_SERVICE_REQUEST_CODE);
                     }
-                } else {
-                    LocalVpnService.IsRunning = false;
                 }
             }
         });
@@ -131,7 +134,7 @@ public class MainActivity extends AppCompatActivity {
         mExitButton = findViewById(R.id.btnConfigUrl);
         mExitButton.setOnClickListener(v -> {
             //finish();
-            if (!LocalVpnService.IsRunning) {
+            if (!localVpnViewModel.isRunning()) {
                 finish();
                 return ;
             }
@@ -140,8 +143,8 @@ public class MainActivity extends AppCompatActivity {
                     .setTitle(R.string.menu_item_exit)
                     .setMessage(R.string.exit_confirm_info)
                     .setPositiveButton(R.string.btn_ok, (dialog, which) -> {
-                        LocalVpnService.IsRunning = false;
-                        LocalVpnService.Instance.disconnectVPN();
+//                        LocalVpnService.Instance.setRunning(false);
+//                        LocalVpnService.Instance.disconnectVPN();
                         stopService(new Intent(MainActivity.this, LocalVpnService.class));
                         System.runFinalization();
                         System.exit(0);
@@ -233,7 +236,7 @@ public class MainActivity extends AppCompatActivity {
 
         textViewLog.setText("");
         GL_HISTORY_LOGS = null;
-        LocalVpnService.ConfigUrl = configUrl;
+        ProxyConfig.ConfigUrl = configUrl;
         startService(new Intent(this, LocalVpnService.class));
     }
 

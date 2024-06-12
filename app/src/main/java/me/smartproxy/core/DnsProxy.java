@@ -7,6 +7,7 @@ import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.util.concurrent.ConcurrentHashMap;
 
+import me.smartproxy.core.viewmodel.LocalVpnViewModel;
 import me.smartproxy.dns.DnsPacket;
 import me.smartproxy.dns.Question;
 import me.smartproxy.dns.Resource;
@@ -18,10 +19,12 @@ import me.smartproxy.tcpip.UDPHeader;
 import android.util.Log;
 import android.util.SparseArray;
 
+import org.koin.java.KoinJavaComponent;
+
 
 public class DnsProxy implements Runnable {
     private static final String TAG = "DnsProxy";
-
+    private LocalVpnViewModel localVpnViewModel = KoinJavaComponent.get(LocalVpnViewModel.class);
     private class QueryState {
         public short ClientQueryID;
         public long QueryNanoTime;
@@ -185,7 +188,7 @@ public class DnsProxy implements Runnable {
             udpHeader.setDestinationPort(state.ClientPort);
             udpHeader.setTotalLength(8 + dnsPacket.Size);
 
-            LocalVpnService.Instance.sendUDPPacket(ipHeader, udpHeader);
+            localVpnViewModel.sendUDPPacket(ipHeader, udpHeader);
         }
     }
 
@@ -218,7 +221,7 @@ public class DnsProxy implements Runnable {
                 udpHeader.setSourcePort(udpHeader.getDestinationPort());
                 udpHeader.setDestinationPort(sourcePort);
                 udpHeader.setTotalLength(8 + dnsPacket.Size);
-                LocalVpnService.Instance.sendUDPPacket(ipHeader, udpHeader);
+                localVpnViewModel.sendUDPPacket(ipHeader, udpHeader);
                 return true;
             }
         }
@@ -260,7 +263,7 @@ public class DnsProxy implements Runnable {
             packet.setSocketAddress(remoteAddress);
 
             try {
-                if (LocalVpnService.Instance.protect(m_Client)) {
+                if (localVpnViewModel.protect(m_Client)) {
                     m_Client.send(packet);
                 } else {
                     Log.e(TAG, "VPN protect udp socket failed.");

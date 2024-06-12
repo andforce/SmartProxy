@@ -28,6 +28,9 @@ import org.apache.http.util.EntityUtils;
 
 
 public class ProxyConfig {
+
+    public static String ConfigUrl;
+
     public static final ProxyConfig Instance = new ProxyConfig();
     public final static boolean IS_DEBUG = true;
     public final static int FAKE_NETWORK_MASK = CommonMethods.ipStringToInt("255.255.0.0");

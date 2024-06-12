@@ -3,6 +3,8 @@ package me.smartproxy.tunnel;
 import android.annotation.SuppressLint;
 import android.util.Log;
 
+import org.koin.java.KoinJavaComponent;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
@@ -12,9 +14,10 @@ import java.nio.channels.SocketChannel;
 
 import me.smartproxy.core.LocalVpnService;
 import me.smartproxy.core.ProxyConfig;
+import me.smartproxy.core.viewmodel.LocalVpnViewModel;
 
 public abstract class Tunnel {
-
+    private LocalVpnViewModel localVpnViewModel = KoinJavaComponent.get(LocalVpnViewModel.class);
     final static ByteBuffer GL_BUFFER = ByteBuffer.allocate(20000);
     public static long SessionCount;
 
@@ -56,7 +59,7 @@ public abstract class Tunnel {
     }
 
     public void connect(InetSocketAddress destAddress) throws Exception {
-        if (LocalVpnService.Instance.protect(m_InnerChannel.socket())) {//保护socket不走vpn
+        if (localVpnViewModel.protect(m_InnerChannel.socket())) {//保护socket不走vpn
             m_DestAddress = destAddress;
             m_InnerChannel.register(m_Selector, SelectionKey.OP_CONNECT, this);//注册连接事件
             m_InnerChannel.connect(m_ServerEP);//连接目标
