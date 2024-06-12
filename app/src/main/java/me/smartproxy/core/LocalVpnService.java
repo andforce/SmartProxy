@@ -56,6 +56,16 @@ public class LocalVpnService extends VpnService {
         super.onCreate();
         Log.d(TAG, "VPNService created.");
 
+        try {
+            m_TcpProxyServer = new TcpProxyServer(0);
+            m_TcpProxyServer.start();
+
+            m_DnsProxy = new DnsProxy();
+            m_DnsProxy.start();
+        } catch (Exception e) {
+            Log.e(TAG, "VPNService error: ", e);
+        }
+
         // Start a new session by creating a new thread.
         m_VPNThread = new Thread(new Runnable() {
             @Override
@@ -66,54 +76,45 @@ public class LocalVpnService extends VpnService {
                     ChinaIpMaskManager.loadFromFile(getResources().openRawResource(R.raw.ipmask));//加载中国的IP段，用于IP分流。
                     waitUntilPrepared();//检查是否准备完毕。
 
-                    m_TcpProxyServer = new TcpProxyServer(0);
-                    m_TcpProxyServer.start();
-
-                    m_DnsProxy = new DnsProxy();
-                    m_DnsProxy.start();
-
-                    while (true) {
-                        if (IsRunning) {
-                            //加载配置文件
-                            if (IS_ENABLE_REMOTE_PROXY) {
-                                try {
-                                    ProxyConfig.Instance.loadFromUrl(ConfigUrl);
-                                    if (ProxyConfig.Instance.getDefaultProxy() == null) {
-                                        throw new Exception("Invalid config file.");
-                                    }
-                                } catch (Exception e) {
-                                    String errString = e.getMessage();
-                                    if (errString == null || errString.isEmpty()) {
-                                        errString = e.toString();
-                                    }
-
-                                    IsRunning = false;
-                                    //onStatusChanged(errString, false);
-                                    continue;
-                                }
+                    //加载配置文件
+                    if (IS_ENABLE_REMOTE_PROXY) {
+                        try {
+                            ProxyConfig.Instance.loadFromUrl(ConfigUrl);
+                            if (ProxyConfig.Instance.getDefaultProxy() == null) {
+                                throw new Exception("Invalid config file.");
+                            }
+                        } catch (Exception e) {
+                            String errString = e.getMessage();
+                            if (errString == null || errString.isEmpty()) {
+                                errString = e.toString();
                             }
 
-                            m_VPNInterface = establishVPN();
-                            m_VPNOutputStream = new FileOutputStream(m_VPNInterface.getFileDescriptor());
-
-                            FileInputStream in = new FileInputStream(m_VPNInterface.getFileDescriptor());
-                            int size = 0;
-                            while (size != -1 && IsRunning) {
-                                while ((size = in.read(m_Packet)) > 0 && IsRunning) {
-                                    if (m_DnsProxy.Stopped || m_TcpProxyServer.Stopped) {
-                                        in.close();
-                                        throw new Exception("LocalServer stopped.");
-                                    }
-                                    onIPPacketReceived(m_IPHeader, size);
-                                }
-                                Thread.sleep(100);
-                            }
-                            in.close();
-                            disconnectVPN();
-                        } else {
-                            Thread.sleep(100);
+                            IsRunning = false;
                         }
                     }
+
+                    m_VPNInterface = establishVPN();
+                    m_VPNOutputStream = new FileOutputStream(m_VPNInterface.getFileDescriptor());
+
+                    FileInputStream in = new FileInputStream(m_VPNInterface.getFileDescriptor());
+
+                    int size;
+                    while (IsRunning) {
+                        size = in.read(m_Packet);
+                        if (size <= 0) {
+                            Thread.sleep(10);
+                            continue;
+                        }
+                        if (m_DnsProxy.Stopped || m_TcpProxyServer.Stopped) {
+                            in.close();
+                            throw new Exception("LocalServer stopped.");
+                        }
+                        onIPPacketReceived(m_IPHeader, size);
+                    }
+
+                    in.close();
+                    disconnectVPN();
+
                 } catch (Exception e) {
                     Log.e(TAG, "Fatal error: ", e);
                 } finally {
