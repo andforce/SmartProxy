@@ -30,8 +30,6 @@ import org.apache.http.util.EntityUtils;
 public class ProxyConfig {
     public static final ProxyConfig Instance = new ProxyConfig();
     public final static boolean IS_DEBUG = true;
-    public static String AppInstallID;
-    public static String AppVersion;
     public final static int FAKE_NETWORK_MASK = CommonMethods.ipStringToInt("255.255.0.0");
     public final static int FAKE_NETWORK_IP = CommonMethods.ipStringToInt("10.231.0.0");
 
@@ -243,8 +241,6 @@ public class ProxyConfig {
             requestGet.addHeader("X-Android-MODEL", Build.MODEL);
             requestGet.addHeader("X-Android-SDK_INT", Integer.toString(Build.VERSION.SDK_INT));
             requestGet.addHeader("X-Android-RELEASE", Build.VERSION.RELEASE);
-            requestGet.addHeader("X-App-Version", AppVersion);
-            requestGet.addHeader("X-App-Install-ID", AppInstallID);
             requestGet.setHeader("User-Agent", System.getProperty("http.agent"));
             HttpResponse response = client.execute(requestGet);
 

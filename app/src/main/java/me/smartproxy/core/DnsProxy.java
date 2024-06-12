@@ -91,7 +91,6 @@ public class DnsProxy implements Runnable {
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
-                    LocalVpnService.Instance.writeLog("Parse dns error: %s", e);
                 }
             }
         } catch (Exception e) {

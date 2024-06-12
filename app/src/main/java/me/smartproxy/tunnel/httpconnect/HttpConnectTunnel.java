@@ -6,6 +6,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.text.Bidi;
+import java.util.Locale;
 
 import me.smartproxy.core.ProxyConfig;
 import me.smartproxy.tunnel.Tunnel;
@@ -22,11 +23,11 @@ public class HttpConnectTunnel extends Tunnel {
 
     @Override
     protected void onConnected(ByteBuffer buffer) throws Exception {
-        String request = String.format("CONNECT %s:%d HTTP/1.0\r\nProxy-Connection: keep-alive\r\nUser-Agent: %s\r\nX-App-Install-ID: %s\r\n\r\n",
+        String request = String.format(Locale.ENGLISH,
+                "CONNECT %s:%d HTTP/1.0\r\nProxy-Connection: keep-alive\r\nUser-Agent: %s\r\n\r\n",
                 m_DestAddress.getHostName(),
                 m_DestAddress.getPort(),
-                ProxyConfig.Instance.getUserAgent(),
-                ProxyConfig.AppInstallID);
+                ProxyConfig.Instance.getUserAgent());
 
         buffer.clear();
         buffer.put(request.getBytes());

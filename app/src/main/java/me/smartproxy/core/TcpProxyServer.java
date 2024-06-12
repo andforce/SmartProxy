@@ -129,11 +129,9 @@ public class TcpProxyServer implements Runnable {
                 localTunnel.setBrotherTunnel(remoteTunnel);//关联兄弟
                 remoteTunnel.connect(destAddress);//开始连接
             } else {
-                LocalVpnService.Instance.writeLog("Error: socket(%s:%d) target host is null.", localChannel.socket().getInetAddress().toString(), localChannel.socket().getPort());
                 localTunnel.dispose();
             }
         } catch (Exception e) {
-            LocalVpnService.Instance.writeLog("Error: remote socket create failed: %s", e.toString());
             Log.e(TAG, "onAccepted: ", e);
             if (localTunnel != null) {
                 localTunnel.dispose();

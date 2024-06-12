@@ -1,14 +1,7 @@
 package me.smartproxy.core;
 
-import android.app.PendingIntent;
 import android.content.Intent;
-import android.content.SharedPreferences;
-import android.content.SharedPreferences.Editor;
-import android.content.pm.PackageInfo;
-import android.content.pm.PackageManager;
 import android.net.VpnService;
-import android.os.Build;
-import android.os.Handler;
 import android.os.ParcelFileDescriptor;
 import android.util.Log;
 
@@ -17,7 +10,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 import me.smartproxy.R;
@@ -28,7 +20,6 @@ import me.smartproxy.tcpip.CommonMethods;
 import me.smartproxy.tcpip.IPHeader;
 import me.smartproxy.tcpip.TCPHeader;
 import me.smartproxy.tcpip.UDPHeader;
-import me.smartproxy.ui.MainActivity;
 
 public class LocalVpnService extends VpnService {
 
@@ -52,7 +43,6 @@ public class LocalVpnService extends VpnService {
     private final TCPHeader m_TCPHeader;
     private final UDPHeader m_UDPHeader;
     private final ByteBuffer m_DNSBuffer;
-    private final Handler m_Handler;
     private long m_SentBytes;
     private long m_ReceivedBytes;
 
@@ -60,7 +50,6 @@ public class LocalVpnService extends VpnService {
 
     public LocalVpnService() {
         ID++;
-        m_Handler = new Handler();
         m_Packet = new byte[20000];
         m_IPHeader = new IPHeader(m_Packet, 0);
         m_TCPHeader = new TCPHeader(m_Packet, 20);
@@ -81,35 +70,24 @@ public class LocalVpnService extends VpnService {
                 try {
                     Log.d(TAG, "VPNService work thread is runing...");
 
-                    ProxyConfig.AppInstallID = getAppInstallID();//获取安装ID
-                    ProxyConfig.AppVersion = getVersionName();//获取版本号
-                    Log.d(TAG, "AppInstallID: " + ProxyConfig.AppInstallID);
-                    writeLog("Android version: %s", Build.VERSION.RELEASE);
-                    writeLog("App version: %s", ProxyConfig.AppVersion);
-
-
                     ChinaIpMaskManager.loadFromFile(getResources().openRawResource(R.raw.ipmask));//加载中国的IP段，用于IP分流。
-                    waitUntilPreapred();//检查是否准备完毕。
+                    waitUntilPrepared();//检查是否准备完毕。
 
                     m_TcpProxyServer = new TcpProxyServer(0);
                     m_TcpProxyServer.start();
-                    writeLog("LocalTcpServer started.");
 
                     m_DnsProxy = new DnsProxy();
                     m_DnsProxy.start();
-                    writeLog("LocalDnsProxy started.");
 
                     while (true) {
                         if (IsRunning) {
                             //加载配置文件
-                            writeLog("Load config from %s ...", ConfigUrl);
                             if (IS_ENABLE_REMOTE_PROXY) {
                                 try {
                                     ProxyConfig.Instance.loadFromUrl(ConfigUrl);
                                     if (ProxyConfig.Instance.getDefaultProxy() == null) {
                                         throw new Exception("Invalid config file.");
                                     }
-                                    writeLog("PROXY %s", ProxyConfig.Instance.getDefaultProxy());
                                 } catch (Exception e) {
                                     String errString = e.getMessage();
                                     if (errString == null || errString.isEmpty()) {
@@ -117,15 +95,8 @@ public class LocalVpnService extends VpnService {
                                     }
 
                                     IsRunning = false;
-                                    onStatusChanged(errString, false);
+                                    //onStatusChanged(errString, false);
                                     continue;
-                                }
-
-
-                                writeLog("Load config success.");
-                                String welcomeInfoString = ProxyConfig.Instance.getWelcomeInfo();
-                                if (welcomeInfoString != null && !welcomeInfoString.isEmpty()) {
-                                    writeLog("%s", ProxyConfig.Instance.getWelcomeInfo());
                                 }
                             }
 
@@ -134,13 +105,9 @@ public class LocalVpnService extends VpnService {
                             Thread.sleep(100);
                         }
                     }
-                } catch (InterruptedException e) {
-                    Log.e(TAG, "Fatal error: ", e);
                 } catch (Exception e) {
-                    writeLog("Fatal error: %s", e.toString());
                     Log.e(TAG, "Fatal error: ", e);
                 } finally {
-                    writeLog("SmartProxy terminated.");
                     dispose();
                 }
             }
@@ -171,52 +138,12 @@ public class LocalVpnService extends VpnService {
         m_OnStatusChangedListeners.remove(listener);
     }
 
-    private void onStatusChanged(final String status, final boolean isRunning) {
-        m_Handler.post(() -> {
-            for (Map.Entry<onStatusChangedListener, Object> entry : m_OnStatusChangedListeners.entrySet()) {
-                entry.getKey().onStatusChanged(status, isRunning);
-            }
-        });
-    }
-
-    public void writeLog(final String format, Object... args) {
-        final String logString = String.format(format, args);
-        m_Handler.post(() -> {
-            for (Map.Entry<onStatusChangedListener, Object> entry : m_OnStatusChangedListeners.entrySet()) {
-                entry.getKey().onLogReceived(logString);
-            }
-        });
-    }
-
     public void sendUDPPacket(IPHeader ipHeader, UDPHeader udpHeader) {
         try {
             CommonMethods.ComputeUDPChecksum(ipHeader, udpHeader);
             this.m_VPNOutputStream.write(ipHeader.m_Data, ipHeader.m_Offset, ipHeader.getTotalLength());
         } catch (IOException e) {
             Log.e(TAG, "sendUDPPacket: ", e);
-        }
-    }
-
-    String getAppInstallID() {
-        SharedPreferences preferences = getSharedPreferences("SmartProxy", MODE_PRIVATE);
-        String appInstallID = preferences.getString("AppInstallID", null);
-        if (appInstallID == null || appInstallID.isEmpty()) {
-            appInstallID = UUID.randomUUID().toString();
-            Editor editor = preferences.edit();
-            editor.putString("AppInstallID", appInstallID);
-            editor.apply();
-        }
-        return appInstallID;
-    }
-
-    String getVersionName() {
-        try {
-            PackageManager packageManager = getPackageManager();
-            // getPackageName()是你当前类的包名，0代表是获取版本信息
-            PackageInfo packInfo = packageManager.getPackageInfo(getPackageName(), 0);
-            return packInfo.versionName;
-        } catch (Exception e) {
-            return "0.0";
         }
     }
 
@@ -315,7 +242,7 @@ public class LocalVpnService extends VpnService {
         }
     }
 
-    private void waitUntilPreapred() {
+    private void waitUntilPrepared() {
         while (prepare(this) != null) {
             try {
                 Thread.sleep(100);
@@ -381,14 +308,8 @@ public class LocalVpnService extends VpnService {
             }
         }
 
-        Intent intent = new Intent(this, MainActivity.class);
-        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, 0);
-        builder.setConfigureIntent(pendingIntent);
-
         builder.setSession(ProxyConfig.Instance.getSessionName());
-        ParcelFileDescriptor pfdDescriptor = builder.establish();
-        onStatusChanged(ProxyConfig.Instance.getSessionName() + getString(R.string.vpn_connected_status), true);
-        return pfdDescriptor;
+        return builder.establish();
     }
 
     public void disconnectVPN() {
@@ -400,7 +321,6 @@ public class LocalVpnService extends VpnService {
         } catch (Exception e) {
             // ignore
         }
-        onStatusChanged(ProxyConfig.Instance.getSessionName() + getString(R.string.vpn_disconnected_status), false);
         this.m_VPNOutputStream = null;
     }
 
@@ -412,14 +332,12 @@ public class LocalVpnService extends VpnService {
         if (m_TcpProxyServer != null) {
             m_TcpProxyServer.stop();
             m_TcpProxyServer = null;
-            writeLog("LocalTcpServer stopped.");
         }
 
         // 停止DNS解析器
         if (m_DnsProxy != null) {
             m_DnsProxy.stop();
             m_DnsProxy = null;
-            writeLog("LocalDnsProxy stopped.");
         }
 
         stopSelf();
