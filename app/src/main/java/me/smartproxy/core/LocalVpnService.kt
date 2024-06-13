@@ -5,7 +5,7 @@ import android.util.Log
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import me.smartproxy.core.viewmodel.LocalVpnViewModel
-import org.koin.java.KoinJavaComponent
+import org.koin.java.KoinJavaComponent.get
 
 class LocalVpnService : CoroutinesService() {
     companion object {
@@ -13,14 +13,12 @@ class LocalVpnService : CoroutinesService() {
     }
 
 
-    private val vpnViewModel: LocalVpnViewModel by lazy {
-        KoinJavaComponent.get(LocalVpnViewModel::class.java)
-    }
+    private val vpnViewModel = get<LocalVpnViewModel>(LocalVpnViewModel::class.java)
 
-    private val m_VpnHelper: VpnHelper = VpnHelper(this)
+    private val vpnHelper: VpnHelper = VpnHelper(this)
 
     init {
-        vpnViewModel.bindHelper(m_VpnHelper)
+        vpnViewModel.bindHelper(vpnHelper)
     }
 
     override fun onCreate() {
@@ -36,13 +34,13 @@ class LocalVpnService : CoroutinesService() {
 
             launch {
                 Log.d(TAG, "VPNService startDnsProxy pre")
-                m_VpnHelper.startDnsProxy(config)
+                vpnHelper.startDnsProxy(config)
                 Log.d(TAG, "VPNService startDnsProxy end")
             }
 
             launch {
                 Log.d(TAG, "VPNService startTcpProxy pre")
-                m_VpnHelper.startTcpProxy(config)
+                vpnHelper.startTcpProxy(config)
                 Log.d(TAG, "VPNService startTcpProxy end")
             }
 
@@ -51,7 +49,7 @@ class LocalVpnService : CoroutinesService() {
 
             pfd?.let {
                 Log.d(TAG, "VPNService startProcessPacket pre")
-                m_VpnHelper.startProcessPacket(config, pfd)
+                vpnHelper.startProcessPacket(config, pfd)
             }?.onFailure {
                 Log.e(TAG, "VPNService failed to establish VPN: $it")
             }
