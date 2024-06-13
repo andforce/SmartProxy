@@ -1,12 +1,12 @@
 package me.smartproxy.core
 
 import android.content.Intent
-import android.net.VpnService
 import android.util.Log
+import kotlinx.coroutines.launch
 import me.smartproxy.core.viewmodel.LocalVpnViewModel
 import org.koin.java.KoinJavaComponent
 
-class LocalVpnService : VpnService() {
+class LocalVpnService : CoroutinesService() {
     companion object {
         private const val TAG = "LocalVpnService"
     }
@@ -16,7 +16,7 @@ class LocalVpnService : VpnService() {
         KoinJavaComponent.get(LocalVpnViewModel::class.java)
     }
 
-    private val m_VpnHelper: VpnHelper = VpnHelper(this, this)
+    private val m_VpnHelper: VpnHelper = VpnHelper(this)
 
     init {
         vpnViewModel.bindHelper(m_VpnHelper)
@@ -26,7 +26,17 @@ class LocalVpnService : VpnService() {
         super.onCreate()
         Log.d(TAG, "VPNService created.")
 
-        m_VpnHelper.start()
+        serviceScope.launch {
+            val config = VpnEstablishHelper.buildProxyConfig(this@LocalVpnService)
+            Log.d(TAG, "VPNService config: $config")
+
+            val pfd = VpnEstablishHelper.establishVPN(config, this@LocalVpnService)
+            Log.d(TAG, "VPNService pfd: $pfd")
+
+            pfd?.let {
+                m_VpnHelper.startProcessPacket(config, pfd)
+            }
+        }
     }
 
 

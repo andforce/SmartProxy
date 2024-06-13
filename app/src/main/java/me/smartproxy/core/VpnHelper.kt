@@ -1,12 +1,10 @@
 package me.smartproxy.core
 
-import android.content.Context
-import android.net.VpnService
 import android.os.ParcelFileDescriptor
 import android.util.Log
-import me.smartproxy.R
-import me.smartproxy.dns.DNSUtils.findAndroidPropDNS
-import me.smartproxy.dns.DNSUtils.isIPv4Address
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 import me.smartproxy.dns.DnsPacket
 import me.smartproxy.tcpip.CommonMethods
 import me.smartproxy.tcpip.IPHeader
@@ -19,7 +17,7 @@ import java.net.DatagramSocket
 import java.net.Socket
 import java.nio.ByteBuffer
 
-class VpnHelper(private val context: Context, private val service: LocalVpnService) {
+class VpnHelper(private val service: LocalVpnService) {
 
     companion object {
         const val TAG = "VpnHelper"
@@ -33,7 +31,6 @@ class VpnHelper(private val context: Context, private val service: LocalVpnServi
     private var m_SentBytes: Long = 0
     private var m_ReceivedBytes: Long = 0
 
-    private var m_VPNThread: Thread? = null
     private var m_TcpProxyServer: TcpProxyServer? = null
     private var m_DnsProxy: DnsProxy? = null
     private var m_VPNOutputStream: FileOutputStream? = null
@@ -46,88 +43,13 @@ class VpnHelper(private val context: Context, private val service: LocalVpnServi
     private val m_DNSBuffer: ByteBuffer =
         (ByteBuffer.wrap(m_Packet).position(28) as ByteBuffer).slice()
 
-    private fun establishVPN(config: ProxyConfig): ParcelFileDescriptor? {
-        val builder: VpnService.Builder = service.Builder()
-        builder.setMtu(config.mtu)
-
-        Log.d(TAG, "setMtu: " + config.mtu)
-
-        val ipAddress = config.defaultLocalIP
-        vpnLocalIpInt = CommonMethods.ipStringToInt(ipAddress.Address)
-        builder.addAddress(ipAddress.Address, ipAddress.PrefixLength)
-        Log.d(
-            TAG,
-            "addAddress: " + ipAddress.Address + "/" + ipAddress.PrefixLength
-        )
-
-        for (dns in config.dnsList) {
-            builder.addDnsServer(dns.Address)
-            Log.d(TAG, "addDnsServer: " + dns.Address)
-        }
-
-        if (config.routeList.isNotEmpty()) {
-            for (routeAddress in config.routeList) {
-                builder.addRoute(routeAddress.Address, routeAddress.PrefixLength)
-                Log.d(
-                    TAG,
-                    "addRoute: " + routeAddress.Address + "/" + routeAddress.PrefixLength
-                )
-            }
-            builder.addRoute(CommonMethods.ipIntToString(ProxyConfig.FAKE_NETWORK_IP), 16)
-
-            Log.d(
-                TAG,
-                "addRoute: " + CommonMethods.ipIntToString(ProxyConfig.FAKE_NETWORK_IP) + "/16"
-            )
-        } else {
-            builder.addRoute("0.0.0.0", 0)
-            Log.d(TAG, "addDefaultRoute:0.0.0.0/0")
-        }
-
-        val dnsMap = findAndroidPropDNS(context)
-        for ((name, host) in dnsMap) {
-            Log.d(TAG, "findAndroidPropDNS: $name -> $host")
-
-            if (isIPv4Address(host)) {
-                builder.addRoute(host, 32)
-                Log.d(TAG, "addRoute by DNS: $host/32")
-            } else {
-                Log.d(
-                    TAG,
-                    "addRoute by DNS, 暂时忽略 IPv6 类型的DNS: $host"
-                )
-            }
-        }
-
-        builder.setSession(config.sessionName)
-        return builder.establish()
-    }
-
-    fun start() {
-
-        isRunning = true
-
-        // Start a new session by creating a new thread.
-        m_VPNThread = Thread({
+    suspend fun startProcessPacket(config: ProxyConfig, pfd: ParcelFileDescriptor) =
+        withContext(Dispatchers.IO) {
             Log.d(TAG, "VPNService work thread is running...")
 
-            var config = ProxyConfig()
+            vpnLocalIpInt = CommonMethods.ipStringToInt(config.defaultLocalIP.Address)
 
-            kotlin.runCatching {
-                //加载配置文件
-                if (IS_ENABLE_REMOTE_PROXY) {
-                    ChinaIpMaskManager.loadFromFile(context.resources.openRawResource(R.raw.ipmask)) //加载中国的IP段，用于IP分流。
-
-                    try {
-                        ProxyConfigHelper.loadFromUrl(ProxyConfig.ConfigUrl)
-                        if (config?.defaultProxy == null) {
-                            throw Exception("Invalid config file.")
-                        }
-                    } catch (e: Exception) {
-                        isRunning = false
-                    }
-                }
-            }
+            isRunning = true
 
             try {
                 m_TcpProxyServer = TcpProxyServer(config, 0)
@@ -139,7 +61,7 @@ class VpnHelper(private val context: Context, private val service: LocalVpnServi
                 Log.e(TAG, "VPNService error: ", e)
             }
 
-            establishVPN(config)?.use { vpnInterface ->
+            pfd.use { vpnInterface ->
 
                 m_VPNOutputStream = FileOutputStream(vpnInterface.fileDescriptor)
 
@@ -149,27 +71,28 @@ class VpnHelper(private val context: Context, private val service: LocalVpnServi
                         while (isRunning && !(m_DnsProxy?.Stopped == true || m_TcpProxyServer?.Stopped == true)) {
                             size = fis.read(m_Packet)
                             if (size <= 0) {
-                                Thread.sleep(10)
+                                delay(10)
                                 continue
                             }
                             onIPPacketReceived(m_IPHeader, size)
                         }
+
+                        stop("while read stopped.")
+
                     }.onFailure {
                         Log.e(TAG, "while read: ", it)
                         stop("while read failed, or onIPPacketReceived() IOException.")
                     }
-
-                    stop("while read stopped.")
+                }.onFailure {
+                    Log.e(TAG, "FileInputStream: ", it)
+                    stop("FileInputStream failed.")
                 }
 
-            } ?: run {
-                stop("establishVPN failed.")
+            }.onFailure {
+                Log.e(TAG, "ParcelFileDescriptor: ", it)
+                stop("ParcelFileDescriptor failed.")
             }
-
-        }, "VPNServiceThread").also {
-            it.start()
         }
-    }
 
     fun stop(reason: String) {
         Log.e(TAG, "VPNService stopped: $reason")
@@ -190,17 +113,6 @@ class VpnHelper(private val context: Context, private val service: LocalVpnServi
         if (m_DnsProxy != null) {
             m_DnsProxy?.stop()
             m_DnsProxy = null
-        }
-
-        m_VPNThread?.let {
-            kotlin.runCatching {
-                if (it.isInterrupted.not()) {
-                    it.interrupt()
-                }
-            }.onFailure {
-                Log.e(TAG, "interrupt m_VPNThread Failed: ", it)
-            }
-            m_VPNThread = null
         }
     }
 
@@ -295,6 +207,8 @@ class VpnHelper(private val context: Context, private val service: LocalVpnServi
                             m_SentBytes += size.toLong()
                         }
                     }
+                } else {
+                    Log.e(TAG, "onIPPacketReceived, TCP: 收到非本地数据包, $ipHeader $tcpHeader")
                 }
             }
 
@@ -309,7 +223,13 @@ class VpnHelper(private val context: Context, private val service: LocalVpnServi
                     if (dnsPacket != null && dnsPacket.Header.QuestionCount > 0) {
                         m_DnsProxy!!.onDnsRequestReceived(ipHeader, udpHeader, dnsPacket)
                     }
+                } else {
+                    Log.e(TAG, "onIPPacketReceived, UDP: 收到非本地数据包, $ipHeader $udpHeader")
                 }
+            }
+
+            else -> {
+                Log.d(TAG, "onIPPacketReceived, 不支持的协议: $ipHeader")
             }
         }
     }
