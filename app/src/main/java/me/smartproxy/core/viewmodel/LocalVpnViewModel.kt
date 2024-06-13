@@ -42,15 +42,19 @@ class LocalVpnViewModel : ViewModel() {
         helper?.sendUDPPacket(ipHeader, udpHeader)
     }
 
-    fun protect(m_Client: DatagramSocket): Boolean {
-        return helper?.protect(m_Client) ?: false
+    fun protect(datagramSocket: DatagramSocket): Boolean {
+        return helper?.protect(datagramSocket) ?: false
     }
 
     fun protect(socket: Socket): Boolean {
         return helper?.protect(socket) ?: false
     }
 
-    private val _requestResult = MutableSharedFlow<Int>(replay = 0, extraBufferCapacity = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
+    private val _requestResult = MutableSharedFlow<Int>(
+        replay = 0,
+        extraBufferCapacity = 1,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST
+    )
     val vpnPermissionRequestResult: SharedFlow<Int> = _requestResult
 
     fun updateRequestResult(it: Int) {

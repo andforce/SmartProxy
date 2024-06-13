@@ -9,7 +9,8 @@ import java.util.StringTokenizer
 import java.util.regex.Pattern
 
 object DNSUtils {
-    private const val REG_V4 = "((25[0-5]|2[0-4]\\d|[01]?\\d\\d?)\\.){3}(25[0-5]|2[0-4]\\d|[01]?\\d\\d?)"
+    private const val REG_V4 =
+        "((25[0-5]|2[0-4]\\d|[01]?\\d\\d?)\\.){3}(25[0-5]|2[0-4]\\d|[01]?\\d\\d?)"
     private const val REG_V6 = "([\\da-fA-F]{1,4}:){7}[\\da-fA-F]{1,4}|:((:[\\da-fA-F]1,4)1,6|:)"
 
 

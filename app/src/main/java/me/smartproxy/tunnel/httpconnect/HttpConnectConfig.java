@@ -1,6 +1,7 @@
 package me.smartproxy.tunnel.httpconnect;
 
 import java.net.InetSocketAddress;
+import java.util.Locale;
 
 import android.net.Uri;
 
@@ -34,6 +35,6 @@ public class HttpConnectConfig extends Config {
 
     @Override
     public String toString() {
-        return String.format("http://%s:%s@%s", UserName, Password, ServerAddress);
+        return String.format(Locale.ENGLISH, "http://%s:%s@%s", UserName, Password, ServerAddress);
     }
 }

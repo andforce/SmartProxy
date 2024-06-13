@@ -10,6 +10,7 @@ import me.smartproxy.tcpip.CommonMethods;
 public class HttpHostHeaderParser {
 
     private static final String TAG = "HttpHostHeaderParser";
+
     public static String parseHost(byte[] buffer, int offset, int count) {
         try {
             switch (buffer[offset]) {

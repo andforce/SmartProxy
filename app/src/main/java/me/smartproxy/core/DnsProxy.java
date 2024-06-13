@@ -25,7 +25,8 @@ import org.koin.java.KoinJavaComponent;
 public class DnsProxy implements Runnable {
     private static final String TAG = "DnsProxy";
     private LocalVpnViewModel localVpnViewModel = KoinJavaComponent.get(LocalVpnViewModel.class);
-    private class QueryState {
+
+    private static class QueryState {
         public short ClientQueryID;
         public long QueryNanoTime;
         public int ClientIP;
@@ -157,8 +158,8 @@ public class DnsProxy implements Runnable {
                     int fakeIP = getOrCreateFakeIP(question.Domain);
                     tamperDnsResponse(rawPacket, dnsPacket, fakeIP);
                     if (ProxyConfig.IS_DEBUG) {
-						Log.d(TAG, "FakeDns: " + question.Domain + "=>" + CommonMethods.ipIntToString(realIP) + "(" + CommonMethods.ipIntToString(fakeIP) + ")");
-					}
+                        Log.d(TAG, "FakeDns: " + question.Domain + "=>" + CommonMethods.ipIntToString(realIP) + "(" + CommonMethods.ipIntToString(fakeIP) + ")");
+                    }
                     return true;
                 }
             }
@@ -203,15 +204,15 @@ public class DnsProxy implements Runnable {
 
     private boolean interceptDns(IPHeader ipHeader, UDPHeader udpHeader, DnsPacket dnsPacket) {
         Question question = dnsPacket.Questions[0];
-		Log.d(TAG, "DNS Qeury " + question.Domain);
+        Log.d(TAG, "DNS Qeury " + question.Domain);
         if (question.Type == 1) {
             if (ProxyConfig.Instance.needProxy(question.Domain, getIPFromCache(question.Domain))) {
                 int fakeIP = getOrCreateFakeIP(question.Domain);
                 tamperDnsResponse(ipHeader.m_Data, dnsPacket, fakeIP);
 
-                if (ProxyConfig.IS_DEBUG){
-					Log.d(TAG, "interceptDns FakeDns: " + question.Domain + "=>" + CommonMethods.ipIntToString(fakeIP));
-				}
+                if (ProxyConfig.IS_DEBUG) {
+                    Log.d(TAG, "interceptDns FakeDns: " + question.Domain + "=>" + CommonMethods.ipIntToString(fakeIP));
+                }
 
                 int sourceIP = ipHeader.getSourceIP();
                 short sourcePort = udpHeader.getSourcePort();
@@ -269,7 +270,7 @@ public class DnsProxy implements Runnable {
                     Log.e(TAG, "VPN protect udp socket failed.");
                 }
             } catch (IOException e) {
-				Log.e(TAG, "onDnsRequestReceived Error: ", e);
+                Log.e(TAG, "onDnsRequestReceived Error: ", e);
             }
         }
     }

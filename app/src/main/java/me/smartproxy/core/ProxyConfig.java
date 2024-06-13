@@ -52,7 +52,7 @@ public class ProxyConfig {
 
     Timer m_Timer;
 
-    public class IPAddress {
+    public static class IPAddress {
         public final String Address;
         public final int PrefixLength;
 
@@ -130,7 +130,7 @@ public class ProxyConfig {
     }
 
     public Config getDefaultProxy() {
-        if (m_ProxyList.size() > 0) {
+        if (!m_ProxyList.isEmpty()) {
             return m_ProxyList.get(0);
         } else {
             return null;
@@ -142,7 +142,7 @@ public class ProxyConfig {
     }
 
     public IPAddress getDefaultLocalIP() {
-        if (m_IpList.size() > 0) {
+        if (!m_IpList.isEmpty()) {
             return m_IpList.get(0);
         } else {
             return new IPAddress("10.8.0.2", 32);
@@ -196,7 +196,7 @@ public class ProxyConfig {
 
     private Boolean getDomainState(String domain) {
         domain = domain.toLowerCase();
-        while (domain.length() > 0) {
+        while (!domain.isEmpty()) {
             Boolean stateBoolean = m_DomainMap.get(domain);
             if (stateBoolean != null) {
                 return stateBoolean;
@@ -342,7 +342,7 @@ public class ProxyConfig {
         }
 
         //查找默认代理。
-        if (m_ProxyList.size() == 0) {
+        if (m_ProxyList.isEmpty()) {
             tryAddProxy(lines);
         }
     }

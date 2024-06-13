@@ -1,10 +1,14 @@
 package me.smartproxy.tcpip;
 
+import android.util.Log;
+
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
 public class CommonMethods {
+
+    private static final String TAG = "CommonMethods";
 
     public static InetAddress ipIntToInet4Address(int ip) {
         byte[] ipAddress = new byte[4];
@@ -12,8 +16,7 @@ public class CommonMethods {
         try {
             return Inet4Address.getByAddress(ipAddress);
         } catch (UnknownHostException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            Log.e(TAG, "ipIntToInet4Address: ", e);
             return null;
         }
     }
@@ -111,7 +114,7 @@ public class CommonMethods {
     }
 
     // 计算IP包的校验和
-    public static boolean ComputeIPChecksum(IPHeader ipHeader) {
+    public static boolean computeIPChecksum(IPHeader ipHeader) {
         short oldCrc = ipHeader.getCrc();
         ipHeader.setCrc((short) 0);// 计算前置零
         short newCrc = CommonMethods.checksum(0, ipHeader.m_Data,
@@ -122,7 +125,7 @@ public class CommonMethods {
 
     // 计算TCP或UDP的校验和
     public static boolean ComputeTCPChecksum(IPHeader ipHeader, TCPHeader tcpHeader) {
-        ComputeIPChecksum(ipHeader);//计算IP校验和
+        computeIPChecksum(ipHeader);//计算IP校验和
         int ipData_len = ipHeader.getTotalLength() - ipHeader.getHeaderLength();// IP数据长度
         if (ipData_len < 0)
             return false;
@@ -143,7 +146,7 @@ public class CommonMethods {
 
     // 计算TCP或UDP的校验和
     public static boolean ComputeUDPChecksum(IPHeader ipHeader, UDPHeader udpHeader) {
-        ComputeIPChecksum(ipHeader);//计算IP校验和
+        computeIPChecksum(ipHeader);//计算IP校验和
         int ipData_len = ipHeader.getTotalLength() - ipHeader.getHeaderLength();// IP数据长度
         if (ipData_len < 0)
             return false;

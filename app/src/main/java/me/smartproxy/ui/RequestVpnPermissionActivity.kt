@@ -13,9 +13,10 @@ open class RequestVpnPermissionActivity : AppCompatActivity() {
         KoinJavaComponent.get<LocalVpnViewModel>(LocalVpnViewModel::class.java)
 
 
-    private var launcher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-        vpnViewModel.updateRequestResult(it.resultCode)
-    }
+    private var launcher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+            vpnViewModel.updateRequestResult(it.resultCode)
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

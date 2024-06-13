@@ -26,19 +26,19 @@ class VpnHelper(private val context: Context, private val service: LocalVpnServi
         const val IS_ENABLE_REMOTE_PROXY: Boolean = false
     }
 
-    private var LOCAL_IP = 0
-    
-    var IsRunning = false
-    
+    private var vpnLocalIpInt = 0
+
+    private var isRunning = false
+
     private var m_SentBytes: Long = 0
     private var m_ReceivedBytes: Long = 0
-    
+
     private var m_VPNThread: Thread? = null
     private var m_TcpProxyServer: TcpProxyServer? = null
     private var m_DnsProxy: DnsProxy? = null
     private var m_VPNOutputStream: FileOutputStream? = null
-    
-    
+
+
     private val m_Packet = ByteArray(20000)
     private val m_IPHeader = IPHeader(m_Packet, 0)
     private val m_TCPHeader = TCPHeader(m_Packet, 20)
@@ -54,7 +54,7 @@ class VpnHelper(private val context: Context, private val service: LocalVpnServi
         }
 
         val ipAddress = ProxyConfig.Instance.defaultLocalIP
-        LOCAL_IP = CommonMethods.ipStringToInt(ipAddress.Address)
+        vpnLocalIpInt = CommonMethods.ipStringToInt(ipAddress.Address)
         builder.addAddress(ipAddress.Address, ipAddress.PrefixLength)
         if (ProxyConfig.IS_DEBUG) {
             Log.d(
@@ -115,7 +115,7 @@ class VpnHelper(private val context: Context, private val service: LocalVpnServi
         builder.setSession(ProxyConfig.Instance.sessionName)
         return builder.establish()
     }
-    
+
     fun start() {
         try {
             m_TcpProxyServer = TcpProxyServer(0)
@@ -127,7 +127,7 @@ class VpnHelper(private val context: Context, private val service: LocalVpnServi
             Log.e(TAG, "VPNService error: ", e)
         }
 
-        IsRunning = true
+        isRunning = true
 
         // Start a new session by creating a new thread.
         m_VPNThread = Thread({
@@ -144,19 +144,19 @@ class VpnHelper(private val context: Context, private val service: LocalVpnServi
                             throw Exception("Invalid config file.")
                         }
                     } catch (e: Exception) {
-                        IsRunning = false
+                        isRunning = false
                     }
                 }
             }
 
-            establishVPN()?.use {vpnInterface->
+            establishVPN()?.use { vpnInterface ->
 
                 m_VPNOutputStream = FileOutputStream(vpnInterface.fileDescriptor)
 
-                FileInputStream(vpnInterface.fileDescriptor).use {fis->
+                FileInputStream(vpnInterface.fileDescriptor).use { fis ->
                     var size: Int
                     kotlin.runCatching {
-                        while (IsRunning && !(m_DnsProxy?.Stopped == true || m_TcpProxyServer?.Stopped == true)) {
+                        while (isRunning && !(m_DnsProxy?.Stopped == true || m_TcpProxyServer?.Stopped == true)) {
                             size = fis.read(m_Packet)
                             if (size <= 0) {
                                 Thread.sleep(10)
@@ -184,7 +184,7 @@ class VpnHelper(private val context: Context, private val service: LocalVpnServi
     fun stop(reason: String) {
         Log.e(TAG, "VPNService stopped: $reason")
 
-        IsRunning = false
+        isRunning = false
 
         m_VPNOutputStream?.use {
             m_VPNOutputStream = null
@@ -230,7 +230,7 @@ class VpnHelper(private val context: Context, private val service: LocalVpnServi
             IPHeader.TCP -> {
                 val tcpHeader = m_TCPHeader
                 tcpHeader.m_Offset = ipHeader.headerLength
-                if (ipHeader.sourceIP == LOCAL_IP) {
+                if (ipHeader.sourceIP == vpnLocalIpInt) {
                     // 收到本地 TcpProxyServer 服务器数据
                     if (tcpHeader.sourcePort == m_TcpProxyServer!!.Port) {
                         val session =
@@ -242,7 +242,7 @@ class VpnHelper(private val context: Context, private val service: LocalVpnServi
                             )
                             ipHeader.sourceIP = ipHeader.destinationIP
                             tcpHeader.sourcePort = session.RemotePort
-                            ipHeader.destinationIP = LOCAL_IP
+                            ipHeader.destinationIP = vpnLocalIpInt
 
                             CommonMethods.ComputeTCPChecksum(ipHeader, tcpHeader)
                             m_VPNOutputStream?.write(ipHeader.m_Data, ipHeader.m_Offset, size)
@@ -295,7 +295,7 @@ class VpnHelper(private val context: Context, private val service: LocalVpnServi
                                 "onIPPacketReceived: 转发给本地 TcpProxyServer 服务器, $ipHeader $tcpHeader"
                             )
                             ipHeader.sourceIP = ipHeader.destinationIP
-                            ipHeader.destinationIP = LOCAL_IP
+                            ipHeader.destinationIP = vpnLocalIpInt
                             tcpHeader.destinationPort = m_TcpProxyServer!!.Port
 
                             CommonMethods.ComputeTCPChecksum(ipHeader, tcpHeader)
@@ -312,7 +312,7 @@ class VpnHelper(private val context: Context, private val service: LocalVpnServi
                 // 转发DNS数据包：
                 val udpHeader = m_UDPHeader
                 udpHeader.m_Offset = ipHeader.headerLength
-                if (ipHeader.sourceIP == LOCAL_IP && udpHeader.destinationPort.toInt() == 53) {
+                if (ipHeader.sourceIP == vpnLocalIpInt && udpHeader.destinationPort.toInt() == 53) {
                     m_DNSBuffer.clear()
                     m_DNSBuffer.limit(ipHeader.dataLength - 8)
                     val dnsPacket = DnsPacket.FromBytes(m_DNSBuffer)
