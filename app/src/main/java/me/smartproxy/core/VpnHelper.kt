@@ -149,15 +149,6 @@ class VpnHelper(private val context: Context, private val service: LocalVpnServi
                 }
             }
 
-            //检查是否准备完毕。
-            while (VpnService.prepare(service) != null) {
-                try {
-                    Thread.sleep(100)
-                } catch (e: InterruptedException) {
-                    Log.e(TAG, "waitUntilPreapred: ", e)
-                }
-            }
-
             establishVPN()?.use {vpnInterface->
 
                 m_VPNOutputStream = FileOutputStream(vpnInterface.fileDescriptor)
@@ -227,6 +218,7 @@ class VpnHelper(private val context: Context, private val service: LocalVpnServi
         try {
             CommonMethods.ComputeUDPChecksum(ipHeader, udpHeader)
             m_VPNOutputStream?.write(ipHeader.m_Data, ipHeader.m_Offset, ipHeader.totalLength)
+            m_VPNOutputStream?.flush()
         } catch (e: IOException) {
             Log.e(TAG, "sendUDPPacket: ", e)
         }
@@ -254,6 +246,7 @@ class VpnHelper(private val context: Context, private val service: LocalVpnServi
 
                             CommonMethods.ComputeTCPChecksum(ipHeader, tcpHeader)
                             m_VPNOutputStream?.write(ipHeader.m_Data, ipHeader.m_Offset, size)
+                            m_VPNOutputStream?.flush()
                             m_ReceivedBytes += size.toLong()
                         } else {
                             Log.d(
@@ -307,6 +300,7 @@ class VpnHelper(private val context: Context, private val service: LocalVpnServi
 
                             CommonMethods.ComputeTCPChecksum(ipHeader, tcpHeader)
                             m_VPNOutputStream?.write(ipHeader.m_Data, ipHeader.m_Offset, size)
+                            m_VPNOutputStream?.flush()
                             session.BytesSent += tcpDataSize //注意顺序
                             m_SentBytes += size.toLong()
                         }
