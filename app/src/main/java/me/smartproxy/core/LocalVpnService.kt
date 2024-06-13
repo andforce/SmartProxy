@@ -35,7 +35,7 @@ class LocalVpnService : VpnService() {
     }
 
     override fun onDestroy() {
-        Log.e(TAG, "VPNService destoried.")
-        m_VpnHelper.stop()
+        Log.e(TAG, "VPNService destroyed")
+        m_VpnHelper.stop("VPNService destroyed")
     }
 }

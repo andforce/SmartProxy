@@ -34,7 +34,6 @@ class VpnHelper(private val context: Context, private val service: LocalVpnServi
     private var m_ReceivedBytes: Long = 0
     
     private var m_VPNThread: Thread? = null
-    private var m_VPNInterface: ParcelFileDescriptor? = null
     private var m_TcpProxyServer: TcpProxyServer? = null
     private var m_DnsProxy: DnsProxy? = null
     private var m_VPNOutputStream: FileOutputStream? = null
@@ -132,70 +131,95 @@ class VpnHelper(private val context: Context, private val service: LocalVpnServi
 
         // Start a new session by creating a new thread.
         m_VPNThread = Thread({
-            try {
-                Log.d(TAG, "VPNService work thread is runing...")
+            Log.d(TAG, "VPNService work thread is running...")
 
-                ChinaIpMaskManager.loadFromFile(context.resources.openRawResource(R.raw.ipmask)) //加载中国的IP段，用于IP分流。
-                waitUntilPrepared() //检查是否准备完毕。
-
+            kotlin.runCatching {
                 //加载配置文件
                 if (IS_ENABLE_REMOTE_PROXY) {
+                    ChinaIpMaskManager.loadFromFile(context.resources.openRawResource(R.raw.ipmask)) //加载中国的IP段，用于IP分流。
+
                     try {
                         ProxyConfig.Instance.loadFromUrl(ProxyConfig.ConfigUrl)
                         if (ProxyConfig.Instance.defaultProxy == null) {
                             throw Exception("Invalid config file.")
                         }
                     } catch (e: Exception) {
-                        var errString = e.message
-                        if (errString == null || errString.isEmpty()) {
-                            errString = e.toString()
-                        }
-
                         IsRunning = false
                     }
                 }
+            }
 
-                establishVPN()?.let {vpnInterface->
-                    m_VPNInterface = vpnInterface
+            //检查是否准备完毕。
+            while (VpnService.prepare(service) != null) {
+                try {
+                    Thread.sleep(100)
+                } catch (e: InterruptedException) {
+                    Log.e(TAG, "waitUntilPreapred: ", e)
+                }
+            }
 
-                    FileOutputStream(vpnInterface.fileDescriptor).use { fos->
-                        m_VPNOutputStream = fos
+            establishVPN()?.use {vpnInterface->
 
-                        FileInputStream(vpnInterface.fileDescriptor).use {fis->
-                            var size: Int
-                            while (IsRunning) {
-                                size = fis.read(m_Packet)
-                                if (size <= 0) {
-                                    Thread.sleep(10)
-                                    continue
-                                }
-                                if (m_DnsProxy?.Stopped == true || m_TcpProxyServer?.Stopped == true) {
-                                    fis.close()
-                                    throw Exception("LocalServer stopped.")
-                                }
-                                onIPPacketReceived(m_IPHeader, size)
+                m_VPNOutputStream = FileOutputStream(vpnInterface.fileDescriptor)
+
+                FileInputStream(vpnInterface.fileDescriptor).use {fis->
+                    var size: Int
+                    kotlin.runCatching {
+                        while (IsRunning && !(m_DnsProxy?.Stopped == true || m_TcpProxyServer?.Stopped == true)) {
+                            size = fis.read(m_Packet)
+                            if (size <= 0) {
+                                Thread.sleep(10)
+                                continue
                             }
-
-                            disconnectVPN()
+                            onIPPacketReceived(m_IPHeader, size)
                         }
+                    }.onFailure {
+                        Log.e(TAG, "while read: ", it)
+                        stop("while read failed, or onIPPacketReceived() IOException.")
                     }
 
-                } ?: run {
-                    throw Exception("VPNInterface is null.")
+                    stop("while read stopped.")
                 }
-            } catch (e: Exception) {
-                Log.e(TAG, "Fatal error: ", e)
-            } finally {
-                dispose()
+
+            } ?: run {
+                stop("establishVPN failed.")
             }
-        }, "VPNServiceThread")
-        m_VPNThread?.start()
+
+        }, "VPNServiceThread").also {
+            it.start()
+        }
     }
 
-    fun stop() {
+    fun stop(reason: String) {
+        Log.e(TAG, "VPNService stopped: $reason")
+
         IsRunning = false
-        if (m_VPNThread != null) {
-            m_VPNThread?.interrupt()
+
+        m_VPNOutputStream?.use {
+            m_VPNOutputStream = null
+        }
+
+        // 停止TcpServer
+        if (m_TcpProxyServer != null) {
+            m_TcpProxyServer?.stop()
+            m_TcpProxyServer = null
+        }
+
+        // 停止DNS解析器
+        if (m_DnsProxy != null) {
+            m_DnsProxy?.stop()
+            m_DnsProxy = null
+        }
+
+        m_VPNThread?.let {
+            kotlin.runCatching {
+                if (it.isInterrupted.not()) {
+                    it.interrupt()
+                }
+            }.onFailure {
+                Log.e(TAG, "interrupt m_VPNThread Failed: ", it)
+            }
+            m_VPNThread = null
         }
     }
 
@@ -208,43 +232,8 @@ class VpnHelper(private val context: Context, private val service: LocalVpnServi
         }
     }
 
-
-    fun disconnectVPN() {
-        try {
-            if (m_VPNInterface != null) {
-                m_VPNInterface?.close()
-                m_VPNInterface = null
-            }
-        } catch (e: java.lang.Exception) {
-            // ignore
-        }
-        this.m_VPNOutputStream = null
-    }
-
-    @Synchronized
-    private fun dispose() {
-        // 断开VPN
-        disconnectVPN()
-
-        // 停止TcpServer
-        if (m_TcpProxyServer != null) {
-            m_TcpProxyServer!!.stop()
-            m_TcpProxyServer = null
-        }
-
-        // 停止DNS解析器
-        if (m_DnsProxy != null) {
-            m_DnsProxy!!.stop()
-            m_DnsProxy = null
-        }
-
-        service.stopSelf()
-        IsRunning = false
-        System.exit(0)
-    }
-
     @Throws(IOException::class)
-    fun onIPPacketReceived(ipHeader: IPHeader, size: Int) {
+    private fun onIPPacketReceived(ipHeader: IPHeader, size: Int) {
         when (ipHeader.protocol) {
             IPHeader.TCP -> {
                 val tcpHeader = m_TCPHeader
@@ -341,21 +330,11 @@ class VpnHelper(private val context: Context, private val service: LocalVpnServi
         }
     }
 
-    private fun waitUntilPrepared() {
-        while (VpnService.prepare(service) != null) {
-            try {
-                Thread.sleep(100)
-            } catch (e: InterruptedException) {
-                Log.e(TAG, "waitUntilPreapred: ", e)
-            }
-        }
-    }
-
-    fun protect(mClient: DatagramSocket): Boolean? {
+    fun protect(mClient: DatagramSocket): Boolean {
         return service.protect(mClient)
     }
 
-    fun protect(socket: Socket): Boolean? {
+    fun protect(socket: Socket): Boolean {
         return service.protect(socket)
     }
 }
