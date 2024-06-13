@@ -13,7 +13,7 @@ import java.util.Iterator;
 import me.smartproxy.tcpip.CommonMethods;
 import me.smartproxy.tunnel.Tunnel;
 
-public class TcpProxyServer implements Runnable {
+public class TcpProxyServer {
 
     private static final String TAG = "TcpProxyServer";
 
@@ -22,7 +22,6 @@ public class TcpProxyServer implements Runnable {
 
     Selector m_Selector;
     ServerSocketChannel m_ServerSocketChannel;
-    Thread m_ServerThread;
 
     ProxyConfig m_Config;
 
@@ -36,12 +35,6 @@ public class TcpProxyServer implements Runnable {
         this.Port = (short) m_ServerSocketChannel.socket().getLocalPort();
         Log.d(TAG, "AsyncTcpServer listen on " + (this.Port & 0xFFFF) + " success.");
 
-    }
-
-    public void start() {
-        m_ServerThread = new Thread(this);
-        m_ServerThread.setName("TcpProxyServerThread");
-        m_ServerThread.start();
     }
 
     public void stop() {
@@ -65,8 +58,7 @@ public class TcpProxyServer implements Runnable {
         }
     }
 
-    @Override
-    public void run() {
+    public void start() {
         try {
             while (true) {
                 m_Selector.select();

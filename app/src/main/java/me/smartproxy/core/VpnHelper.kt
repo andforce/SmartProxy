@@ -37,10 +37,7 @@ class VpnHelper(private val service: LocalVpnService) {
     private var m_SentBytes: Long = 0
     private var m_ReceivedBytes: Long = 0
 
-    private var m_TcpProxyServer: TcpProxyServer? = null
-    private var m_DnsProxy: DnsProxy? = null
     private var m_VPNOutputStream: FileOutputStream? = null
-
 
     private val m_Packet = ByteArray(20000)
     private val m_IPHeader = IPHeader(m_Packet, 0)
@@ -50,6 +47,18 @@ class VpnHelper(private val service: LocalVpnService) {
         (ByteBuffer.wrap(m_Packet).position(28) as ByteBuffer).slice()
 
     private var proxyConfig: ProxyConfig? = null
+
+    suspend fun startDnsProxy(config: ProxyConfig) {
+        withContext(Dispatchers.IO) {
+            DnsProxyHelper.startDnsProxy(config)
+        }
+    }
+
+    suspend fun startTcpProxy(config: ProxyConfig) {
+        withContext(Dispatchers.IO) {
+            TcpProxyHelper.startTcpProxy(config)
+        }
+    }
 
     suspend fun startProcessPacket(config: ProxyConfig, pfd: ParcelFileDescriptor) =
         withContext(Dispatchers.IO) {
@@ -67,16 +76,6 @@ class VpnHelper(private val service: LocalVpnService) {
             // 更新状态
             viewModel.updateVpnStatus(1)
 
-            try {
-                m_TcpProxyServer = TcpProxyServer(config, 0)
-                m_TcpProxyServer?.start()
-
-                m_DnsProxy = DnsProxy()
-                m_DnsProxy?.start()
-            } catch (e: Exception) {
-                Log.e(TAG, "VPNService error: ", e)
-            }
-
             pfd.use { vpnInterface ->
 
                 m_VPNOutputStream = FileOutputStream(vpnInterface.fileDescriptor)
@@ -84,7 +83,7 @@ class VpnHelper(private val service: LocalVpnService) {
                 FileInputStream(vpnInterface.fileDescriptor).use { fis ->
                     var size: Int
                     kotlin.runCatching {
-                        while (isRunning && !(m_DnsProxy?.Stopped == true || m_TcpProxyServer?.Stopped == true)) {
+                        while (isRunning) {
                             size = fis.read(m_Packet)
                             if (size <= 0) {
                                 delay(10)
@@ -119,22 +118,17 @@ class VpnHelper(private val service: LocalVpnService) {
             m_VPNOutputStream = null
         }
 
-        // 停止TcpServer
-        if (m_TcpProxyServer != null) {
-            m_TcpProxyServer?.stop()
-            m_TcpProxyServer = null
-        }
+        TcpProxyHelper.stopTcpProxy()
 
-        // 停止DNS解析器
-        if (m_DnsProxy != null) {
-            m_DnsProxy?.stop()
-            m_DnsProxy = null
-        }
+        DnsProxyHelper.stopDnsProxy()
 
         viewModel.updateVpnStatus(0)
     }
 
     fun tryStop() {
+        DnsProxyHelper.stopDnsProxy()
+        TcpProxyHelper.stopTcpProxy()
+
         this.proxyConfig?.stopTimer()
         stop("tryStop()")
         service.stopSelf()
@@ -158,7 +152,7 @@ class VpnHelper(private val service: LocalVpnService) {
                 tcpHeader.m_Offset = ipHeader.headerLength
                 if (ipHeader.sourceIP == vpnLocalIpInt) {
                     // 收到本地 TcpProxyServer 服务器数据
-                    if (tcpHeader.sourcePort == m_TcpProxyServer!!.Port) {
+                    if (tcpHeader.sourcePort == TcpProxyHelper.getPort()) {
                         val session =
                             NatSessionManager.getSession(tcpHeader.destinationPort.toInt())
                         if (session != null) {
@@ -222,7 +216,7 @@ class VpnHelper(private val service: LocalVpnService) {
                             )
                             ipHeader.sourceIP = ipHeader.destinationIP
                             ipHeader.destinationIP = vpnLocalIpInt
-                            tcpHeader.destinationPort = m_TcpProxyServer!!.Port
+                            tcpHeader.destinationPort = TcpProxyHelper.getPort()
 
                             CommonMethods.ComputeTCPChecksum(ipHeader, tcpHeader)
                             m_VPNOutputStream?.write(ipHeader.m_Data, ipHeader.m_Offset, size)
@@ -245,7 +239,7 @@ class VpnHelper(private val service: LocalVpnService) {
                     m_DNSBuffer.limit(ipHeader.dataLength - 8)
                     val dnsPacket = DnsPacket.FromBytes(m_DNSBuffer)
                     if (dnsPacket != null && dnsPacket.Header.QuestionCount > 0) {
-                        m_DnsProxy!!.onDnsRequestReceived(ipHeader, udpHeader, dnsPacket)
+                        DnsProxyHelper.onDnsRequestReceived(ipHeader, udpHeader, dnsPacket)
                     }
                 } else {
                     Log.e(TAG, "onIPPacketReceived, UDP: 收到非本地数据包, $ipHeader $udpHeader")

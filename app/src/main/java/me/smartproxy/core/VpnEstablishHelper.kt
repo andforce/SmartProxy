@@ -13,7 +13,7 @@ import me.smartproxy.tcpip.CommonMethods
 object VpnEstablishHelper {
 
     private const val TAG = "VpnEstablishHelper"
-    suspend fun buildProxyConfig(context: Context): ProxyConfig {
+    suspend fun buildProxyConfig(context: Context, configUrl: String): ProxyConfig {
         return withContext(Dispatchers.IO) {
             val config = ProxyConfig()
 
@@ -23,7 +23,7 @@ object VpnEstablishHelper {
                     ChinaIpMaskManager.loadFromFile(context.resources.openRawResource(R.raw.ipmask)) //加载中国的IP段，用于IP分流。
 
                     try {
-                        ProxyConfigHelper.loadFromUrl(ProxyConfig.ConfigUrl)
+                        ProxyConfigHelper.loadFromUrl(configUrl)
                         if (config.defaultProxy == null) {
                             throw Exception("Invalid config file.")
                         }

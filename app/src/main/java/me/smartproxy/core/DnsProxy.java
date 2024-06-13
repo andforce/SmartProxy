@@ -22,13 +22,15 @@ import me.smartproxy.tcpip.IPHeader;
 import me.smartproxy.tcpip.UDPHeader;
 
 
-public class DnsProxy implements Runnable {
+public class DnsProxy {
     private static final String TAG = "DnsProxy";
-    private LocalVpnViewModel localVpnViewModel = KoinJavaComponent.get(LocalVpnViewModel.class);
+    private final LocalVpnViewModel localVpnViewModel = KoinJavaComponent.get(LocalVpnViewModel.class);
 
     private ProxyConfig m_Config;
-    public DnsProxy(ProxyConfig config) {
+    public DnsProxy(ProxyConfig config) throws IOException {
         m_Config = config;
+        m_QueryArray = new SparseArray<QueryState>();
+        m_Client = new DatagramSocket(0);
     }
 
     private static class QueryState {
@@ -45,24 +47,13 @@ public class DnsProxy implements Runnable {
     private static final ConcurrentHashMap<String, Integer> DomainIPMaps = new ConcurrentHashMap<String, Integer>();
     private final long QUERY_TIMEOUT_NS = 10 * 1000000000L;
     private DatagramSocket m_Client;
-    private Thread m_ReceivedThread;
     private short m_QueryID;
     private SparseArray<QueryState> m_QueryArray;
-
-    public DnsProxy() throws IOException {
-        m_QueryArray = new SparseArray<QueryState>();
-        m_Client = new DatagramSocket(0);
-    }
 
     public static String reverseLookup(int ip) {
         return IPDomainMaps.get(ip);
     }
 
-    public void start() {
-        m_ReceivedThread = new Thread(this);
-        m_ReceivedThread.setName("DnsProxyThread");
-        m_ReceivedThread.start();
-    }
 
     public void stop() {
         Stopped = true;
@@ -72,8 +63,7 @@ public class DnsProxy implements Runnable {
         }
     }
 
-    @Override
-    public void run() {
+    public void start() {
         try {
             byte[] receiveBuffer = new byte[2000];
             IPHeader ipHeader = new IPHeader(receiveBuffer, 0);
@@ -105,7 +95,7 @@ public class DnsProxy implements Runnable {
         } catch (Exception e) {
             Log.e(TAG, "DnsResolver Error: ", e);
         } finally {
-            Log.i(TAG, "DnsResolver Thread Exited.");
+            Log.e(TAG, "DnsResolver Thread Exited.");
             this.stop();
         }
     }
