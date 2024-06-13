@@ -23,19 +23,24 @@ class LocalVpnViewModel : ViewModel() {
     private val _vpnStatusStateFlow = MutableStateFlow(-1)
     val vpnStatusStateFlow: StateFlow<Int> = _vpnStatusStateFlow
 
-    private val _vpnStatus = MutableSharedFlow<Int>(
+    private val _vpnStatusSharedFlow = MutableSharedFlow<Int>(
         replay = 0,
         extraBufferCapacity = 1,
         onBufferOverflow = BufferOverflow.DROP_OLDEST
     )
-    val vpnStatus: SharedFlow<Int> = _vpnStatus
+    val vpnStatusSharedFlow: SharedFlow<Int> = _vpnStatusSharedFlow
 
     fun updateVpnStatus(status: Int) {
-        _vpnStatus.tryEmit(status)
+        _vpnStatusStateFlow.value = status
+        _vpnStatusSharedFlow.tryEmit(status)
     }
 
     fun isRunning(): Boolean {
         return _vpnStatusStateFlow.value == 1
+    }
+
+    fun tryStop() {
+        helper?.tryStop()
     }
 
     fun sendUDPPacket(ipHeader: IPHeader, udpHeader: UDPHeader) {

@@ -34,11 +34,6 @@ public class ProxyConfig {
 
     private Timer m_Timer;
 
-    public ProxyConfig() {
-        m_Timer = new Timer();
-        m_Timer.schedule(m_Task, 120000, 120000);//每两分钟刷新一次。
-    }
-
     public ArrayList<IPAddress> getM_IpList() {
         return m_IpList;
     }
@@ -309,6 +304,21 @@ public class ProxyConfig {
             m_ProxyList.add(config);
             m_DomainMap.put(config.ServerAddress.getHostName(), false);
         }
+    }
+
+    public void startTimer() {
+        if (m_Timer != null) {
+            m_Timer.cancel();
+            m_Timer = null;
+        }
+
+        m_Timer = new Timer();
+        m_Timer.schedule(m_Task, 120000, 120000);//每两分钟刷新一次。
+    }
+
+    public void stopTimer() {
+        m_Timer.cancel();
+        m_Timer = null;
     }
 
 }

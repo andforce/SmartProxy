@@ -1,5 +1,10 @@
 package me.smartproxy.core;
 
+import android.util.Log;
+import android.util.SparseArray;
+
+import org.koin.java.KoinJavaComponent;
+
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -15,11 +20,6 @@ import me.smartproxy.dns.ResourcePointer;
 import me.smartproxy.tcpip.CommonMethods;
 import me.smartproxy.tcpip.IPHeader;
 import me.smartproxy.tcpip.UDPHeader;
-
-import android.util.Log;
-import android.util.SparseArray;
-
-import org.koin.java.KoinJavaComponent;
 
 
 public class DnsProxy implements Runnable {
@@ -75,20 +75,20 @@ public class DnsProxy implements Runnable {
     @Override
     public void run() {
         try {
-            byte[] RECEIVE_BUFFER = new byte[2000];
-            IPHeader ipHeader = new IPHeader(RECEIVE_BUFFER, 0);
+            byte[] receiveBuffer = new byte[2000];
+            IPHeader ipHeader = new IPHeader(receiveBuffer, 0);
             ipHeader.Default();
-            UDPHeader udpHeader = new UDPHeader(RECEIVE_BUFFER, 20);
+            UDPHeader udpHeader = new UDPHeader(receiveBuffer, 20);
 
-            ByteBuffer dnsBuffer = ByteBuffer.wrap(RECEIVE_BUFFER);
+            ByteBuffer dnsBuffer = ByteBuffer.wrap(receiveBuffer);
             dnsBuffer.position(28);
             dnsBuffer = dnsBuffer.slice();
 
-            DatagramPacket packet = new DatagramPacket(RECEIVE_BUFFER, 28, RECEIVE_BUFFER.length - 28);
+            DatagramPacket packet = new DatagramPacket(receiveBuffer, 28, receiveBuffer.length - 28);
 
             while (m_Client != null && !m_Client.isClosed()) {
 
-                packet.setLength(RECEIVE_BUFFER.length - 28);
+                packet.setLength(receiveBuffer.length - 28);
                 m_Client.receive(packet);
 
                 dnsBuffer.clear();
@@ -96,7 +96,7 @@ public class DnsProxy implements Runnable {
                 try {
                     DnsPacket dnsPacket = DnsPacket.FromBytes(dnsBuffer);
                     if (dnsPacket != null) {
-                        OnDnsResponseReceived(ipHeader, udpHeader, dnsPacket);
+                        onDnsResponseReceived(ipHeader, udpHeader, dnsPacket);
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -170,7 +170,7 @@ public class DnsProxy implements Runnable {
         return false;
     }
 
-    private void OnDnsResponseReceived(IPHeader ipHeader, UDPHeader udpHeader, DnsPacket dnsPacket) {
+    private void onDnsResponseReceived(IPHeader ipHeader, UDPHeader udpHeader, DnsPacket dnsPacket) {
         QueryState state = null;
         synchronized (m_QueryArray) {
             state = m_QueryArray.get(dnsPacket.Header.ID);

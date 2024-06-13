@@ -12,8 +12,6 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 
-import me.smartproxy.core.LocalVpnService;
-import me.smartproxy.core.ProxyConfig;
 import me.smartproxy.core.viewmodel.LocalVpnViewModel;
 
 public abstract class Tunnel {

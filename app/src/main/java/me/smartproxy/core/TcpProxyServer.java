@@ -11,11 +11,7 @@ import java.nio.channels.SocketChannel;
 import java.util.Iterator;
 
 import me.smartproxy.tcpip.CommonMethods;
-import me.smartproxy.tunnel.Config;
-import me.smartproxy.tunnel.RawTunnel;
 import me.smartproxy.tunnel.Tunnel;
-import me.smartproxy.tunnel.httpconnect.HttpConnectConfig;
-import me.smartproxy.tunnel.shadowsocks.ShadowsocksConfig;
 
 public class TcpProxyServer implements Runnable {
 
@@ -55,7 +51,7 @@ public class TcpProxyServer implements Runnable {
                 m_Selector.close();
                 m_Selector = null;
             } catch (Exception e) {
-                e.printStackTrace();
+                Log.e(TAG, "stop, m_Selector: ", e);
             }
         }
 
@@ -64,7 +60,7 @@ public class TcpProxyServer implements Runnable {
                 m_ServerSocketChannel.close();
                 m_ServerSocketChannel = null;
             } catch (Exception e) {
-                e.printStackTrace();
+                Log.e(TAG, "stop, m_ServerSocketChannel: ", e);
             }
         }
     }

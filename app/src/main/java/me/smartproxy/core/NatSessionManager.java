@@ -1,8 +1,8 @@
 package me.smartproxy.core;
 
-import me.smartproxy.tcpip.CommonMethods;
-
 import android.util.SparseArray;
+
+import me.smartproxy.tcpip.CommonMethods;
 
 public class NatSessionManager {
 

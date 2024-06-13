@@ -1,12 +1,12 @@
 package me.smartproxy.core;
 
+import android.util.Log;
+import android.util.SparseIntArray;
+
 import java.io.IOException;
 import java.io.InputStream;
 
 import me.smartproxy.tcpip.CommonMethods;
-
-import android.util.Log;
-import android.util.SparseIntArray;
 
 
 public class ChinaIpMaskManager {

@@ -2,6 +2,7 @@ package me.smartproxy.ui
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.widget.CompoundButton
 import android.widget.ScrollView
 import android.widget.Toast
@@ -52,11 +53,13 @@ open class MainActivity : RequestVpnPermissionActivity() {
 
         viewBinding.proxySwitch.isChecked = vpnViewModel.isRunning()
         viewBinding.proxySwitch.setOnCheckedChangeListener { buttonView: CompoundButton?, isChecked: Boolean ->
+            Log.d(TAG, "proxySwitch: $isChecked, vpnViewModel.isRunning(): ${vpnViewModel.isRunning()}")
             if (vpnViewModel.isRunning()) {
                 if (isChecked) {
                     // do nothing
                 } else {
-                    stopService(Intent(this, LocalVpnService::class.java))
+                    //stopService(Intent(this, LocalVpnService::class.java))
+                    vpnViewModel.tryStop()
                 }
             } else {
                 if (isChecked) {
@@ -64,6 +67,12 @@ open class MainActivity : RequestVpnPermissionActivity() {
                 } else {
                     // do nothing
                 }
+            }
+        }
+
+        lifecycleScope.launch {
+            vpnViewModel.vpnStatusSharedFlow.collectLatest {
+                Log.d(TAG, "vpnStatusSharedFlow: $it")
             }
         }
     }

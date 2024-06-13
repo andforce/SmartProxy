@@ -1,9 +1,9 @@
 package me.smartproxy.tunnel.httpconnect;
 
+import android.net.Uri;
+
 import java.net.InetSocketAddress;
 import java.util.Locale;
-
-import android.net.Uri;
 
 import me.smartproxy.tunnel.Config;
 

@@ -1,9 +1,9 @@
 package me.smartproxy.tunnel.shadowsocks;
 
-import java.net.InetSocketAddress;
-
 import android.net.Uri;
 import android.util.Base64;
+
+import java.net.InetSocketAddress;
 
 import me.smartproxy.tunnel.Config;
 

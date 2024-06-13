@@ -5,11 +5,13 @@ import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
+import me.smartproxy.core.viewmodel.LocalVpnViewModel
 import me.smartproxy.dns.DnsPacket
 import me.smartproxy.tcpip.CommonMethods
 import me.smartproxy.tcpip.IPHeader
 import me.smartproxy.tcpip.TCPHeader
 import me.smartproxy.tcpip.UDPHeader
+import org.koin.java.KoinJavaComponent
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.IOException
@@ -22,6 +24,10 @@ class VpnHelper(private val service: LocalVpnService) {
     companion object {
         const val TAG = "VpnHelper"
         const val IS_ENABLE_REMOTE_PROXY: Boolean = false
+    }
+
+    private val viewModel: LocalVpnViewModel by lazy {
+        KoinJavaComponent.get(LocalVpnViewModel::class.java)
     }
 
     private var vpnLocalIpInt = 0
@@ -43,13 +49,23 @@ class VpnHelper(private val service: LocalVpnService) {
     private val m_DNSBuffer: ByteBuffer =
         (ByteBuffer.wrap(m_Packet).position(28) as ByteBuffer).slice()
 
+    private var proxyConfig: ProxyConfig? = null
+
     suspend fun startProcessPacket(config: ProxyConfig, pfd: ParcelFileDescriptor) =
         withContext(Dispatchers.IO) {
             Log.d(TAG, "VPNService work thread is running...")
 
+            proxyConfig = config
+
+            proxyConfig?.startTimer()
+
+
             vpnLocalIpInt = CommonMethods.ipStringToInt(config.defaultLocalIP.Address)
 
             isRunning = true
+
+            // 更新状态
+            viewModel.updateVpnStatus(1)
 
             try {
                 m_TcpProxyServer = TcpProxyServer(config, 0)
@@ -94,7 +110,7 @@ class VpnHelper(private val service: LocalVpnService) {
             }
         }
 
-    fun stop(reason: String) {
+    private fun stop(reason: String) {
         Log.e(TAG, "VPNService stopped: $reason")
 
         isRunning = false
@@ -114,6 +130,14 @@ class VpnHelper(private val service: LocalVpnService) {
             m_DnsProxy?.stop()
             m_DnsProxy = null
         }
+
+        viewModel.updateVpnStatus(0)
+    }
+
+    fun tryStop() {
+        this.proxyConfig?.stopTimer()
+        stop("tryStop()")
+        service.stopSelf()
     }
 
     fun sendUDPPacket(ipHeader: IPHeader, udpHeader: UDPHeader?) {
