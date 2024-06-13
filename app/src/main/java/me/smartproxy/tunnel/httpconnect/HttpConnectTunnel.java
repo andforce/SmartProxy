@@ -1,11 +1,8 @@
 package me.smartproxy.tunnel.httpconnect;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.Selector;
-import java.nio.channels.SocketChannel;
-import java.text.Bidi;
 import java.util.Locale;
 
 import me.smartproxy.core.ProxyConfig;
@@ -15,9 +12,11 @@ public class HttpConnectTunnel extends Tunnel {
 
     private boolean m_TunnelEstablished;
     private HttpConnectConfig m_Config;
+    private ProxyConfig proxyConfig;
 
-    public HttpConnectTunnel(HttpConnectConfig config, Selector selector) throws IOException {
+    public HttpConnectTunnel(ProxyConfig c, HttpConnectConfig config, Selector selector) throws IOException {
         super(config.ServerAddress, selector);
+        this.proxyConfig = c;
         m_Config = config;
     }
 
@@ -27,7 +26,7 @@ public class HttpConnectTunnel extends Tunnel {
                 "CONNECT %s:%d HTTP/1.0\r\nProxy-Connection: keep-alive\r\nUser-Agent: %s\r\n\r\n",
                 m_DestAddress.getHostName(),
                 m_DestAddress.getPort(),
-                ProxyConfig.Instance.getUserAgent());
+                proxyConfig.getUserAgent());
 
         buffer.clear();
         buffer.put(request.getBytes());
@@ -48,8 +47,8 @@ public class HttpConnectTunnel extends Tunnel {
                 super.write(buffer, false);
                 bytesSent = 10 - buffer.remaining();
                 buffer.limit(limit);
-                if (ProxyConfig.IS_DEBUG)
-                    System.out.printf("Send %d bytes(%s) to %s\n", bytesSent, firString, m_DestAddress);
+                System.out.printf("Send %d bytes(%s) to %s\n", bytesSent, firString, m_DestAddress);
+
             }
         }
     }
@@ -57,7 +56,7 @@ public class HttpConnectTunnel extends Tunnel {
 
     @Override
     protected void beforeSend(ByteBuffer buffer) throws Exception {
-        if (ProxyConfig.Instance.isIsolateHttpHostHeader()) {
+        if (proxyConfig.isM_isolate_http_host_header()) {
             trySendPartOfHeader(buffer);//尝试发送请求头的一部分，让请求头的host在第二个包里面发送，从而绕过机房的白名单机制。
         }
     }

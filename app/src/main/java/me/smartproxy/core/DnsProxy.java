@@ -26,6 +26,11 @@ public class DnsProxy implements Runnable {
     private static final String TAG = "DnsProxy";
     private LocalVpnViewModel localVpnViewModel = KoinJavaComponent.get(LocalVpnViewModel.class);
 
+    private ProxyConfig m_Config;
+    public DnsProxy(ProxyConfig config) {
+        m_Config = config;
+    }
+
     private static class QueryState {
         public short ClientQueryID;
         public long QueryNanoTime;
@@ -127,7 +132,7 @@ public class DnsProxy implements Runnable {
         rPointer.setDomain((short) 0xC00C);
         rPointer.setType(question.Type);
         rPointer.setClass(question.Class);
-        rPointer.setTTL(ProxyConfig.Instance.getDnsTTL());
+        rPointer.setTTL(m_Config.getDnsTTL());
         rPointer.setDataLength((short) 4);
         rPointer.setIP(newIP);
 
@@ -154,12 +159,10 @@ public class DnsProxy implements Runnable {
             Question question = dnsPacket.Questions[0];
             if (question.Type == 1) {
                 int realIP = getFirstIP(dnsPacket);
-                if (ProxyConfig.Instance.needProxy(question.Domain, realIP)) {
+                if (m_Config.needProxy(question.Domain, realIP)) {
                     int fakeIP = getOrCreateFakeIP(question.Domain);
                     tamperDnsResponse(rawPacket, dnsPacket, fakeIP);
-                    if (ProxyConfig.IS_DEBUG) {
-                        Log.d(TAG, "FakeDns: " + question.Domain + "=>" + CommonMethods.ipIntToString(realIP) + "(" + CommonMethods.ipIntToString(fakeIP) + ")");
-                    }
+                    Log.d(TAG, "FakeDns: " + question.Domain + "=>" + CommonMethods.ipIntToString(realIP) + "(" + CommonMethods.ipIntToString(fakeIP) + ")");
                     return true;
                 }
             }
@@ -206,13 +209,11 @@ public class DnsProxy implements Runnable {
         Question question = dnsPacket.Questions[0];
         Log.d(TAG, "DNS Qeury " + question.Domain);
         if (question.Type == 1) {
-            if (ProxyConfig.Instance.needProxy(question.Domain, getIPFromCache(question.Domain))) {
+            if (m_Config.needProxy(question.Domain, getIPFromCache(question.Domain))) {
                 int fakeIP = getOrCreateFakeIP(question.Domain);
                 tamperDnsResponse(ipHeader.m_Data, dnsPacket, fakeIP);
 
-                if (ProxyConfig.IS_DEBUG) {
-                    Log.d(TAG, "interceptDns FakeDns: " + question.Domain + "=>" + CommonMethods.ipIntToString(fakeIP));
-                }
+                Log.d(TAG, "interceptDns FakeDns: " + question.Domain + "=>" + CommonMethods.ipIntToString(fakeIP));
 
                 int sourceIP = ipHeader.getSourceIP();
                 short sourcePort = udpHeader.getSourcePort();

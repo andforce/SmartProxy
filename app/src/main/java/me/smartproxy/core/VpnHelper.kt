@@ -46,53 +46,42 @@ class VpnHelper(private val context: Context, private val service: LocalVpnServi
     private val m_DNSBuffer: ByteBuffer =
         (ByteBuffer.wrap(m_Packet).position(28) as ByteBuffer).slice()
 
-    private fun establishVPN(): ParcelFileDescriptor? {
+    private fun establishVPN(config: ProxyConfig): ParcelFileDescriptor? {
         val builder: VpnService.Builder = service.Builder()
-        builder.setMtu(ProxyConfig.Instance.mtu)
-        if (ProxyConfig.IS_DEBUG) {
-            Log.d(TAG, "setMtu: " + ProxyConfig.Instance.mtu)
-        }
+        builder.setMtu(config.mtu)
 
-        val ipAddress = ProxyConfig.Instance.defaultLocalIP
+        Log.d(TAG, "setMtu: " + config.mtu)
+
+        val ipAddress = config.defaultLocalIP
         vpnLocalIpInt = CommonMethods.ipStringToInt(ipAddress.Address)
         builder.addAddress(ipAddress.Address, ipAddress.PrefixLength)
-        if (ProxyConfig.IS_DEBUG) {
-            Log.d(
-                TAG,
-                "addAddress: " + ipAddress.Address + "/" + ipAddress.PrefixLength
-            )
-        }
+        Log.d(
+            TAG,
+            "addAddress: " + ipAddress.Address + "/" + ipAddress.PrefixLength
+        )
 
-        for (dns in ProxyConfig.Instance.dnsList) {
+        for (dns in config.dnsList) {
             builder.addDnsServer(dns.Address)
-            if (ProxyConfig.IS_DEBUG) {
-                Log.d(TAG, "addDnsServer: " + dns.Address)
-            }
+            Log.d(TAG, "addDnsServer: " + dns.Address)
         }
 
-        if (ProxyConfig.Instance.routeList.isNotEmpty()) {
-            for (routeAddress in ProxyConfig.Instance.routeList) {
+        if (config.routeList.isNotEmpty()) {
+            for (routeAddress in config.routeList) {
                 builder.addRoute(routeAddress.Address, routeAddress.PrefixLength)
-                if (ProxyConfig.IS_DEBUG) {
-                    Log.d(
-                        TAG,
-                        "addRoute: " + routeAddress.Address + "/" + routeAddress.PrefixLength
-                    )
-                }
+                Log.d(
+                    TAG,
+                    "addRoute: " + routeAddress.Address + "/" + routeAddress.PrefixLength
+                )
             }
             builder.addRoute(CommonMethods.ipIntToString(ProxyConfig.FAKE_NETWORK_IP), 16)
 
-            if (ProxyConfig.IS_DEBUG) {
-                Log.d(
-                    TAG,
-                    "addRoute: " + CommonMethods.ipIntToString(ProxyConfig.FAKE_NETWORK_IP) + "/16"
-                )
-            }
+            Log.d(
+                TAG,
+                "addRoute: " + CommonMethods.ipIntToString(ProxyConfig.FAKE_NETWORK_IP) + "/16"
+            )
         } else {
             builder.addRoute("0.0.0.0", 0)
-            if (ProxyConfig.IS_DEBUG) {
-                Log.d(TAG, "addDefaultRoute:0.0.0.0/0")
-            }
+            Log.d(TAG, "addDefaultRoute:0.0.0.0/0")
         }
 
         val dnsMap = findAndroidPropDNS(context)
@@ -101,9 +90,7 @@ class VpnHelper(private val context: Context, private val service: LocalVpnServi
 
             if (isIPv4Address(host)) {
                 builder.addRoute(host, 32)
-                if (ProxyConfig.IS_DEBUG) {
-                    Log.d(TAG, "addRoute by DNS: $host/32")
-                }
+                Log.d(TAG, "addRoute by DNS: $host/32")
             } else {
                 Log.d(
                     TAG,
@@ -112,20 +99,11 @@ class VpnHelper(private val context: Context, private val service: LocalVpnServi
             }
         }
 
-        builder.setSession(ProxyConfig.Instance.sessionName)
+        builder.setSession(config.sessionName)
         return builder.establish()
     }
 
     fun start() {
-        try {
-            m_TcpProxyServer = TcpProxyServer(0)
-            m_TcpProxyServer?.start()
-
-            m_DnsProxy = DnsProxy()
-            m_DnsProxy?.start()
-        } catch (e: Exception) {
-            Log.e(TAG, "VPNService error: ", e)
-        }
 
         isRunning = true
 
@@ -133,14 +111,16 @@ class VpnHelper(private val context: Context, private val service: LocalVpnServi
         m_VPNThread = Thread({
             Log.d(TAG, "VPNService work thread is running...")
 
+            var config = ProxyConfig()
+
             kotlin.runCatching {
                 //加载配置文件
                 if (IS_ENABLE_REMOTE_PROXY) {
                     ChinaIpMaskManager.loadFromFile(context.resources.openRawResource(R.raw.ipmask)) //加载中国的IP段，用于IP分流。
 
                     try {
-                        ProxyConfig.Instance.loadFromUrl(ProxyConfig.ConfigUrl)
-                        if (ProxyConfig.Instance.defaultProxy == null) {
+                        ProxyConfigHelper.loadFromUrl(ProxyConfig.ConfigUrl)
+                        if (config?.defaultProxy == null) {
                             throw Exception("Invalid config file.")
                         }
                     } catch (e: Exception) {
@@ -149,7 +129,17 @@ class VpnHelper(private val context: Context, private val service: LocalVpnServi
                 }
             }
 
-            establishVPN()?.use { vpnInterface ->
+            try {
+                m_TcpProxyServer = TcpProxyServer(config, 0)
+                m_TcpProxyServer?.start()
+
+                m_DnsProxy = DnsProxy()
+                m_DnsProxy?.start()
+            } catch (e: Exception) {
+                Log.e(TAG, "VPNService error: ", e)
+            }
+
+            establishVPN(config)?.use { vpnInterface ->
 
                 m_VPNOutputStream = FileOutputStream(vpnInterface.fileDescriptor)
 

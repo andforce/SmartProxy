@@ -28,7 +28,10 @@ public class TcpProxyServer implements Runnable {
     ServerSocketChannel m_ServerSocketChannel;
     Thread m_ServerThread;
 
-    public TcpProxyServer(int port) throws IOException {
+    ProxyConfig m_Config;
+
+    public TcpProxyServer(ProxyConfig config, int port) throws IOException {
+        this.m_Config = config;
         m_Selector = Selector.open();
         m_ServerSocketChannel = ServerSocketChannel.open();
         m_ServerSocketChannel.configureBlocking(false);
@@ -104,10 +107,8 @@ public class TcpProxyServer implements Runnable {
         short portKey = (short) localChannel.socket().getPort();
         NatSession session = NatSessionManager.getSession(portKey);
         if (session != null) {
-            if (ProxyConfig.Instance.needProxy(session.RemoteHost, session.RemoteIP)) {
-                if (ProxyConfig.IS_DEBUG) {
-                    Log.d(TAG, String.format("%d/%d:[PROXY] %s=>%s:%d", NatSessionManager.getSessionCount(), Tunnel.SessionCount, session.RemoteHost, CommonMethods.ipIntToString(session.RemoteIP), session.RemotePort & 0xFFFF));
-                }
+            if (m_Config.needProxy(session.RemoteHost, session.RemoteIP)) {
+                Log.d(TAG, String.format("%d/%d:[PROXY] %s=>%s:%d", NatSessionManager.getSessionCount(), Tunnel.SessionCount, session.RemoteHost, CommonMethods.ipIntToString(session.RemoteIP), session.RemotePort & 0xFFFF));
                 return InetSocketAddress.createUnresolved(session.RemoteHost, session.RemotePort & 0xFFFF);
             } else {
                 return new InetSocketAddress(localChannel.socket().getInetAddress(), session.RemotePort & 0xFFFF);
@@ -124,7 +125,7 @@ public class TcpProxyServer implements Runnable {
 
             InetSocketAddress destAddress = getDestAddress(localChannel);
             if (destAddress != null) {
-                Tunnel remoteTunnel = TunnelFactory.createTunnelByConfig(destAddress, m_Selector);
+                Tunnel remoteTunnel = TunnelFactory.createTunnelByConfig(m_Config, destAddress, m_Selector);
                 remoteTunnel.setBrotherTunnel(localTunnel);//关联兄弟
                 localTunnel.setBrotherTunnel(remoteTunnel);//关联兄弟
                 remoteTunnel.connect(destAddress);//开始连接

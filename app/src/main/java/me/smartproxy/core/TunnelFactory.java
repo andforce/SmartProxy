@@ -18,11 +18,11 @@ public class TunnelFactory {
         return new RawTunnel(channel, selector);
     }
 
-    public static Tunnel createTunnelByConfig(InetSocketAddress destAddress, Selector selector) throws Exception {
+    public static Tunnel createTunnelByConfig(ProxyConfig c, InetSocketAddress destAddress, Selector selector) throws Exception {
         if (destAddress.isUnresolved()) {
-            Config config = ProxyConfig.Instance.getDefaultTunnelConfig(destAddress);
+            Config config = c.getDefaultTunnelConfig(destAddress);
             if (config instanceof HttpConnectConfig) {
-                return new HttpConnectTunnel((HttpConnectConfig) config, selector);
+                return new HttpConnectTunnel(c, (HttpConnectConfig) config, selector);
             } else if (config instanceof ShadowsocksConfig) {
                 return new ShadowsocksTunnel((ShadowsocksConfig) config, selector);
             }

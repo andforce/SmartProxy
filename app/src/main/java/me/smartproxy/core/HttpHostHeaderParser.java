@@ -97,9 +97,7 @@ public class HttpHostHeaderParser {
                     length -= 5;//SNI size;
                     if (offset + length > limit) return null;
                     String serverName = new String(buffer, offset, length);
-                    if (ProxyConfig.IS_DEBUG) {
-                        Log.d(TAG, "SNI: " + serverName);
-                    }
+                    Log.d(TAG, "SNI: " + serverName);
 
                     return serverName;
                 } else {
