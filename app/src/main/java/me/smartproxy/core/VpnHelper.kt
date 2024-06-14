@@ -57,9 +57,9 @@ class VpnHelper(private val context: Context) {
         }
     }
 
-    suspend fun startTcpProxy(service: VpnService, config: ProxyConfig) {
+    suspend fun startTcpProxy(config: ProxyConfig) {
         withContext(Dispatchers.IO) {
-            TcpProxyHelper.startTcpProxy(service, config)
+            TcpProxyHelper.startTcpProxy(config)
         }
     }
 

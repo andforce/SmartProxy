@@ -1,6 +1,6 @@
 package me.smartproxy.core
 
-import android.content.Context
+import android.app.Application
 import android.net.VpnService
 import android.os.ParcelFileDescriptor
 import android.util.Log
@@ -9,17 +9,19 @@ import kotlinx.coroutines.withContext
 import me.smartproxy.R
 import me.smartproxy.dns.DNSUtils
 import me.smartproxy.tcpip.CommonMethods
+import org.koin.java.KoinJavaComponent
 
 object VpnEstablishHelper {
 
     private const val TAG = "VpnEstablishHelper"
-    suspend fun buildProxyConfig(context: Context, configUrl: String): ProxyConfig {
+    suspend fun buildProxyConfig(configUrl: String): ProxyConfig {
         return withContext(Dispatchers.IO) {
             val config = ProxyConfig()
 
             kotlin.runCatching {
                 //加载配置文件
                 if (VpnHelper.IS_ENABLE_REMOTE_PROXY) {
+                    val context: Application = KoinJavaComponent.get(Application::class.java)
                     ChinaIpMaskManager.loadFromFile(context.resources.openRawResource(R.raw.ipmask)) //加载中国的IP段，用于IP分流。
 
                     try {
@@ -36,8 +38,14 @@ object VpnEstablishHelper {
             config
         }
     }
-    suspend fun establishVPN(config: ProxyConfig, service: VpnService): ParcelFileDescriptor? {
+    suspend fun establishVPN(config: ProxyConfig): ParcelFileDescriptor? {
         return withContext(Dispatchers.IO) {
+            val service = LocalVpnService::class.getOrNull()
+            if (service == null) {
+                Log.e(TAG, "establishVPN: LocalVpnService is null")
+                return@withContext null
+            }
+
             val builder: VpnService.Builder = service.Builder()
             builder.setMtu(config.mtu)
 

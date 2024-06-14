@@ -53,7 +53,8 @@ class TcpProxyServer(private val config: ProxyConfig, port: Int) {
         }
     }
 
-    fun start(service: VpnService) {
+    fun start() {
+        val service = LocalVpnService::class.getOrNull()
         selector?.let { selector ->
             try {
                 while (true) {
@@ -118,7 +119,7 @@ class TcpProxyServer(private val config: ProxyConfig, port: Int) {
         return null
     }
 
-    private fun onAccepted(service: VpnService) {
+    private fun onAccepted(service: VpnService?) {
         var localTunnel: Tunnel? = null
         try {
             serverSocketChannel?.let { socketChannel->

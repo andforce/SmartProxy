@@ -1,25 +1,24 @@
 package me.smartproxy.core.viewmodel
 
+import android.app.Application
 import android.net.VpnService
+import android.os.ParcelFileDescriptor
 import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import me.smartproxy.core.ProxyConfig
 import me.smartproxy.core.VpnHelper
 import me.smartproxy.tcpip.IPHeader
 import me.smartproxy.tcpip.UDPHeader
 import java.net.DatagramSocket
 import java.net.Socket
 
-class LocalVpnViewModel : ViewModel() {
+class LocalVpnViewModel(private val context: Application) : ViewModel() {
 
-    private var helper: VpnHelper? = null
-
-    fun bindHelper(helper: VpnHelper) {
-        this.helper = helper
-    }
+    private val helper = VpnHelper(context)
 
     private val _vpnStatusStateFlow = MutableStateFlow(-1)
     val vpnStatusStateFlow: StateFlow<Int> = _vpnStatusStateFlow
@@ -41,19 +40,19 @@ class LocalVpnViewModel : ViewModel() {
     }
 
     fun tryStop() {
-        helper?.tryStop()
+        helper.tryStop()
     }
 
     fun sendUDPPacket(ipHeader: IPHeader, udpHeader: UDPHeader) {
-        helper?.sendUDPPacket(ipHeader, udpHeader)
+        helper.sendUDPPacket(ipHeader, udpHeader)
     }
 
     fun protect(service: VpnService, datagramSocket: DatagramSocket): Boolean {
-        return helper?.protect(service, datagramSocket) ?: false
+        return helper.protect(service, datagramSocket) ?: false
     }
 
     fun protect(service: VpnService, socket: Socket): Boolean {
-        return helper?.protect(service, socket) ?: false
+        return helper.protect(service, socket) ?: false
     }
 
     private val _requestResult = MutableSharedFlow<Int>(
@@ -66,4 +65,14 @@ class LocalVpnViewModel : ViewModel() {
     fun updateRequestResult(it: Int) {
         _requestResult.tryEmit(it)
     }
+
+    suspend fun startDnsProxy(config: ProxyConfig) {
+        helper.startDnsProxy(config)
+    }
+
+    suspend fun startTcpProxy(config: ProxyConfig) {
+        helper.startTcpProxy(config)
+    }
+
+    suspend fun startProcessPacket(config: ProxyConfig, pfd: ParcelFileDescriptor) = helper.startProcessPacket(config, pfd)
 }

@@ -10,55 +10,51 @@ import org.koin.core.qualifier.named
 import org.koin.core.scope.Scope
 import org.koin.java.KoinJavaComponent.get
 
-class LocalVpnService : CoroutinesService(), IVpnWrapper {
+class LocalVpnService : CoroutinesService() {
     companion object {
         private const val TAG = "LocalVpnService"
     }
 
-    private lateinit var koinScope: Scope
+    private var koinScope: Scope
 
     private val vpnViewModel = get<LocalVpnViewModel>(LocalVpnViewModel::class.java)
 
-    private val vpnHelper: VpnHelper = VpnHelper(this)
-
     init {
-        vpnViewModel.bindHelper(vpnHelper)
-    }
-
-    override fun onCreate() {
         val name = this.javaClass.name
         koinScope = GlobalContext.get().getOrCreateScope(name, named(name))
         koinScope.declare(this)
+    }
 
+    override fun onCreate() {
         super.onCreate()
 
         Log.d(TAG, "VPNService created()")
 
         serviceScope.launch {
-            val config = VpnEstablishHelper.buildProxyConfig(this@LocalVpnService, "")
+            val config = VpnEstablishHelper.buildProxyConfig("")
             Log.d(TAG, "VPNService config: $config")
 
-            val pfd = VpnEstablishHelper.establishVPN(config, this@LocalVpnService)
+            val pfd = VpnEstablishHelper.establishVPN(config)
             Log.d(TAG, "VPNService pfd: $pfd")
 
             launch {
                 Log.d(TAG, "VPNService startDnsProxy pre")
-                vpnHelper.startDnsProxy(config)
+                vpnViewModel.startDnsProxy(config)
                 Log.d(TAG, "VPNService startDnsProxy end")
             }
 
             launch {
                 Log.d(TAG, "VPNService startTcpProxy pre")
-                vpnHelper.startTcpProxy(this@LocalVpnService, config)
+                vpnViewModel.startTcpProxy(config)
                 Log.d(TAG, "VPNService startTcpProxy end")
             }
 
             // 等待DNS和TCP代理启动
-            delay(1000)
+            delay(500)
 
             pfd?.let {
                 Log.d(TAG, "VPNService startProcessPacket pre")
-                vpnHelper.startProcessPacket(config, pfd)
+                vpnViewModel.startProcessPacket(config, pfd)
             }?.onFailure {
                 Log.e(TAG, "VPNService failed to establish VPN: $it")
             }

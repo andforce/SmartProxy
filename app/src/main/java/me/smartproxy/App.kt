@@ -15,7 +15,7 @@ class App : Application() {
             androidContext(this@App)
 
             modules(module {
-                single { LocalVpnViewModel() }
+                single { LocalVpnViewModel(get()) }
                 single { UdpViewModel() }
                 single { TcpViewModel() }
             })
