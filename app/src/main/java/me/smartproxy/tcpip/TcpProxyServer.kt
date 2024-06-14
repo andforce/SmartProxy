@@ -1,9 +1,11 @@
 package me.smartproxy.tcpip
 
 import android.util.Log
+import me.smartproxy.core.LocalVpnService
 import me.smartproxy.core.NatSessionManager
 import me.smartproxy.core.ProxyConfig
 import me.smartproxy.core.TunnelFactory
+import me.smartproxy.core.getOrNull
 import me.smartproxy.tunnel.Tunnel
 import java.net.InetSocketAddress
 import java.nio.channels.SelectionKey
@@ -134,7 +136,9 @@ class TcpProxyServer(private val config: ProxyConfig, port: Int) {
                             TunnelFactory.createTunnelByConfig(config, destAddress, s)
                         remoteTunnel.setBrotherTunnel(localTunnel) //关联兄弟
                         localTunnel?.setBrotherTunnel(remoteTunnel) //关联兄弟
-                        remoteTunnel.connect(destAddress) //开始连接
+
+                        val service = LocalVpnService::class.getOrNull()
+                        remoteTunnel.connect(service, destAddress) //开始连接
                     } else {
                         localTunnel?.dispose()
                     }

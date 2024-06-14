@@ -1,6 +1,5 @@
 package me.smartproxy.core
 
-import android.net.VpnService
 import android.os.ParcelFileDescriptor
 import android.util.Log
 import kotlinx.coroutines.Dispatchers
@@ -16,8 +15,6 @@ import me.smartproxy.tcpip.TcpProxyClient
 import me.smartproxy.tcpip.UDPHeader
 import org.koin.java.KoinJavaComponent
 import java.io.FileInputStream
-import java.net.DatagramSocket
-import java.net.Socket
 
 class VpnHelper {
 
@@ -141,15 +138,5 @@ class VpnHelper {
 
     fun sendUDPPacket(ipHeader: IPHeader, udpHeader: UDPHeader?) {
         tcpClient?.sendUDPPacket(ipHeader, udpHeader)
-    }
-
-    fun protect(datagramSocket: DatagramSocket): Boolean {
-        val service = LocalVpnService::class.getOrNull()
-        return service?.protect(datagramSocket) ?: false
-    }
-
-    fun protect(socket: Socket): Boolean {
-        val service = LocalVpnService::class.getOrNull()
-        return service?.protect(socket) ?: false
     }
 }

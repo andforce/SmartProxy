@@ -1,10 +1,11 @@
 package me.smartproxy.dns
 
-import android.net.VpnService
 import android.util.Log
 import android.util.SparseArray
+import me.smartproxy.core.LocalVpnService
 import me.smartproxy.core.ProxyConfig
 import me.smartproxy.core.QueryState
+import me.smartproxy.core.getOrNull
 import me.smartproxy.core.viewmodel.LocalVpnViewModel
 import me.smartproxy.tcpip.CommonMethods
 import me.smartproxy.tcpip.IPData
@@ -39,7 +40,8 @@ class DnsProxy(private val config: ProxyConfig) {
     fun start() {
         try {
             client?.let { client->
-                val protect = localVpnViewModel.protect(client)
+                val service = LocalVpnService::class.getOrNull()
+                val protect = service?.protect(client)
 
                 Log.e(TAG, "DNS Proxy, protect result: $protect")
 

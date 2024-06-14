@@ -2,7 +2,6 @@ package me.smartproxy.core.viewmodel
 
 import android.app.Application
 import android.content.Intent
-import android.net.VpnService
 import android.os.ParcelFileDescriptor
 import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.channels.BufferOverflow
@@ -15,8 +14,6 @@ import me.smartproxy.core.ProxyConfig
 import me.smartproxy.core.VpnHelper
 import me.smartproxy.tcpip.IPHeader
 import me.smartproxy.tcpip.UDPHeader
-import java.net.DatagramSocket
-import java.net.Socket
 
 class LocalVpnViewModel(private val context: Application) : ViewModel() {
 
@@ -48,14 +45,6 @@ class LocalVpnViewModel(private val context: Application) : ViewModel() {
 
     fun sendUDPPacket(ipHeader: IPHeader, udpHeader: UDPHeader) {
         helper.sendUDPPacket(ipHeader, udpHeader)
-    }
-
-    fun protect(datagramSocket: DatagramSocket): Boolean {
-        return helper.protect(datagramSocket)
-    }
-
-    fun protect(socket: Socket): Boolean {
-        return helper.protect(socket)
     }
 
     private val _requestResult = MutableSharedFlow<Int>(
