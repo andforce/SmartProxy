@@ -4,29 +4,12 @@ import java.util.Locale;
 
 public class IPHeader {
 
-    public static final short IP = 0x0800;
-    public static final byte ICMP = 1;
-    public static final byte TCP = 6;
-    public static final byte UDP = 17;
-
-    static final byte offset_ver_ihl = 0; // 0: Version (4 bits) + Internet header length (4// bits)
-    static final byte offset_tos = 1; // 1: Type of service
-    static final short offset_tlen = 2; // 2: Total length
-    static final short offset_identification = 4; // :4 Identification
-    static final short offset_flags_fo = 6; // 6: Flags (3 bits) + Fragment offset (13 bits)
-    static final byte offset_ttl = 8; // 8: Time to live
-    public static final byte offset_proto = 9; // 9: Protocol
-    static final short offset_crc = 10; // 10: Header checksum
-    public static final int offset_src_ip = 12; // 12: Source address
-    public static final int offset_dest_ip = 16; // 16: Destination address
-    static final int offset_op_pad = 20; // 20: Option + Padding
-
-    public byte[] m_Data;
-    public int m_Offset;
+    public byte[] data;
+    public int offset;
 
     public IPHeader(byte[] data, int offset) {
-        this.m_Data = data;
-        this.m_Offset = offset;
+        this.data = data;
+        this.offset = offset;
     }
 
     public void Default() {
@@ -43,83 +26,83 @@ public class IPHeader {
     }
 
     public int getHeaderLength() {
-        return (m_Data[m_Offset + offset_ver_ihl] & 0x0F) * 4;
+        return (data[offset + IPData.offset_ver_ihl] & 0x0F) * 4;
     }
 
     public void setHeaderLength(int value) {
-        m_Data[m_Offset + offset_ver_ihl] = (byte) ((4 << 4) | (value / 4));
+        data[offset +  IPData.offset_ver_ihl] = (byte) ((4 << 4) | (value / 4));
     }
 
     public byte getTos() {
-        return m_Data[m_Offset + offset_tos];
+        return data[offset +  IPData.offset_tos];
     }
 
     public void setTos(byte value) {
-        m_Data[m_Offset + offset_tos] = value;
+        data[offset +  IPData.offset_tos] = value;
     }
 
     public int getTotalLength() {
-        return CommonMethods.readShort(m_Data, m_Offset + offset_tlen) & 0xFFFF;
+        return CommonMethods.readShort(data, offset +  IPData.offset_tlen) & 0xFFFF;
     }
 
     public void setTotalLength(int value) {
-        CommonMethods.writeShort(m_Data, m_Offset + offset_tlen, (short) value);
+        CommonMethods.writeShort(data, offset +  IPData.offset_tlen, (short) value);
     }
 
     public int getIdentification() {
-        return CommonMethods.readShort(m_Data, m_Offset + offset_identification) & 0xFFFF;
+        return CommonMethods.readShort(data, offset +  IPData.offset_identification) & 0xFFFF;
     }
 
     public void setIdentification(int value) {
-        CommonMethods.writeShort(m_Data, m_Offset + offset_identification, (short) value);
+        CommonMethods.writeShort(data, offset +  IPData.offset_identification, (short) value);
     }
 
     public short getFlagsAndOffset() {
-        return CommonMethods.readShort(m_Data, m_Offset + offset_flags_fo);
+        return CommonMethods.readShort(data, offset +  IPData.offset_flags_fo);
     }
 
     public void setFlagsAndOffset(short value) {
-        CommonMethods.writeShort(m_Data, m_Offset + offset_flags_fo, value);
+        CommonMethods.writeShort(data, offset +  IPData.offset_flags_fo, value);
     }
 
     public byte getTTL() {
-        return m_Data[m_Offset + offset_ttl];
+        return data[offset +  IPData.offset_ttl];
     }
 
     public void setTTL(byte value) {
-        m_Data[m_Offset + offset_ttl] = value;
+        data[offset +  IPData.offset_ttl] = value;
     }
 
     public byte getProtocol() {
-        return m_Data[m_Offset + offset_proto];
+        return data[offset +  IPData.offset_proto];
     }
 
     public void setProtocol(byte value) {
-        m_Data[m_Offset + offset_proto] = value;
+        data[offset +  IPData.offset_proto] = value;
     }
 
     public short getCrc() {
-        return CommonMethods.readShort(m_Data, m_Offset + offset_crc);
+        return CommonMethods.readShort(data, offset +  IPData.offset_crc);
     }
 
     public void setCrc(short value) {
-        CommonMethods.writeShort(m_Data, m_Offset + offset_crc, value);
+        CommonMethods.writeShort(data, offset +  IPData.offset_crc, value);
     }
 
     public int getSourceIP() {
-        return CommonMethods.readInt(m_Data, m_Offset + offset_src_ip);
+        return CommonMethods.readInt(data, offset +  IPData.offset_src_ip);
     }
 
     public void setSourceIP(int value) {
-        CommonMethods.writeInt(m_Data, m_Offset + offset_src_ip, value);
+        CommonMethods.writeInt(data, offset +  IPData.offset_src_ip, value);
     }
 
     public int getDestinationIP() {
-        return CommonMethods.readInt(m_Data, m_Offset + offset_dest_ip);
+        return CommonMethods.readInt(data, offset +  IPData.offset_dest_ip);
     }
 
     public void setDestinationIP(int value) {
-        CommonMethods.writeInt(m_Data, m_Offset + offset_dest_ip, value);
+        CommonMethods.writeInt(data, offset +  IPData.offset_dest_ip, value);
     }
 
     @Override

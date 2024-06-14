@@ -117,8 +117,8 @@ public class CommonMethods {
     public static boolean computeIPChecksum(IPHeader ipHeader) {
         short oldCrc = ipHeader.getCrc();
         ipHeader.setCrc((short) 0);// 计算前置零
-        short newCrc = CommonMethods.checksum(0, ipHeader.m_Data,
-                ipHeader.m_Offset, ipHeader.getHeaderLength());
+        short newCrc = CommonMethods.checksum(0, ipHeader.data,
+                ipHeader.offset, ipHeader.getHeaderLength());
         ipHeader.setCrc(newCrc);
         return oldCrc == newCrc;
     }
@@ -130,15 +130,15 @@ public class CommonMethods {
         if (ipData_len < 0)
             return false;
         // 计算为伪首部和
-        long sum = getsum(ipHeader.m_Data, ipHeader.m_Offset
-                + IPHeader.offset_src_ip, 8);
+        long sum = getsum(ipHeader.data, ipHeader.offset
+                + IPData.offset_src_ip, 8);
         sum += ipHeader.getProtocol() & 0xFF;
         sum += ipData_len;
 
         short oldCrc = tcpHeader.getCrc();
         tcpHeader.setCrc((short) 0);// 计算前置0
 
-        short newCrc = checksum(sum, tcpHeader.m_Data, tcpHeader.m_Offset, ipData_len);// 计算校验和
+        short newCrc = checksum(sum, tcpHeader.getData(), tcpHeader.getOffset(), ipData_len);// 计算校验和
 
         tcpHeader.setCrc(newCrc);
         return oldCrc == newCrc;
@@ -151,15 +151,15 @@ public class CommonMethods {
         if (ipData_len < 0)
             return false;
         // 计算为伪首部和
-        long sum = getsum(ipHeader.m_Data, ipHeader.m_Offset
-                + IPHeader.offset_src_ip, 8);
+        long sum = getsum(ipHeader.data, ipHeader.offset
+                + IPData.offset_src_ip, 8);
         sum += ipHeader.getProtocol() & 0xFF;
         sum += ipData_len;
 
         short oldCrc = udpHeader.getCrc();
         udpHeader.setCrc((short) 0);// 计算前置0
 
-        short newCrc = checksum(sum, udpHeader.data, udpHeader.offset, ipData_len);// 计算校验和
+        short newCrc = checksum(sum, udpHeader.getData(), udpHeader.getOffset(), ipData_len);// 计算校验和
 
         udpHeader.setCrc(newCrc);
         return oldCrc == newCrc;

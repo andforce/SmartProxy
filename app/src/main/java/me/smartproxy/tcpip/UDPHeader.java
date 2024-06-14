@@ -3,16 +3,32 @@ package me.smartproxy.tcpip;
 import java.util.Locale;
 
 public class UDPHeader {
-    static final short offset_src_port = 0; // Source port
-    static final short offset_dest_port = 2; // Destination port
-    static final short offset_tlen = 4; // Datagram length
-    static final short offset_crc = 6; // Checksum
+    private static final short offset_src_port = 0; // Source port
+    private static final short offset_dest_port = 2; // Destination port
+    private static final short offset_tlen = 4; // Datagram length
+    private static final short offset_crc = 6; // Checksum
 
-    public byte[] data;
-    public int offset;
+    private byte[] data;
+    private int offset;
 
     public UDPHeader(byte[] data, int offset) {
         this.data = data;
+        this.offset = offset;
+    }
+
+    public byte[] getData() {
+        return data;
+    }
+
+    public void setData(byte[] data) {
+        this.data = data;
+    }
+
+    public int getOffset() {
+        return offset;
+    }
+
+    public void setOffset(int offset) {
         this.offset = offset;
     }
 

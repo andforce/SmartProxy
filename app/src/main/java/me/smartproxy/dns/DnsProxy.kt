@@ -7,6 +7,7 @@ import me.smartproxy.core.ProxyConfig
 import me.smartproxy.core.QueryState
 import me.smartproxy.core.viewmodel.LocalVpnViewModel
 import me.smartproxy.tcpip.CommonMethods
+import me.smartproxy.tcpip.IPData
 import me.smartproxy.tcpip.IPHeader
 import me.smartproxy.tcpip.UDPHeader
 import org.koin.java.KoinJavaComponent.get
@@ -162,7 +163,7 @@ class DnsProxy(private val config: ProxyConfig) {
             dnsPacket.dnsHeader.id = state!!.clientQueryID
             ipHeader.sourceIP = state!!.remoteIP
             ipHeader.destinationIP = state!!.clientIP
-            ipHeader.protocol = IPHeader.UDP
+            ipHeader.protocol = IPData.UDP
             ipHeader.totalLength = 20 + 8 + dnsPacket.size
             udpHeader.sourcePort = state!!.remotePort
             udpHeader.destinationPort = state!!.clientPort
@@ -187,7 +188,7 @@ class DnsProxy(private val config: ProxyConfig) {
         if (question.type.toInt() == 1) {
             if (config.needProxy(question.domain, getIPFromCache(question.domain))) {
                 val fakeIP = getOrCreateFakeIP(question.domain)
-                tamperDnsResponse(ipHeader.m_Data, dnsPacket, fakeIP)
+                tamperDnsResponse(ipHeader.data, dnsPacket, fakeIP)
 
                 Log.d(
                     TAG,

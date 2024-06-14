@@ -10,6 +10,7 @@ import me.smartproxy.core.viewmodel.LocalVpnViewModel
 import me.smartproxy.dns.DnsProcessor
 import me.smartproxy.dns.DnsProxyHelper
 import me.smartproxy.tcpip.CommonMethods
+import me.smartproxy.tcpip.IPData
 import me.smartproxy.tcpip.IPHeader
 import me.smartproxy.tcpip.TcpProxyClient
 import me.smartproxy.tcpip.UDPHeader
@@ -84,11 +85,11 @@ class VpnHelper {
                                 continue
                             }
                             when (ipHeader.protocol) {
-                                IPHeader.TCP -> {
+                                IPData.TCP -> {
                                     tcpClient?.onTCPPacketReceived(ipHeader, size)
                                 }
 
-                                IPHeader.UDP -> {
+                                IPData.UDP -> {
                                     // 转发DNS数据包：
                                     dnsProcessor?.processUdpPacket(ipHeader)
                                 }

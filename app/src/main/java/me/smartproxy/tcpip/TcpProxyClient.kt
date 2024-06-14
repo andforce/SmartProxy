@@ -27,7 +27,7 @@ class TcpProxyClient(pfd: ParcelFileDescriptor, buffer: ByteArray, private val v
     fun onTCPPacketReceived(ipHeader: IPHeader, size: Int) {
         val tcpHeader = tcpHeader
 
-        tcpHeader.m_Offset = ipHeader.headerLength
+        tcpHeader.offset = ipHeader.headerLength
         if (ipHeader.sourceIP == vpnLocalIpInt) {
             // 收到本地 TcpProxyServer 服务器数据
             if (tcpHeader.sourcePort == TcpProxyHelper.getPort()) {
@@ -43,7 +43,7 @@ class TcpProxyClient(pfd: ParcelFileDescriptor, buffer: ByteArray, private val v
                     ipHeader.destinationIP = vpnLocalIpInt
 
                     CommonMethods.computeTCPChecksum(ipHeader, tcpHeader)
-                    vpnOutputStream?.write(ipHeader.m_Data, ipHeader.m_Offset, size)
+                    vpnOutputStream?.write(ipHeader.data, ipHeader.offset, size)
                     vpnOutputStream?.flush()
                     receivedBytes += size.toLong()
                 } else {
@@ -76,9 +76,9 @@ class TcpProxyClient(pfd: ParcelFileDescriptor, buffer: ByteArray, private val v
 
                     //分析数据，找到host
                     if (session.bytesSent == 0 && tcpDataSize > 10) {
-                        val dataOffset = tcpHeader.m_Offset + tcpHeader.headerLength
+                        val dataOffset = tcpHeader.offset + tcpHeader.headerLength
                         val host = HttpHostHeaderParser.parseHost(
-                            tcpHeader.m_Data,
+                            tcpHeader.data,
                             dataOffset,
                             tcpDataSize
                         )
@@ -97,7 +97,7 @@ class TcpProxyClient(pfd: ParcelFileDescriptor, buffer: ByteArray, private val v
                     tcpHeader.destinationPort = TcpProxyHelper.getPort()
 
                     CommonMethods.computeTCPChecksum(ipHeader, tcpHeader)
-                    vpnOutputStream?.write(ipHeader.m_Data, ipHeader.m_Offset, size)
+                    vpnOutputStream?.write(ipHeader.data, ipHeader.offset, size)
                     vpnOutputStream?.flush()
                     session.bytesSent += tcpDataSize //注意顺序
                     sentBytes += size.toLong()
@@ -112,7 +112,7 @@ class TcpProxyClient(pfd: ParcelFileDescriptor, buffer: ByteArray, private val v
     fun sendUDPPacket(ipHeader: IPHeader, udpHeader: UDPHeader?) {
         try {
             CommonMethods.computeUDPChecksum(ipHeader, udpHeader)
-            vpnOutputStream?.write(ipHeader.m_Data, ipHeader.m_Offset, ipHeader.totalLength)
+            vpnOutputStream?.write(ipHeader.data, ipHeader.offset, ipHeader.totalLength)
             vpnOutputStream?.flush()
         } catch (e: IOException) {
             Log.e(TAG, "sendUDPPacket: ", e)
