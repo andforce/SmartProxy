@@ -90,7 +90,19 @@ class VpnHelper {
                                 delay(10)
                                 continue
                             }
-                            onIPPacketReceived(m_IPHeader, size)
+                            when (m_IPHeader.protocol) {
+                                IPHeader.TCP -> {
+                                    onTCPPacketReceived(m_IPHeader, size)
+                                }
+
+                                IPHeader.UDP -> {
+                                    onUDPPacketReceived(m_IPHeader, size)
+                                }
+
+                                else -> {
+                                    Log.d(TAG, "onIPPacketReceived, 不支持的协议: $m_IPHeader")
+                                }
+                            }
                         }
 
                         stop("while read stopped.")
@@ -145,110 +157,103 @@ class VpnHelper {
     }
 
     @Throws(IOException::class)
-    private fun onIPPacketReceived(ipHeader: IPHeader, size: Int) {
-        when (ipHeader.protocol) {
-            IPHeader.TCP -> {
-                val tcpHeader = m_TCPHeader
-                tcpHeader.m_Offset = ipHeader.headerLength
-                if (ipHeader.sourceIP == vpnLocalIpInt) {
-                    // 收到本地 TcpProxyServer 服务器数据
-                    if (tcpHeader.sourcePort == TcpProxyHelper.getPort()) {
-                        val session =
-                            NatSessionManager.getSession(tcpHeader.destinationPort.toInt())
-                        if (session != null) {
-                            Log.d(
-                                "LocalVpnService",
-                                "onIPPacketReceived: 收到本地 TcpProxyServer 服务器数据, $ipHeader $tcpHeader"
-                            )
-                            ipHeader.sourceIP = ipHeader.destinationIP
-                            tcpHeader.sourcePort = session.remotePort
-                            ipHeader.destinationIP = vpnLocalIpInt
+    private fun onUDPPacketReceived(ipHeader: IPHeader, size: Int) {
+        // 转发DNS数据包：
+        val udpHeader = m_UDPHeader
+        udpHeader.m_Offset = ipHeader.headerLength
+        if (ipHeader.sourceIP == vpnLocalIpInt && udpHeader.destinationPort.toInt() == 53) {
+            m_DNSBuffer.clear()
+            m_DNSBuffer.limit(ipHeader.dataLength - 8)
+            val dnsPacket = DnsPacket.FromBytes(m_DNSBuffer)
+            if (dnsPacket != null && dnsPacket.Header.QuestionCount > 0) {
+                DnsProxyHelper.onDnsRequestReceived(ipHeader, udpHeader, dnsPacket)
+            }
+        } else {
+            Log.e(TAG, "onIPPacketReceived, UDP: 收到非本地数据包, $ipHeader $udpHeader")
+        }
+    }
 
-                            CommonMethods.ComputeTCPChecksum(ipHeader, tcpHeader)
-                            m_VPNOutputStream?.write(ipHeader.m_Data, ipHeader.m_Offset, size)
-                            m_VPNOutputStream?.flush()
-                            m_ReceivedBytes += size.toLong()
-                        } else {
-                            Log.d(
-                                TAG,
-                                "onIPPacketReceived: NoSession, $ipHeader $tcpHeader"
-                            )
-                        }
-                    } else {
-                        // 添加端口映射
+    @Throws(IOException::class)
+    private fun onTCPPacketReceived(ipHeader: IPHeader, size: Int) {
+        val tcpHeader = m_TCPHeader
+        tcpHeader.m_Offset = ipHeader.headerLength
+        if (ipHeader.sourceIP == vpnLocalIpInt) {
+            // 收到本地 TcpProxyServer 服务器数据
+            if (tcpHeader.sourcePort == TcpProxyHelper.getPort()) {
+                val session =
+                    NatSessionManager.getSession(tcpHeader.destinationPort.toInt())
+                if (session != null) {
+                    Log.d(
+                        "LocalVpnService",
+                        "onIPPacketReceived: 收到本地 TcpProxyServer 服务器数据, $ipHeader $tcpHeader"
+                    )
+                    ipHeader.sourceIP = ipHeader.destinationIP
+                    tcpHeader.sourcePort = session.remotePort
+                    ipHeader.destinationIP = vpnLocalIpInt
 
-                        val portKey = tcpHeader.sourcePort.toInt()
-                        var session = NatSessionManager.getSession(portKey)
-                        if (session == null || session.remoteIP != ipHeader.destinationIP || session.remotePort != tcpHeader.destinationPort) {
-                            session = NatSessionManager.createSession(
-                                portKey,
-                                ipHeader.destinationIP,
-                                tcpHeader.destinationPort
-                            )
-                        }
+                    CommonMethods.ComputeTCPChecksum(ipHeader, tcpHeader)
+                    m_VPNOutputStream?.write(ipHeader.m_Data, ipHeader.m_Offset, size)
+                    m_VPNOutputStream?.flush()
+                    m_ReceivedBytes += size.toLong()
+                } else {
+                    Log.d(
+                        TAG,
+                        "onIPPacketReceived: NoSession, $ipHeader $tcpHeader"
+                    )
+                }
+            } else {
+                // 添加端口映射
 
-                        session?.let {
-                            session.lastNanoTime = System.nanoTime()
-                            session.packetSent++ //注意顺序
+                val portKey = tcpHeader.sourcePort.toInt()
+                var session = NatSessionManager.getSession(portKey)
+                if (session == null || session.remoteIP != ipHeader.destinationIP || session.remotePort != tcpHeader.destinationPort) {
+                    session = NatSessionManager.createSession(
+                        portKey,
+                        ipHeader.destinationIP,
+                        tcpHeader.destinationPort
+                    )
+                }
 
-                            val tcpDataSize = ipHeader.dataLength - tcpHeader.headerLength
-                            if (session.packetSent == 2 && tcpDataSize == 0) {
-                                return  //丢弃tcp握手的第二个ACK报文。因为客户端发数据的时候也会带上ACK，这样可以在服务器Accept之前分析出HOST信息。
-                            }
+                session?.let {
+                    session.lastNanoTime = System.nanoTime()
+                    session.packetSent++ //注意顺序
 
-                            //分析数据，找到host
-                            if (session.bytesSent == 0 && tcpDataSize > 10) {
-                                val dataOffset = tcpHeader.m_Offset + tcpHeader.headerLength
-                                val host = HttpHostHeaderParser.parseHost(
-                                    tcpHeader.m_Data,
-                                    dataOffset,
-                                    tcpDataSize
-                                )
-                                if (host != null) {
-                                    session.remoteHost = host
-                                }
-                            }
+                    val tcpDataSize = ipHeader.dataLength - tcpHeader.headerLength
+                    if (session.packetSent == 2 && tcpDataSize == 0) {
+                        return  //丢弃tcp握手的第二个ACK报文。因为客户端发数据的时候也会带上ACK，这样可以在服务器Accept之前分析出HOST信息。
+                    }
 
-                            // 转发给本地 TcpProxyServer 服务器
-                            Log.d(
-                                "LocalVpnService",
-                                "onIPPacketReceived: 转发给本地 TcpProxyServer 服务器, $ipHeader $tcpHeader"
-                            )
-                            ipHeader.sourceIP = ipHeader.destinationIP
-                            ipHeader.destinationIP = vpnLocalIpInt
-                            tcpHeader.destinationPort = TcpProxyHelper.getPort()
-
-                            CommonMethods.ComputeTCPChecksum(ipHeader, tcpHeader)
-                            m_VPNOutputStream?.write(ipHeader.m_Data, ipHeader.m_Offset, size)
-                            m_VPNOutputStream?.flush()
-                            session.bytesSent += tcpDataSize //注意顺序
-                            m_SentBytes += size.toLong()
+                    //分析数据，找到host
+                    if (session.bytesSent == 0 && tcpDataSize > 10) {
+                        val dataOffset = tcpHeader.m_Offset + tcpHeader.headerLength
+                        val host = HttpHostHeaderParser.parseHost(
+                            tcpHeader.m_Data,
+                            dataOffset,
+                            tcpDataSize
+                        )
+                        if (host != null) {
+                            session.remoteHost = host
                         }
                     }
-                } else {
-                    Log.e(TAG, "onIPPacketReceived, TCP: 收到非本地数据包, $ipHeader $tcpHeader")
+
+                    // 转发给本地 TcpProxyServer 服务器
+                    Log.d(
+                        "LocalVpnService",
+                        "onIPPacketReceived: 转发给本地 TcpProxyServer 服务器, $ipHeader $tcpHeader"
+                    )
+                    ipHeader.sourceIP = ipHeader.destinationIP
+                    ipHeader.destinationIP = vpnLocalIpInt
+                    tcpHeader.destinationPort = TcpProxyHelper.getPort()
+
+                    CommonMethods.ComputeTCPChecksum(ipHeader, tcpHeader)
+                    m_VPNOutputStream?.write(ipHeader.m_Data, ipHeader.m_Offset, size)
+                    m_VPNOutputStream?.flush()
+                    session.bytesSent += tcpDataSize //注意顺序
+                    m_SentBytes += size.toLong()
                 }
             }
-
-            IPHeader.UDP -> {
-                // 转发DNS数据包：
-                val udpHeader = m_UDPHeader
-                udpHeader.m_Offset = ipHeader.headerLength
-                if (ipHeader.sourceIP == vpnLocalIpInt && udpHeader.destinationPort.toInt() == 53) {
-                    m_DNSBuffer.clear()
-                    m_DNSBuffer.limit(ipHeader.dataLength - 8)
-                    val dnsPacket = DnsPacket.FromBytes(m_DNSBuffer)
-                    if (dnsPacket != null && dnsPacket.Header.QuestionCount > 0) {
-                        DnsProxyHelper.onDnsRequestReceived(ipHeader, udpHeader, dnsPacket)
-                    }
-                } else {
-                    Log.e(TAG, "onIPPacketReceived, UDP: 收到非本地数据包, $ipHeader $udpHeader")
-                }
-            }
-
-            else -> {
-                Log.d(TAG, "onIPPacketReceived, 不支持的协议: $ipHeader")
-            }
+        } else {
+            Log.e(TAG, "onIPPacketReceived, TCP: 收到非本地数据包, $ipHeader $tcpHeader")
         }
     }
 
