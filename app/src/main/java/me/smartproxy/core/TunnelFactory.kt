@@ -1,35 +1,36 @@
-package me.smartproxy.core;
+package me.smartproxy.core
 
-import java.net.InetSocketAddress;
-import java.nio.channels.Selector;
-import java.nio.channels.SocketChannel;
+import me.smartproxy.tunnel.RawTunnel
+import me.smartproxy.tunnel.Tunnel
+import me.smartproxy.tunnel.httpconnect.HttpConnectConfig
+import me.smartproxy.tunnel.httpconnect.HttpConnectTunnel
+import me.smartproxy.tunnel.shadowsocks.ShadowsocksConfig
+import me.smartproxy.tunnel.shadowsocks.ShadowsocksTunnel
+import java.net.InetSocketAddress
+import java.nio.channels.Selector
+import java.nio.channels.SocketChannel
 
-import me.smartproxy.tunnel.Config;
-import me.smartproxy.tunnel.RawTunnel;
-import me.smartproxy.tunnel.Tunnel;
-import me.smartproxy.tunnel.httpconnect.HttpConnectConfig;
-import me.smartproxy.tunnel.httpconnect.HttpConnectTunnel;
-import me.smartproxy.tunnel.shadowsocks.ShadowsocksConfig;
-import me.smartproxy.tunnel.shadowsocks.ShadowsocksTunnel;
-
-public class TunnelFactory {
-
-    public static Tunnel wrap(SocketChannel channel, Selector selector) {
-        return new RawTunnel(channel, selector);
+object TunnelFactory {
+    fun wrap(channel: SocketChannel, selector: Selector): Tunnel {
+        return RawTunnel(channel, selector)
     }
 
-    public static Tunnel createTunnelByConfig(ProxyConfig c, InetSocketAddress destAddress, Selector selector) throws Exception {
-        if (destAddress.isUnresolved()) {
-            Config config = c.getDefaultTunnelConfig(destAddress);
-            if (config instanceof HttpConnectConfig) {
-                return new HttpConnectTunnel(c, (HttpConnectConfig) config, selector);
-            } else if (config instanceof ShadowsocksConfig) {
-                return new ShadowsocksTunnel((ShadowsocksConfig) config, selector);
+    @Throws(Exception::class)
+    fun createTunnelByConfig(
+        c: ProxyConfig,
+        destAddress: InetSocketAddress,
+        selector: Selector
+    ): Tunnel {
+        if (destAddress.isUnresolved) {
+            val config = c.getDefaultTunnelConfig(destAddress)
+            if (config is HttpConnectConfig) {
+                return HttpConnectTunnel(c, config, selector)
+            } else if (config is ShadowsocksConfig) {
+                return ShadowsocksTunnel(config, selector)
             }
-            throw new Exception("The config is unknow.");
+            throw Exception("The config is unknow.")
         } else {
-            return new RawTunnel(destAddress, selector);
+            return RawTunnel(destAddress, selector)
         }
     }
-
 }

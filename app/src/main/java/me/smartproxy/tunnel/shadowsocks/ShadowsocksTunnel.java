@@ -9,15 +9,15 @@ import me.smartproxy.tunnel.Tunnel;
 public class ShadowsocksTunnel extends Tunnel {
 
     private IEncryptor encryptor;
-    private ShadowsocksConfig m_Config;
-    private boolean mTunnelEstablished;
+    private ShadowsocksConfig config;
+    private boolean tunnelEstablished;
 
     public ShadowsocksTunnel(ShadowsocksConfig config, Selector selector) throws Exception {
         super(config.socketAddress, selector);
         if (config.encryptor == null) {
             throw new Exception("Error: The Encryptor for ShadowsocksTunnel is null.");
         }
-        m_Config = config;
+        this.config = config;
         encryptor = config.encryptor;
     }
 
@@ -35,17 +35,17 @@ public class ShadowsocksTunnel extends Tunnel {
 
         encryptor.encrypt(buffer);
         if (write(buffer, true)) {
-            mTunnelEstablished = true;
+            tunnelEstablished = true;
             onTunnelEstablished();
         } else {
-            mTunnelEstablished = true;
+            tunnelEstablished = true;
             this.beginReceive();
         }
     }
 
     @Override
     protected boolean isTunnelEstablished() {
-        return mTunnelEstablished;
+        return tunnelEstablished;
     }
 
     @Override
@@ -60,7 +60,7 @@ public class ShadowsocksTunnel extends Tunnel {
 
     @Override
     protected void onDispose() {
-        m_Config = null;
+        config = null;
         encryptor = null;
     }
 

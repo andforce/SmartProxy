@@ -10,55 +10,55 @@ public class ResourcePointer {
     static final short offset_DataLength = 10;
     static final int offset_IP = 12;
 
-    byte[] Data;
-    int Offset;
+    byte[] data;
+    int offset;
 
     public ResourcePointer(byte[] data, int offset) {
-        this.Data = data;
-        this.Offset = offset;
+        this.data = data;
+        this.offset = offset;
     }
 
     public void setDomain(short value) {
-        CommonMethods.writeShort(Data, Offset + offset_Domain, value);
+        CommonMethods.writeShort(data, offset + offset_Domain, value);
     }
 
     public short getType() {
-        return CommonMethods.readShort(Data, Offset + offset_Type);
+        return CommonMethods.readShort(data, offset + offset_Type);
     }
 
     public void setType(short value) {
-        CommonMethods.writeShort(Data, Offset + offset_Type, value);
+        CommonMethods.writeShort(data, offset + offset_Type, value);
     }
 
     public short getClass(short value) {
-        return CommonMethods.readShort(Data, Offset + offset_Class);
+        return CommonMethods.readShort(data, offset + offset_Class);
     }
 
     public void setClass(short value) {
-        CommonMethods.writeShort(Data, Offset + offset_Class, value);
+        CommonMethods.writeShort(data, offset + offset_Class, value);
     }
 
     public int getTTL() {
-        return CommonMethods.readInt(Data, Offset + offset_TTL);
+        return CommonMethods.readInt(data, offset + offset_TTL);
     }
 
     public void setTTL(int value) {
-        CommonMethods.writeInt(Data, Offset + offset_TTL, value);
+        CommonMethods.writeInt(data, offset + offset_TTL, value);
     }
 
     public short getDataLength() {
-        return CommonMethods.readShort(Data, Offset + offset_DataLength);
+        return CommonMethods.readShort(data, offset + offset_DataLength);
     }
 
     public void setDataLength(short value) {
-        CommonMethods.writeShort(Data, Offset + offset_DataLength, value);
+        CommonMethods.writeShort(data, offset + offset_DataLength, value);
     }
 
     public int getIP() {
-        return CommonMethods.readInt(Data, Offset + offset_IP);
+        return CommonMethods.readInt(data, offset + offset_IP);
     }
 
     public void setIP(int value) {
-        CommonMethods.writeInt(Data, Offset + offset_IP, value);
+        CommonMethods.writeInt(data, offset + offset_IP, value);
     }
 }

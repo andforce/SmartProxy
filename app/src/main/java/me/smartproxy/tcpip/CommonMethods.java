@@ -159,7 +159,7 @@ public class CommonMethods {
         short oldCrc = udpHeader.getCrc();
         udpHeader.setCrc((short) 0);// 计算前置0
 
-        short newCrc = checksum(sum, udpHeader.m_Data, udpHeader.m_Offset, ipData_len);// 计算校验和
+        short newCrc = checksum(sum, udpHeader.data, udpHeader.offset, ipData_len);// 计算校验和
 
         udpHeader.setCrc(newCrc);
         return oldCrc == newCrc;

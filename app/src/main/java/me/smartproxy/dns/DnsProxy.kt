@@ -78,31 +78,31 @@ class DnsProxy(private val config: ProxyConfig) {
     }
 
     private fun getFirstIP(dnsPacket: DnsPacket): Int {
-        for (i in 0 until dnsPacket.Header.ResourceCount) {
-            val resource = dnsPacket.Resources[i]
-            if (resource.Type.toInt() == 1) {
-                return CommonMethods.readInt(resource.Data, 0)
+        for (i in 0 until dnsPacket.dnsHeader.ResourceCount) {
+            val resource = dnsPacket.resources[i]
+            if (resource.type.toInt() == 1) {
+                return CommonMethods.readInt(resource.data, 0)
             }
         }
         return 0
     }
 
     private fun tamperDnsResponse(rawPacket: ByteArray, dnsPacket: DnsPacket, newIP: Int) {
-        val question = dnsPacket.Questions[0]
+        val question = dnsPacket.questions[0]
 
-        dnsPacket.Header.resourceCount = 1.toShort()
-        dnsPacket.Header.aResourceCount = 0.toShort()
-        dnsPacket.Header.eResourceCount = 0.toShort()
+        dnsPacket.dnsHeader.resourceCount = 1.toShort()
+        dnsPacket.dnsHeader.aResourceCount = 0.toShort()
+        dnsPacket.dnsHeader.eResourceCount = 0.toShort()
 
         val rPointer = ResourcePointer(rawPacket, question.Offset() + question.Length())
         rPointer.setDomain(0xC00C.toShort())
-        rPointer.type = question.Type
-        rPointer.setClass(question.Class)
+        rPointer.type = question.type
+        rPointer.setClass(question.clazz)
         rPointer.ttl = config.dnsTTL
         rPointer.dataLength = 4.toShort()
         rPointer.ip = newIP
 
-        dnsPacket.Size = 12 + question.Length() + 16
+        dnsPacket.size = 12 + question.Length() + 16
     }
 
     private fun getOrCreateFakeIP(domainString: String): Int {
@@ -122,16 +122,16 @@ class DnsProxy(private val config: ProxyConfig) {
     }
 
     private fun dnsPollution(rawPacket: ByteArray, dnsPacket: DnsPacket): Boolean {
-        if (dnsPacket.Header.QuestionCount > 0) {
-            val question = dnsPacket.Questions[0]
-            if (question.Type.toInt() == 1) {
+        if (dnsPacket.dnsHeader.QuestionCount > 0) {
+            val question = dnsPacket.questions[0]
+            if (question.type.toInt() == 1) {
                 val realIP = getFirstIP(dnsPacket)
-                if (config.needProxy(question.Domain, realIP)) {
-                    val fakeIP = getOrCreateFakeIP(question.Domain)
+                if (config.needProxy(question.domain, realIP)) {
+                    val fakeIP = getOrCreateFakeIP(question.domain)
                     tamperDnsResponse(rawPacket, dnsPacket, fakeIP)
                     Log.d(
                         TAG,
-                        "FakeDns: " + question.Domain + "=>" + CommonMethods.ipIntToString(realIP) + "(" + CommonMethods.ipIntToString(
+                        "FakeDns: " + question.domain + "=>" + CommonMethods.ipIntToString(realIP) + "(" + CommonMethods.ipIntToString(
                             fakeIP
                         ) + ")"
                     )
@@ -149,24 +149,24 @@ class DnsProxy(private val config: ProxyConfig) {
     ) {
         var state: QueryState?
         synchronized(queryArray) {
-            state = queryArray[dnsPacket.Header.ID.toInt()]
+            state = queryArray[dnsPacket.dnsHeader.ID.toInt()]
             if (state != null) {
-                queryArray.remove(dnsPacket.Header.ID.toInt())
+                queryArray.remove(dnsPacket.dnsHeader.ID.toInt())
             }
         }
 
         if (state != null) {
             //DNS污染，默认污染海外网站
-            dnsPollution(udpHeader.m_Data, dnsPacket)
+            dnsPollution(udpHeader.data, dnsPacket)
 
-            dnsPacket.Header.id = state!!.clientQueryID
+            dnsPacket.dnsHeader.id = state!!.clientQueryID
             ipHeader.sourceIP = state!!.remoteIP
             ipHeader.destinationIP = state!!.clientIP
             ipHeader.protocol = IPHeader.UDP
-            ipHeader.totalLength = 20 + 8 + dnsPacket.Size
+            ipHeader.totalLength = 20 + 8 + dnsPacket.size
             udpHeader.sourcePort = state!!.remotePort
             udpHeader.destinationPort = state!!.clientPort
-            udpHeader.totalLength = 8 + dnsPacket.Size
+            udpHeader.totalLength = 8 + dnsPacket.size
 
             localVpnViewModel.sendUDPPacket(ipHeader, udpHeader)
         }
@@ -182,16 +182,16 @@ class DnsProxy(private val config: ProxyConfig) {
         udpHeader: UDPHeader,
         dnsPacket: DnsPacket
     ): Boolean {
-        val question = dnsPacket.Questions[0]
-        Log.d(TAG, "DNS Qeury " + question.Domain)
-        if (question.Type.toInt() == 1) {
-            if (config.needProxy(question.Domain, getIPFromCache(question.Domain))) {
-                val fakeIP = getOrCreateFakeIP(question.Domain)
+        val question = dnsPacket.questions[0]
+        Log.d(TAG, "DNS Qeury " + question.domain)
+        if (question.type.toInt() == 1) {
+            if (config.needProxy(question.domain, getIPFromCache(question.domain))) {
+                val fakeIP = getOrCreateFakeIP(question.domain)
                 tamperDnsResponse(ipHeader.m_Data, dnsPacket, fakeIP)
 
                 Log.d(
                     TAG,
-                    "interceptDns FakeDns: " + question.Domain + "=>" + CommonMethods.ipIntToString(
+                    "interceptDns FakeDns: " + question.domain + "=>" + CommonMethods.ipIntToString(
                         fakeIP
                     )
                 )
@@ -200,10 +200,10 @@ class DnsProxy(private val config: ProxyConfig) {
                 val sourcePort = udpHeader.sourcePort
                 ipHeader.sourceIP = ipHeader.destinationIP
                 ipHeader.destinationIP = sourceIP
-                ipHeader.totalLength = 20 + 8 + dnsPacket.Size
+                ipHeader.totalLength = 20 + 8 + dnsPacket.size
                 udpHeader.sourcePort = udpHeader.destinationPort
                 udpHeader.destinationPort = sourcePort
-                udpHeader.totalLength = 8 + dnsPacket.Size
+                udpHeader.totalLength = 8 + dnsPacket.size
                 localVpnViewModel.sendUDPPacket(ipHeader, udpHeader)
                 return true
             }
@@ -227,7 +227,7 @@ class DnsProxy(private val config: ProxyConfig) {
         if (!interceptDns(ipHeader, udpHeader, dnsPacket)) {
             //转发DNS
             val state = QueryState()
-            state.clientQueryID = dnsPacket.Header.ID
+            state.clientQueryID = dnsPacket.dnsHeader.ID
             state.queryNanoTime = System.nanoTime()
             state.clientIP = ipHeader.sourceIP
             state.clientPort = udpHeader.sourcePort
@@ -236,7 +236,7 @@ class DnsProxy(private val config: ProxyConfig) {
 
             // 转换QueryID
             queryID++ // 增加ID
-            dnsPacket.Header.id = queryID
+            dnsPacket.dnsHeader.id = queryID
 
             synchronized(queryArray) {
                 clearExpiredQueries() //清空过期的查询，减少内存开销。
@@ -247,7 +247,7 @@ class DnsProxy(private val config: ProxyConfig) {
                 CommonMethods.ipIntToInet4Address(state.remoteIP),
                 state.remotePort.toInt()
             )
-            val packet = DatagramPacket(udpHeader.m_Data, udpHeader.m_Offset + 8, dnsPacket.Size)
+            val packet = DatagramPacket(udpHeader.data, udpHeader.offset + 8, dnsPacket.size)
             packet.socketAddress = remoteAddress
 
             try {

@@ -10,14 +10,14 @@ import me.smartproxy.tunnel.Tunnel;
 
 public class HttpConnectTunnel extends Tunnel {
 
-    private boolean m_TunnelEstablished;
-    private HttpConnectConfig m_Config;
-    private ProxyConfig proxyConfig;
+    private boolean tunnelEstablished;
+    private HttpConnectConfig config;
+    private final ProxyConfig proxyConfig;
 
     public HttpConnectTunnel(ProxyConfig c, HttpConnectConfig config, Selector selector) throws IOException {
         super(config.socketAddress, selector);
         this.proxyConfig = c;
-        m_Config = config;
+        this.config = config;
     }
 
     @Override
@@ -63,7 +63,7 @@ public class HttpConnectTunnel extends Tunnel {
 
     @Override
     protected void afterReceived(ByteBuffer buffer) throws Exception {
-        if (!m_TunnelEstablished) {
+        if (!tunnelEstablished) {
             //收到代理服务器响应数据
             //分析响应并判断是否连接成功
             String response = new String(buffer.array(), buffer.position(), 12);
@@ -73,19 +73,19 @@ public class HttpConnectTunnel extends Tunnel {
                 throw new Exception(String.format("Proxy server responsed an error: %s", response));
             }
 
-            m_TunnelEstablished = true;
+            tunnelEstablished = true;
             super.onTunnelEstablished();
         }
     }
 
     @Override
     protected boolean isTunnelEstablished() {
-        return m_TunnelEstablished;
+        return tunnelEstablished;
     }
 
     @Override
     protected void onDispose() {
-        m_Config = null;
+        config = null;
     }
 
 

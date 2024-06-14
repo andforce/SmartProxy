@@ -3,12 +3,12 @@ package me.smartproxy.dns;
 import java.nio.ByteBuffer;
 
 public class Resource {
-    public String Domain;
-    public short Type;
-    public short Class;
-    public int TTL;
-    public short DataLength;
-    public byte[] Data;
+    public String domain;
+    public short type;
+    public short clazz;
+    public int ttl;
+    public short dataLength;
+    public byte[] data;
 
     private int offset;
 
@@ -26,31 +26,31 @@ public class Resource {
 
         Resource r = new Resource();
         r.offset = buffer.arrayOffset() + buffer.position();
-        r.Domain = DnsPacket.readDomain(buffer, buffer.arrayOffset());
-        r.Type = buffer.getShort();
-        r.Class = buffer.getShort();
-        r.TTL = buffer.getInt();
-        r.DataLength = buffer.getShort();
-        r.Data = new byte[r.DataLength & 0xFFFF];
-        buffer.get(r.Data);
+        r.domain = DnsPacket.readDomain(buffer, buffer.arrayOffset());
+        r.type = buffer.getShort();
+        r.clazz = buffer.getShort();
+        r.ttl = buffer.getInt();
+        r.dataLength = buffer.getShort();
+        r.data = new byte[r.dataLength & 0xFFFF];
+        buffer.get(r.data);
         r.length = buffer.arrayOffset() + buffer.position() - r.offset;
         return r;
     }
 
     public void toBytes(ByteBuffer buffer) {
-        if (this.Data == null) {
-            this.Data = new byte[0];
+        if (this.data == null) {
+            this.data = new byte[0];
         }
-        this.DataLength = (short) this.Data.length;
+        this.dataLength = (short) this.data.length;
 
         this.offset = buffer.position();
-        DnsPacket.writeDomain(this.Domain, buffer);
-        buffer.putShort(this.Type);
-        buffer.putShort(this.Class);
-        buffer.putInt(this.TTL);
+        DnsPacket.writeDomain(this.domain, buffer);
+        buffer.putShort(this.type);
+        buffer.putShort(this.clazz);
+        buffer.putInt(this.ttl);
 
-        buffer.putShort(this.DataLength);
-        buffer.put(this.Data);
+        buffer.putShort(this.dataLength);
+        buffer.put(this.data);
         this.length = buffer.position() - this.offset;
     }
 

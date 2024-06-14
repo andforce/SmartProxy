@@ -3,13 +3,13 @@ package me.smartproxy.dns;
 import java.nio.ByteBuffer;
 
 public class DnsPacket {
-    public DnsHeader Header;
-    public Question[] Questions;
-    public Resource[] Resources;
-    public Resource[] AResources;
-    public Resource[] EResources;
+    public DnsHeader dnsHeader;
+    public Question[] questions;
+    public Resource[] resources;
+    public Resource[] aResources;
+    public Resource[] eResources;
 
-    public int Size;
+    public int size;
 
     public static DnsPacket fromBytes(ByteBuffer buffer) {
         if (buffer.limit() < 12)
@@ -18,68 +18,68 @@ public class DnsPacket {
             return null;
 
         DnsPacket packet = new DnsPacket();
-        packet.Size = buffer.limit();
-        packet.Header = DnsHeader.fromBytes(buffer);
+        packet.size = buffer.limit();
+        packet.dnsHeader = DnsHeader.fromBytes(buffer);
 
-        if (packet.Header.QuestionCount > 2 || packet.Header.ResourceCount > 50 || packet.Header.AResourceCount > 50 || packet.Header.EResourceCount > 50) {
+        if (packet.dnsHeader.QuestionCount > 2 || packet.dnsHeader.ResourceCount > 50 || packet.dnsHeader.AResourceCount > 50 || packet.dnsHeader.EResourceCount > 50) {
             return null;
         }
 
-        packet.Questions = new Question[packet.Header.QuestionCount];
-        packet.Resources = new Resource[packet.Header.ResourceCount];
-        packet.AResources = new Resource[packet.Header.AResourceCount];
-        packet.EResources = new Resource[packet.Header.EResourceCount];
+        packet.questions = new Question[packet.dnsHeader.QuestionCount];
+        packet.resources = new Resource[packet.dnsHeader.ResourceCount];
+        packet.aResources = new Resource[packet.dnsHeader.AResourceCount];
+        packet.eResources = new Resource[packet.dnsHeader.EResourceCount];
 
-        for (int i = 0; i < packet.Questions.length; i++) {
-            packet.Questions[i] = Question.fromBytes(buffer);
+        for (int i = 0; i < packet.questions.length; i++) {
+            packet.questions[i] = Question.fromBytes(buffer);
         }
 
-        for (int i = 0; i < packet.Resources.length; i++) {
-            packet.Resources[i] = Resource.fromBytes(buffer);
+        for (int i = 0; i < packet.resources.length; i++) {
+            packet.resources[i] = Resource.fromBytes(buffer);
         }
 
-        for (int i = 0; i < packet.AResources.length; i++) {
-            packet.AResources[i] = Resource.fromBytes(buffer);
+        for (int i = 0; i < packet.aResources.length; i++) {
+            packet.aResources[i] = Resource.fromBytes(buffer);
         }
 
-        for (int i = 0; i < packet.EResources.length; i++) {
-            packet.EResources[i] = Resource.fromBytes(buffer);
+        for (int i = 0; i < packet.eResources.length; i++) {
+            packet.eResources[i] = Resource.fromBytes(buffer);
         }
 
         return packet;
     }
 
     public void toBytes(ByteBuffer buffer) {
-        Header.QuestionCount = 0;
-        Header.ResourceCount = 0;
-        Header.AResourceCount = 0;
-        Header.EResourceCount = 0;
+        dnsHeader.QuestionCount = 0;
+        dnsHeader.ResourceCount = 0;
+        dnsHeader.AResourceCount = 0;
+        dnsHeader.EResourceCount = 0;
 
-        if (Questions != null)
-            Header.QuestionCount = (short) Questions.length;
-        if (Resources != null)
-            Header.ResourceCount = (short) Resources.length;
-        if (AResources != null)
-            Header.AResourceCount = (short) AResources.length;
-        if (EResources != null)
-            Header.EResourceCount = (short) EResources.length;
+        if (questions != null)
+            dnsHeader.QuestionCount = (short) questions.length;
+        if (resources != null)
+            dnsHeader.ResourceCount = (short) resources.length;
+        if (aResources != null)
+            dnsHeader.AResourceCount = (short) aResources.length;
+        if (eResources != null)
+            dnsHeader.EResourceCount = (short) eResources.length;
 
-        this.Header.toBytes(buffer);
+        this.dnsHeader.toBytes(buffer);
 
-        for (int i = 0; i < Header.QuestionCount; i++) {
-            this.Questions[i].toBytes(buffer);
+        for (int i = 0; i < dnsHeader.QuestionCount; i++) {
+            this.questions[i].toBytes(buffer);
         }
 
-        for (int i = 0; i < Header.ResourceCount; i++) {
-            this.Resources[i].toBytes(buffer);
+        for (int i = 0; i < dnsHeader.ResourceCount; i++) {
+            this.resources[i].toBytes(buffer);
         }
 
-        for (int i = 0; i < Header.AResourceCount; i++) {
-            this.AResources[i].toBytes(buffer);
+        for (int i = 0; i < dnsHeader.AResourceCount; i++) {
+            this.aResources[i].toBytes(buffer);
         }
 
-        for (int i = 0; i < Header.EResourceCount; i++) {
-            this.EResources[i].toBytes(buffer);
+        for (int i = 0; i < dnsHeader.EResourceCount; i++) {
+            this.eResources[i].toBytes(buffer);
         }
     }
 

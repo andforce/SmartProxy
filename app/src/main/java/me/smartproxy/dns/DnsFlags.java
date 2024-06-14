@@ -10,7 +10,7 @@ public class DnsFlags {
     public int Zero;//3 bits
     public int Rcode;//4 bits
 
-    public static DnsFlags Parse(short value) {
+    public static DnsFlags parse(short value) {
         int m_Flags = value & 0xFFFF;
         DnsFlags flags = new DnsFlags();
         flags.QR = ((m_Flags >> 7) & 0x01) == 1;
@@ -24,7 +24,7 @@ public class DnsFlags {
         return flags;
     }
 
-    public short ToShort() {
+    public short toShort() {
         int m_Flags = 0;
         m_Flags |= (this.QR ? 1 : 0) << 7;
         m_Flags |= (this.OpCode & 0x0F) << 3;

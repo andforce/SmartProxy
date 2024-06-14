@@ -8,44 +8,44 @@ public class UDPHeader {
     static final short offset_tlen = 4; // Datagram length
     static final short offset_crc = 6; // Checksum
 
-    public byte[] m_Data;
-    public int m_Offset;
+    public byte[] data;
+    public int offset;
 
     public UDPHeader(byte[] data, int offset) {
-        this.m_Data = data;
-        this.m_Offset = offset;
+        this.data = data;
+        this.offset = offset;
     }
 
     public short getSourcePort() {
-        return CommonMethods.readShort(m_Data, m_Offset + offset_src_port);
+        return CommonMethods.readShort(data, offset + offset_src_port);
     }
 
     public void setSourcePort(short value) {
-        CommonMethods.writeShort(m_Data, m_Offset + offset_src_port, value);
+        CommonMethods.writeShort(data, offset + offset_src_port, value);
     }
 
     public short getDestinationPort() {
-        return CommonMethods.readShort(m_Data, m_Offset + offset_dest_port);
+        return CommonMethods.readShort(data, offset + offset_dest_port);
     }
 
     public void setDestinationPort(short value) {
-        CommonMethods.writeShort(m_Data, m_Offset + offset_dest_port, value);
+        CommonMethods.writeShort(data, offset + offset_dest_port, value);
     }
 
     public int getTotalLength() {
-        return CommonMethods.readShort(m_Data, m_Offset + offset_tlen) & 0xFFFF;
+        return CommonMethods.readShort(data, offset + offset_tlen) & 0xFFFF;
     }
 
     public void setTotalLength(int value) {
-        CommonMethods.writeShort(m_Data, m_Offset + offset_tlen, (short) value);
+        CommonMethods.writeShort(data, offset + offset_tlen, (short) value);
     }
 
     public short getCrc() {
-        return CommonMethods.readShort(m_Data, m_Offset + offset_crc);
+        return CommonMethods.readShort(data, offset + offset_crc);
     }
 
     public void setCrc(short value) {
-        CommonMethods.writeShort(m_Data, m_Offset + offset_crc, value);
+        CommonMethods.writeShort(data, offset + offset_crc, value);
     }
 
     @Override

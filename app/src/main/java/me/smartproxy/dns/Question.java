@@ -3,9 +3,9 @@ package me.smartproxy.dns;
 import java.nio.ByteBuffer;
 
 public class Question {
-    public String Domain;
-    public short Type;
-    public short Class;
+    public String domain;
+    public short type;
+    public short clazz;
 
     private int offset;
 
@@ -22,18 +22,18 @@ public class Question {
     public static Question fromBytes(ByteBuffer buffer) {
         Question q = new Question();
         q.offset = buffer.arrayOffset() + buffer.position();
-        q.Domain = DnsPacket.readDomain(buffer, buffer.arrayOffset());
-        q.Type = buffer.getShort();
-        q.Class = buffer.getShort();
+        q.domain = DnsPacket.readDomain(buffer, buffer.arrayOffset());
+        q.type = buffer.getShort();
+        q.clazz = buffer.getShort();
         q.length = buffer.arrayOffset() + buffer.position() - q.offset;
         return q;
     }
 
     public void toBytes(ByteBuffer buffer) {
         this.offset = buffer.position();
-        DnsPacket.writeDomain(this.Domain, buffer);
-        buffer.putShort(this.Type);
-        buffer.putShort(this.Class);
+        DnsPacket.writeDomain(this.domain, buffer);
+        buffer.putShort(this.type);
+        buffer.putShort(this.clazz);
         this.length = buffer.position() - this.offset;
     }
 }

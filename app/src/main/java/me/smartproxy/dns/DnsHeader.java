@@ -16,7 +16,7 @@ public class DnsHeader {
     public static DnsHeader fromBytes(ByteBuffer buffer) {
         DnsHeader header = new DnsHeader(buffer.array(), buffer.arrayOffset() + buffer.position());
         header.ID = buffer.getShort();
-        header.Flags = DnsFlags.Parse(buffer.getShort());
+        header.Flags = DnsFlags.parse(buffer.getShort());
         header.QuestionCount = buffer.getShort();
         header.ResourceCount = buffer.getShort();
         header.AResourceCount = buffer.getShort();
@@ -26,7 +26,7 @@ public class DnsHeader {
 
     public void toBytes(ByteBuffer buffer) {
         buffer.putShort(this.ID);
-        buffer.putShort(this.Flags.ToShort());
+        buffer.putShort(this.Flags.toShort());
         buffer.putShort(this.QuestionCount);
         buffer.putShort(this.ResourceCount);
         buffer.putShort(this.AResourceCount);

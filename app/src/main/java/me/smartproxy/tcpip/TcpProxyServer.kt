@@ -128,17 +128,20 @@ class TcpProxyServer(private val config: ProxyConfig, port: Int) {
         try {
             serverSocketChannel?.let { socketChannel->
                 val localChannel = socketChannel.accept()
-                localTunnel = TunnelFactory.wrap(localChannel, selector)
 
-                val destAddress = getDestAddress(localChannel)
-                if (destAddress != null) {
-                    val remoteTunnel =
-                        TunnelFactory.createTunnelByConfig(config, destAddress, selector)
-                    remoteTunnel.setBrotherTunnel(localTunnel) //关联兄弟
-                    localTunnel?.setBrotherTunnel(remoteTunnel) //关联兄弟
-                    remoteTunnel.connect(service, destAddress) //开始连接
-                } else {
-                    localTunnel?.dispose()
+                selector?.let { s->
+                    localTunnel = TunnelFactory.wrap(localChannel, s)
+
+                    val destAddress = getDestAddress(localChannel)
+                    if (destAddress != null) {
+                        val remoteTunnel =
+                            TunnelFactory.createTunnelByConfig(config, destAddress, s)
+                        remoteTunnel.setBrotherTunnel(localTunnel) //关联兄弟
+                        localTunnel?.setBrotherTunnel(remoteTunnel) //关联兄弟
+                        remoteTunnel.connect(service, destAddress) //开始连接
+                    } else {
+                        localTunnel?.dispose()
+                    }
                 }
             }
         } catch (e: Exception) {
