@@ -5,6 +5,9 @@ import android.util.Log
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import me.smartproxy.core.viewmodel.LocalVpnViewModel
+import org.koin.core.context.GlobalContext
+import org.koin.core.qualifier.named
+import org.koin.core.scope.Scope
 import org.koin.java.KoinJavaComponent.get
 
 class LocalVpnService : CoroutinesService() {
@@ -12,6 +15,7 @@ class LocalVpnService : CoroutinesService() {
         private const val TAG = "LocalVpnService"
     }
 
+    private lateinit var koinScope: Scope
 
     private val vpnViewModel = get<LocalVpnViewModel>(LocalVpnViewModel::class.java)
 
@@ -22,8 +26,14 @@ class LocalVpnService : CoroutinesService() {
     }
 
     override fun onCreate() {
+        // 把当前Service实例绑定到Koin的Scope中
+        koinScope = GlobalContext.get().getOrCreateScope(this.javaClass.name, named(this.javaClass.name))
+        koinScope.declare(this)
+
+        val localVpnService: LocalVpnService = GlobalContext.get().getScope(this.javaClass.name).get()
+
         super.onCreate()
-        Log.d(TAG, "VPNService created.")
+        Log.d(TAG, "VPNService created: $localVpnService")
 
         serviceScope.launch {
             val config = VpnEstablishHelper.buildProxyConfig(this@LocalVpnService, "")
@@ -40,7 +50,7 @@ class LocalVpnService : CoroutinesService() {
 
             launch {
                 Log.d(TAG, "VPNService startTcpProxy pre")
-                vpnHelper.startTcpProxy(config)
+                vpnHelper.startTcpProxy(this@LocalVpnService, config)
                 Log.d(TAG, "VPNService startTcpProxy end")
             }
 
@@ -66,5 +76,6 @@ class LocalVpnService : CoroutinesService() {
 
     override fun onDestroy() {
         Log.e(TAG, "VPNService destroyed")
+        GlobalContext.get().deleteScope(koinScope.id)
     }
 }

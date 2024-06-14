@@ -1,5 +1,6 @@
 package me.smartproxy.core;
 
+import android.net.VpnService;
 import android.util.Log;
 
 import java.io.IOException;
@@ -58,7 +59,7 @@ public class TcpProxyServer {
         }
     }
 
-    public void start() {
+    public void start(VpnService service) {
         try {
             while (true) {
                 m_Selector.select();
@@ -74,7 +75,7 @@ public class TcpProxyServer {
                             } else if (key.isConnectable()) {
                                 ((Tunnel) key.attachment()).onConnectable();
                             } else if (key.isAcceptable()) {
-                                onAccepted(key);
+                                onAccepted(service, key);
                             }
                         } catch (Exception e) {
                             Log.e(TAG, "inner run: ", e);
@@ -105,7 +106,7 @@ public class TcpProxyServer {
         return null;
     }
 
-    void onAccepted(SelectionKey key) {
+    void onAccepted(VpnService service, SelectionKey key) {
         Tunnel localTunnel = null;
         try {
             SocketChannel localChannel = m_ServerSocketChannel.accept();
@@ -116,7 +117,7 @@ public class TcpProxyServer {
                 Tunnel remoteTunnel = TunnelFactory.createTunnelByConfig(m_Config, destAddress, m_Selector);
                 remoteTunnel.setBrotherTunnel(localTunnel);//关联兄弟
                 localTunnel.setBrotherTunnel(remoteTunnel);//关联兄弟
-                remoteTunnel.connect(destAddress);//开始连接
+                remoteTunnel.connect(service, destAddress);//开始连接
             } else {
                 localTunnel.dispose();
             }

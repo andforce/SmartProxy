@@ -1,18 +1,18 @@
 package me.smartproxy.core
 
+import android.net.VpnService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 object TcpProxyHelper {
 
     private var tcpProxy: TcpProxyServer? = null
-    suspend fun startTcpProxy(config: ProxyConfig) {
+    suspend fun startTcpProxy(service: VpnService, config: ProxyConfig) {
         withContext(Dispatchers.IO) {
-//            TcpProxyServer(config, 0).start()
             if (tcpProxy == null) {
                 tcpProxy = TcpProxyServer(config, 0)
             }
-            tcpProxy?.start()
+            tcpProxy?.start(service)
         }
     }
 

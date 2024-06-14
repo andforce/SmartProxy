@@ -1,5 +1,6 @@
 package me.smartproxy.core;
 
+import android.net.VpnService;
 import android.util.Log;
 import android.util.SparseArray;
 
@@ -63,8 +64,11 @@ public class DnsProxy {
         }
     }
 
-    public void start() {
+    public void start(VpnService service) {
         try {
+            boolean protect = localVpnViewModel.protect(service, m_Client);
+            Log.e(TAG, "DNS Proxy, protect result: " + protect);
+
             byte[] receiveBuffer = new byte[2000];
             IPHeader ipHeader = new IPHeader(receiveBuffer, 0);
             ipHeader.Default();
@@ -255,11 +259,7 @@ public class DnsProxy {
             packet.setSocketAddress(remoteAddress);
 
             try {
-                if (localVpnViewModel.protect(m_Client)) {
-                    m_Client.send(packet);
-                } else {
-                    Log.e(TAG, "VPN protect udp socket failed.");
-                }
+                m_Client.send(packet);
             } catch (IOException e) {
                 Log.e(TAG, "onDnsRequestReceived Error: ", e);
             }

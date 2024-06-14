@@ -1,5 +1,8 @@
 package me.smartproxy.core
 
+import android.content.Context
+import android.content.Intent
+import android.net.VpnService
 import android.os.ParcelFileDescriptor
 import android.util.Log
 import kotlinx.coroutines.Dispatchers
@@ -19,7 +22,7 @@ import java.net.DatagramSocket
 import java.net.Socket
 import java.nio.ByteBuffer
 
-class VpnHelper(private val service: LocalVpnService) {
+class VpnHelper(private val context: Context) {
 
     companion object {
         const val TAG = "VpnHelper"
@@ -54,9 +57,9 @@ class VpnHelper(private val service: LocalVpnService) {
         }
     }
 
-    suspend fun startTcpProxy(config: ProxyConfig) {
+    suspend fun startTcpProxy(service: VpnService, config: ProxyConfig) {
         withContext(Dispatchers.IO) {
-            TcpProxyHelper.startTcpProxy(config)
+            TcpProxyHelper.startTcpProxy(service, config)
         }
     }
 
@@ -131,7 +134,8 @@ class VpnHelper(private val service: LocalVpnService) {
 
         this.proxyConfig?.stopTimer()
         stop("tryStop()")
-        service.stopSelf()
+        //service.stopSelf()
+        context.stopService(Intent(context, LocalVpnService::class.java))
     }
 
     fun sendUDPPacket(ipHeader: IPHeader, udpHeader: UDPHeader?) {
@@ -252,11 +256,11 @@ class VpnHelper(private val service: LocalVpnService) {
         }
     }
 
-    fun protect(mClient: DatagramSocket): Boolean {
+    fun protect(service: VpnService, mClient: DatagramSocket): Boolean {
         return service.protect(mClient)
     }
 
-    fun protect(socket: Socket): Boolean {
+    fun protect(service: VpnService, socket: Socket): Boolean {
         return service.protect(socket)
     }
 }
