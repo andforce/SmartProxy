@@ -13,7 +13,7 @@ public class DnsHeader {
     public short AResourceCount;
     public short EResourceCount;
 
-    public static DnsHeader FromBytes(ByteBuffer buffer) {
+    public static DnsHeader fromBytes(ByteBuffer buffer) {
         DnsHeader header = new DnsHeader(buffer.array(), buffer.arrayOffset() + buffer.position());
         header.ID = buffer.getShort();
         header.Flags = DnsFlags.Parse(buffer.getShort());
@@ -24,7 +24,7 @@ public class DnsHeader {
         return header;
     }
 
-    public void ToBytes(ByteBuffer buffer) {
+    public void toBytes(ByteBuffer buffer) {
         buffer.putShort(this.ID);
         buffer.putShort(this.Flags.ToShort());
         buffer.putShort(this.QuestionCount);

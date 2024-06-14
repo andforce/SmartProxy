@@ -124,7 +124,7 @@ public class CommonMethods {
     }
 
     // 计算TCP或UDP的校验和
-    public static boolean ComputeTCPChecksum(IPHeader ipHeader, TCPHeader tcpHeader) {
+    public static boolean computeTCPChecksum(IPHeader ipHeader, TCPHeader tcpHeader) {
         computeIPChecksum(ipHeader);//计算IP校验和
         int ipData_len = ipHeader.getTotalLength() - ipHeader.getHeaderLength();// IP数据长度
         if (ipData_len < 0)
@@ -145,7 +145,7 @@ public class CommonMethods {
     }
 
     // 计算TCP或UDP的校验和
-    public static boolean ComputeUDPChecksum(IPHeader ipHeader, UDPHeader udpHeader) {
+    public static boolean computeUDPChecksum(IPHeader ipHeader, UDPHeader udpHeader) {
         computeIPChecksum(ipHeader);//计算IP校验和
         int ipData_len = ipHeader.getTotalLength() - ipHeader.getHeaderLength();// IP数据长度
         if (ipData_len < 0)

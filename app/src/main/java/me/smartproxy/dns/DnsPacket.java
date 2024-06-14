@@ -11,7 +11,7 @@ public class DnsPacket {
 
     public int Size;
 
-    public static DnsPacket FromBytes(ByteBuffer buffer) {
+    public static DnsPacket fromBytes(ByteBuffer buffer) {
         if (buffer.limit() < 12)
             return null;
         if (buffer.limit() > 512)
@@ -19,7 +19,7 @@ public class DnsPacket {
 
         DnsPacket packet = new DnsPacket();
         packet.Size = buffer.limit();
-        packet.Header = DnsHeader.FromBytes(buffer);
+        packet.Header = DnsHeader.fromBytes(buffer);
 
         if (packet.Header.QuestionCount > 2 || packet.Header.ResourceCount > 50 || packet.Header.AResourceCount > 50 || packet.Header.EResourceCount > 50) {
             return null;
@@ -31,25 +31,25 @@ public class DnsPacket {
         packet.EResources = new Resource[packet.Header.EResourceCount];
 
         for (int i = 0; i < packet.Questions.length; i++) {
-            packet.Questions[i] = Question.FromBytes(buffer);
+            packet.Questions[i] = Question.fromBytes(buffer);
         }
 
         for (int i = 0; i < packet.Resources.length; i++) {
-            packet.Resources[i] = Resource.FromBytes(buffer);
+            packet.Resources[i] = Resource.fromBytes(buffer);
         }
 
         for (int i = 0; i < packet.AResources.length; i++) {
-            packet.AResources[i] = Resource.FromBytes(buffer);
+            packet.AResources[i] = Resource.fromBytes(buffer);
         }
 
         for (int i = 0; i < packet.EResources.length; i++) {
-            packet.EResources[i] = Resource.FromBytes(buffer);
+            packet.EResources[i] = Resource.fromBytes(buffer);
         }
 
         return packet;
     }
 
-    public void ToBytes(ByteBuffer buffer) {
+    public void toBytes(ByteBuffer buffer) {
         Header.QuestionCount = 0;
         Header.ResourceCount = 0;
         Header.AResourceCount = 0;
@@ -64,26 +64,26 @@ public class DnsPacket {
         if (EResources != null)
             Header.EResourceCount = (short) EResources.length;
 
-        this.Header.ToBytes(buffer);
+        this.Header.toBytes(buffer);
 
         for (int i = 0; i < Header.QuestionCount; i++) {
-            this.Questions[i].ToBytes(buffer);
+            this.Questions[i].toBytes(buffer);
         }
 
         for (int i = 0; i < Header.ResourceCount; i++) {
-            this.Resources[i].ToBytes(buffer);
+            this.Resources[i].toBytes(buffer);
         }
 
         for (int i = 0; i < Header.AResourceCount; i++) {
-            this.AResources[i].ToBytes(buffer);
+            this.AResources[i].toBytes(buffer);
         }
 
         for (int i = 0; i < Header.EResourceCount; i++) {
-            this.EResources[i].ToBytes(buffer);
+            this.EResources[i].toBytes(buffer);
         }
     }
 
-    public static String ReadDomain(ByteBuffer buffer, int dnsHeaderOffset) {
+    public static String readDomain(ByteBuffer buffer, int dnsHeaderOffset) {
         StringBuilder sb = new StringBuilder();
         int len = 0;
         while (buffer.hasRemaining() && (len = (buffer.get() & 0xFF)) > 0) {
@@ -94,7 +94,7 @@ public class DnsPacket {
                 pointer |= (len & 0x3F) << 8;// 高6位
 
                 ByteBuffer newBuffer = ByteBuffer.wrap(buffer.array(), dnsHeaderOffset + pointer, dnsHeaderOffset + buffer.limit());
-                sb.append(ReadDomain(newBuffer, dnsHeaderOffset));
+                sb.append(readDomain(newBuffer, dnsHeaderOffset));
                 return sb.toString();
             } else {
                 while (len > 0 && buffer.hasRemaining()) {
@@ -111,7 +111,7 @@ public class DnsPacket {
         return sb.toString();
     }
 
-    public static void WriteDomain(String domain, ByteBuffer buffer) {
+    public static void writeDomain(String domain, ByteBuffer buffer) {
         if (domain == null || domain == "") {
             buffer.put((byte) 0);
             return;

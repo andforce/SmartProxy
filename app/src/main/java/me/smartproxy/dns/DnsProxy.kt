@@ -60,7 +60,7 @@ class DnsProxy(private val config: ProxyConfig) {
                     dnsBuffer.clear()
                     dnsBuffer.limit(packet.length)
                     try {
-                        val dnsPacket = DnsPacket.FromBytes(dnsBuffer)
+                        val dnsPacket = DnsPacket.fromBytes(dnsBuffer)
                         if (dnsPacket != null) {
                             onDnsResponseReceived(ipHeader, udpHeader, dnsPacket)
                         }

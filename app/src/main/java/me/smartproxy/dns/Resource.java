@@ -22,11 +22,11 @@ public class Resource {
         return length;
     }
 
-    public static Resource FromBytes(ByteBuffer buffer) {
+    public static Resource fromBytes(ByteBuffer buffer) {
 
         Resource r = new Resource();
         r.offset = buffer.arrayOffset() + buffer.position();
-        r.Domain = DnsPacket.ReadDomain(buffer, buffer.arrayOffset());
+        r.Domain = DnsPacket.readDomain(buffer, buffer.arrayOffset());
         r.Type = buffer.getShort();
         r.Class = buffer.getShort();
         r.TTL = buffer.getInt();
@@ -37,14 +37,14 @@ public class Resource {
         return r;
     }
 
-    public void ToBytes(ByteBuffer buffer) {
+    public void toBytes(ByteBuffer buffer) {
         if (this.Data == null) {
             this.Data = new byte[0];
         }
         this.DataLength = (short) this.Data.length;
 
         this.offset = buffer.position();
-        DnsPacket.WriteDomain(this.Domain, buffer);
+        DnsPacket.writeDomain(this.Domain, buffer);
         buffer.putShort(this.Type);
         buffer.putShort(this.Class);
         buffer.putInt(this.TTL);

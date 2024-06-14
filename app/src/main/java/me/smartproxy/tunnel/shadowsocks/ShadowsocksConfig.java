@@ -4,7 +4,6 @@ import android.net.Uri;
 import android.util.Base64;
 
 import java.net.InetSocketAddress;
-import java.nio.charset.StandardCharsets;
 
 import me.smartproxy.tunnel.Config;
 
@@ -29,8 +28,8 @@ public class ShadowsocksConfig extends Config {
                 config.password = userStrings[1];
             }
         }
-        config.ServerAddress = new InetSocketAddress(uri.getHost(), uri.getPort());
-        config.Encryptor = EncryptorFactory.createEncryptorByConfig(config);
+        config.socketAddress = new InetSocketAddress(uri.getHost(), uri.getPort());
+        config.encryptor = EncryptorFactory.createEncryptorByConfig(config);
         return config;
     }
 
@@ -43,6 +42,6 @@ public class ShadowsocksConfig extends Config {
 
     @Override
     public String toString() {
-        return String.format("ss://%s:%s@%s", encryptMethod, password, ServerAddress);
+        return String.format("ss://%s:%s@%s", encryptMethod, password, socketAddress);
     }
 }

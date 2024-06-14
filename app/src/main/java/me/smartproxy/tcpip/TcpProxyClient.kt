@@ -42,7 +42,7 @@ class TcpProxyClient(pfd: ParcelFileDescriptor, buffer: ByteArray, private val v
                     tcpHeader.sourcePort = session.remotePort
                     ipHeader.destinationIP = vpnLocalIpInt
 
-                    CommonMethods.ComputeTCPChecksum(ipHeader, tcpHeader)
+                    CommonMethods.computeTCPChecksum(ipHeader, tcpHeader)
                     vpnOutputStream?.write(ipHeader.m_Data, ipHeader.m_Offset, size)
                     vpnOutputStream?.flush()
                     receivedBytes += size.toLong()
@@ -96,7 +96,7 @@ class TcpProxyClient(pfd: ParcelFileDescriptor, buffer: ByteArray, private val v
                     ipHeader.destinationIP = vpnLocalIpInt
                     tcpHeader.destinationPort = TcpProxyHelper.getPort()
 
-                    CommonMethods.ComputeTCPChecksum(ipHeader, tcpHeader)
+                    CommonMethods.computeTCPChecksum(ipHeader, tcpHeader)
                     vpnOutputStream?.write(ipHeader.m_Data, ipHeader.m_Offset, size)
                     vpnOutputStream?.flush()
                     session.bytesSent += tcpDataSize //注意顺序
@@ -111,7 +111,7 @@ class TcpProxyClient(pfd: ParcelFileDescriptor, buffer: ByteArray, private val v
 
     fun sendUDPPacket(ipHeader: IPHeader, udpHeader: UDPHeader?) {
         try {
-            CommonMethods.ComputeUDPChecksum(ipHeader, udpHeader)
+            CommonMethods.computeUDPChecksum(ipHeader, udpHeader)
             vpnOutputStream?.write(ipHeader.m_Data, ipHeader.m_Offset, ipHeader.totalLength)
             vpnOutputStream?.flush()
         } catch (e: IOException) {

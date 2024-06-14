@@ -150,7 +150,7 @@ object ProxyConfigHelper {
             val m = p.matcher(line)
             while (m.find()) {
                 val config = HttpConnectConfig()
-                config.ServerAddress = InetSocketAddress(m.group(1), m.group(2).toInt())
+                config.socketAddress = InetSocketAddress(m.group(1), m.group(2).toInt())
                 c.addProxyConfig(config)
             }
         }

@@ -1,6 +1,7 @@
 package me.smartproxy.tunnel.shadowsocks;
 
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 
 import me.smartproxy.tunnel.IEncryptor;
@@ -30,7 +31,7 @@ public class TableEncryptor implements IEncryptor {
 
     long passwordToInt64(String password) {
         try {
-            byte[] passwordBytes = password.getBytes("UTF-8");
+            byte[] passwordBytes = password.getBytes(StandardCharsets.UTF_8);
             MessageDigest md5 = MessageDigest.getInstance("MD5");
             byte[] hashPwd = md5.digest(passwordBytes);
             long a = bytesToInt64(hashPwd);

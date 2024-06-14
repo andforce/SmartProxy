@@ -13,12 +13,12 @@ public class ShadowsocksTunnel extends Tunnel {
     private boolean mTunnelEstablished;
 
     public ShadowsocksTunnel(ShadowsocksConfig config, Selector selector) throws Exception {
-        super(config.ServerAddress, selector);
-        if (config.Encryptor == null) {
+        super(config.socketAddress, selector);
+        if (config.encryptor == null) {
             throw new Exception("Error: The Encryptor for ShadowsocksTunnel is null.");
         }
         m_Config = config;
-        encryptor = config.Encryptor;
+        encryptor = config.encryptor;
     }
 
     @Override

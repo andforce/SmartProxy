@@ -137,9 +137,9 @@ public class ProxyConfig {
                 for (int i = 0; i < m_ProxyList.size(); i++) {
                     try {
                         Config config = m_ProxyList.get(0);
-                        InetAddress address = InetAddress.getByName(config.ServerAddress.getHostName());
-                        if (address != null && !address.equals(config.ServerAddress.getAddress())) {
-                            config.ServerAddress = new InetSocketAddress(address, config.ServerAddress.getPort());
+                        InetAddress address = InetAddress.getByName(config.socketAddress.getHostName());
+                        if (address != null && !address.equals(config.socketAddress.getAddress())) {
+                            config.socketAddress = new InetSocketAddress(address, config.socketAddress.getPort());
                         }
                     } catch (Exception e) {
                     }
@@ -197,7 +197,7 @@ public class ProxyConfig {
     public String getSessionName() {
         if (VpnHelper.IS_ENABLE_REMOTE_PROXY) {
             if (m_session_name == null) {
-                m_session_name = getDefaultProxy().ServerAddress.getHostName();
+                m_session_name = getDefaultProxy().socketAddress.getHostName();
             }
             return m_session_name;
         } else {
@@ -300,7 +300,7 @@ public class ProxyConfig {
     public void addProxyConfig(Config config) {
         if (!m_ProxyList.contains(config)) {
             m_ProxyList.add(config);
-            m_DomainMap.put(config.ServerAddress.getHostName(), false);
+            m_DomainMap.put(config.socketAddress.getHostName(), false);
         }
     }
 

@@ -6,7 +6,7 @@ import me.smartproxy.tunnel.IEncryptor;
 
 public class EncryptorFactory {
 
-    private static HashMap<String, IEncryptor> EncryptorCache = new HashMap<String, IEncryptor>();
+    private static final HashMap<String, IEncryptor> EncryptorCache = new HashMap<String, IEncryptor>();
 
     public static IEncryptor createEncryptorByConfig(ShadowsocksConfig config) throws Exception {
         if ("table".equals(config.encryptMethod)) {

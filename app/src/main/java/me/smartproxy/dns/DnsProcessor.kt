@@ -15,7 +15,7 @@ class DnsProcessor(buffer: ByteArray, private val vpnLocalIpInt: Int) {
         if (header.sourceIP == vpnLocalIpInt && udpHeader.destinationPort.toInt() == 53) {
             dnsBuffer.clear()
             dnsBuffer.limit(header.dataLength - 8)
-            val dnsPacket = DnsPacket.FromBytes(dnsBuffer)
+            val dnsPacket = DnsPacket.fromBytes(dnsBuffer)
             if (dnsPacket != null && dnsPacket.Header.QuestionCount > 0) {
                 DnsProxyHelper.onDnsRequestReceived(
                     header,

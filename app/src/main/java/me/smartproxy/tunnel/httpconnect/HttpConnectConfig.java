@@ -8,8 +8,8 @@ import java.util.Locale;
 import me.smartproxy.tunnel.Config;
 
 public class HttpConnectConfig extends Config {
-    public String UserName;
-    public String Password;
+    public String userName;
+    public String password;
 
     public static HttpConnectConfig parse(String proxyInfo) {
         HttpConnectConfig config = new HttpConnectConfig();
@@ -17,12 +17,12 @@ public class HttpConnectConfig extends Config {
         String userInfoString = uri.getUserInfo();
         if (userInfoString != null) {
             String[] userStrings = userInfoString.split(":");
-            config.UserName = userStrings[0];
+            config.userName = userStrings[0];
             if (userStrings.length >= 2) {
-                config.Password = userStrings[1];
+                config.password = userStrings[1];
             }
         }
-        config.ServerAddress = new InetSocketAddress(uri.getHost(), uri.getPort());
+        config.socketAddress = new InetSocketAddress(uri.getHost(), uri.getPort());
         return config;
     }
 
@@ -35,6 +35,6 @@ public class HttpConnectConfig extends Config {
 
     @Override
     public String toString() {
-        return String.format(Locale.ENGLISH, "http://%s:%s@%s", UserName, Password, ServerAddress);
+        return String.format(Locale.ENGLISH, "http://%s:%s@%s", userName, password, socketAddress);
     }
 }
