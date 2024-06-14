@@ -92,11 +92,29 @@ class VpnHelper {
                             }
                             when (m_IPHeader.protocol) {
                                 IPHeader.TCP -> {
-                                    onTCPPacketReceived(m_IPHeader, size)
+                                    onTCPPacketReceived(m_IPHeader, m_TCPHeader, size)
                                 }
 
                                 IPHeader.UDP -> {
-                                    onUDPPacketReceived(m_IPHeader, size)
+                                    // 转发DNS数据包：
+                                    m_UDPHeader.m_Offset = m_IPHeader.headerLength
+                                    if (m_IPHeader.sourceIP == vpnLocalIpInt && m_UDPHeader.destinationPort.toInt() == 53) {
+                                        m_DNSBuffer.clear()
+                                        m_DNSBuffer.limit(m_IPHeader.dataLength - 8)
+                                        val dnsPacket = DnsPacket.FromBytes(m_DNSBuffer)
+                                        if (dnsPacket != null && dnsPacket.Header.QuestionCount > 0) {
+                                            DnsProxyHelper.onDnsRequestReceived(
+                                                m_IPHeader,
+                                                m_UDPHeader,
+                                                dnsPacket
+                                            )
+                                        }
+                                    } else {
+                                        Log.e(
+                                            TAG,
+                                            "onIPPacketReceived, UDP: 收到非本地数据包, $m_IPHeader $m_UDPHeader"
+                                        )
+                                    }
                                 }
 
                                 else -> {
@@ -157,25 +175,7 @@ class VpnHelper {
     }
 
     @Throws(IOException::class)
-    private fun onUDPPacketReceived(ipHeader: IPHeader, size: Int) {
-        // 转发DNS数据包：
-        val udpHeader = m_UDPHeader
-        udpHeader.m_Offset = ipHeader.headerLength
-        if (ipHeader.sourceIP == vpnLocalIpInt && udpHeader.destinationPort.toInt() == 53) {
-            m_DNSBuffer.clear()
-            m_DNSBuffer.limit(ipHeader.dataLength - 8)
-            val dnsPacket = DnsPacket.FromBytes(m_DNSBuffer)
-            if (dnsPacket != null && dnsPacket.Header.QuestionCount > 0) {
-                DnsProxyHelper.onDnsRequestReceived(ipHeader, udpHeader, dnsPacket)
-            }
-        } else {
-            Log.e(TAG, "onIPPacketReceived, UDP: 收到非本地数据包, $ipHeader $udpHeader")
-        }
-    }
-
-    @Throws(IOException::class)
-    private fun onTCPPacketReceived(ipHeader: IPHeader, size: Int) {
-        val tcpHeader = m_TCPHeader
+    private fun onTCPPacketReceived(ipHeader: IPHeader, tcpHeader: TCPHeader, size: Int) {
         tcpHeader.m_Offset = ipHeader.headerLength
         if (ipHeader.sourceIP == vpnLocalIpInt) {
             // 收到本地 TcpProxyServer 服务器数据
