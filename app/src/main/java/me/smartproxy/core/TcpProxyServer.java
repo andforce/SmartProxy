@@ -21,10 +21,10 @@ public class TcpProxyServer {
     public boolean Stopped;
     public short Port;
 
-    Selector m_Selector;
-    ServerSocketChannel m_ServerSocketChannel;
+    private Selector m_Selector;
+    private ServerSocketChannel m_ServerSocketChannel;
 
-    ProxyConfig m_Config;
+    private final ProxyConfig m_Config;
 
     public TcpProxyServer(ProxyConfig config, int port) throws IOException {
         this.m_Config = config;
@@ -35,7 +35,6 @@ public class TcpProxyServer {
         m_ServerSocketChannel.register(m_Selector, SelectionKey.OP_ACCEPT);
         this.Port = (short) m_ServerSocketChannel.socket().getLocalPort();
         Log.d(TAG, "AsyncTcpServer listen on " + (this.Port & 0xFFFF) + " success.");
-
     }
 
     public void stop() {

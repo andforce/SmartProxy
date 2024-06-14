@@ -27,29 +27,19 @@ public class DnsProxy {
     private static final String TAG = "DnsProxy";
     private final LocalVpnViewModel localVpnViewModel = KoinJavaComponent.get(LocalVpnViewModel.class);
 
-    private ProxyConfig m_Config;
-    public DnsProxy(ProxyConfig config) throws IOException {
-        m_Config = config;
-        m_QueryArray = new SparseArray<QueryState>();
-        m_Client = new DatagramSocket(0);
-    }
-
-    private static class QueryState {
-        public short ClientQueryID;
-        public long QueryNanoTime;
-        public int ClientIP;
-        public short ClientPort;
-        public int RemoteIP;
-        public short RemotePort;
-    }
+    private final ProxyConfig m_Config;
 
     public boolean Stopped;
     private static final ConcurrentHashMap<Integer, String> IPDomainMaps = new ConcurrentHashMap<Integer, String>();
     private static final ConcurrentHashMap<String, Integer> DomainIPMaps = new ConcurrentHashMap<String, Integer>();
-    private final long QUERY_TIMEOUT_NS = 10 * 1000000000L;
     private DatagramSocket m_Client;
     private short m_QueryID;
-    private SparseArray<QueryState> m_QueryArray;
+    private final SparseArray<QueryState> m_QueryArray = new SparseArray<>();
+
+    public DnsProxy(ProxyConfig config) throws IOException {
+        m_Config = config;
+        m_Client = new DatagramSocket(0);
+    }
 
     public static String reverseLookup(int ip) {
         return IPDomainMaps.get(ip);
@@ -93,7 +83,7 @@ public class DnsProxy {
                         onDnsResponseReceived(ipHeader, udpHeader, dnsPacket);
                     }
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    Log.e(TAG, "Parse DNS Packet Error: ", e);
                 }
             }
         } catch (Exception e) {
@@ -108,8 +98,7 @@ public class DnsProxy {
         for (int i = 0; i < dnsPacket.Header.ResourceCount; i++) {
             Resource resource = dnsPacket.Resources[i];
             if (resource.Type == 1) {
-                int ip = CommonMethods.readInt(resource.Data, 0);
-                return ip;
+                return CommonMethods.readInt(resource.Data, 0);
             }
         }
         return 0;
@@ -226,6 +215,8 @@ public class DnsProxy {
 
     private void clearExpiredQueries() {
         long now = System.nanoTime();
+        long QUERY_TIMEOUT_NS = 10 * 1000000000L;
+
         for (int i = m_QueryArray.size() - 1; i >= 0; i--) {
             QueryState state = m_QueryArray.valueAt(i);
             if ((now - state.QueryNanoTime) > QUERY_TIMEOUT_NS) {
