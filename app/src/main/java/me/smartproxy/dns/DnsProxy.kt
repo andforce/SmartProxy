@@ -1,11 +1,11 @@
-package me.smartproxy.core
+package me.smartproxy.dns
 
 import android.net.VpnService
 import android.util.Log
 import android.util.SparseArray
+import me.smartproxy.core.ProxyConfig
+import me.smartproxy.core.QueryState
 import me.smartproxy.core.viewmodel.LocalVpnViewModel
-import me.smartproxy.dns.DnsPacket
-import me.smartproxy.dns.ResourcePointer
 import me.smartproxy.tcpip.CommonMethods
 import me.smartproxy.tcpip.IPHeader
 import me.smartproxy.tcpip.UDPHeader

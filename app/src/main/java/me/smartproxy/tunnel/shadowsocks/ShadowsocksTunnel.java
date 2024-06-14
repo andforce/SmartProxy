@@ -8,9 +8,9 @@ import me.smartproxy.tunnel.Tunnel;
 
 public class ShadowsocksTunnel extends Tunnel {
 
-    private IEncryptor m_Encryptor;
+    private IEncryptor encryptor;
     private ShadowsocksConfig m_Config;
-    private boolean m_TunnelEstablished;
+    private boolean mTunnelEstablished;
 
     public ShadowsocksTunnel(ShadowsocksConfig config, Selector selector) throws Exception {
         super(config.ServerAddress, selector);
@@ -18,7 +18,7 @@ public class ShadowsocksTunnel extends Tunnel {
             throw new Exception("Error: The Encryptor for ShadowsocksTunnel is null.");
         }
         m_Config = config;
-        m_Encryptor = config.Encryptor;
+        encryptor = config.Encryptor;
     }
 
     @Override
@@ -33,35 +33,35 @@ public class ShadowsocksTunnel extends Tunnel {
         buffer.putShort((short) m_DestAddress.getPort());
         buffer.flip();
 
-        m_Encryptor.encrypt(buffer);
+        encryptor.encrypt(buffer);
         if (write(buffer, true)) {
-            m_TunnelEstablished = true;
+            mTunnelEstablished = true;
             onTunnelEstablished();
         } else {
-            m_TunnelEstablished = true;
+            mTunnelEstablished = true;
             this.beginReceive();
         }
     }
 
     @Override
     protected boolean isTunnelEstablished() {
-        return m_TunnelEstablished;
+        return mTunnelEstablished;
     }
 
     @Override
     protected void beforeSend(ByteBuffer buffer) throws Exception {
-        m_Encryptor.encrypt(buffer);
+        encryptor.encrypt(buffer);
     }
 
     @Override
     protected void afterReceived(ByteBuffer buffer) throws Exception {
-        m_Encryptor.decrypt(buffer);
+        encryptor.decrypt(buffer);
     }
 
     @Override
     protected void onDispose() {
         m_Config = null;
-        m_Encryptor = null;
+        encryptor = null;
     }
 
 }

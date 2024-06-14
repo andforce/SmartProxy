@@ -1,7 +1,6 @@
-package me.smartproxy.core
+package me.smartproxy.dns
 
 import android.util.Log
-import me.smartproxy.dns.DnsPacket
 import me.smartproxy.tcpip.IPHeader
 import me.smartproxy.tcpip.UDPHeader
 import java.nio.ByteBuffer

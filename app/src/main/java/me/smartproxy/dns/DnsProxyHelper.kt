@@ -1,9 +1,10 @@
-package me.smartproxy.core
+package me.smartproxy.dns
 
 import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import me.smartproxy.dns.DnsPacket
+import me.smartproxy.core.LocalVpnService
+import me.smartproxy.core.ProxyConfig
 import me.smartproxy.tcpip.IPHeader
 import me.smartproxy.tcpip.UDPHeader
 import org.koin.core.context.GlobalContext

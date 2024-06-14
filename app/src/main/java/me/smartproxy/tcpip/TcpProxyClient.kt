@@ -1,12 +1,11 @@
-package me.smartproxy.core
+package me.smartproxy.tcpip
 
 import android.os.ParcelFileDescriptor
 import android.util.Log
+import me.smartproxy.core.HttpHostHeaderParser
+import me.smartproxy.core.NatSessionManager
+import me.smartproxy.core.TcpProxyHelper
 import me.smartproxy.core.VpnHelper.Companion.TAG
-import me.smartproxy.tcpip.CommonMethods
-import me.smartproxy.tcpip.IPHeader
-import me.smartproxy.tcpip.TCPHeader
-import me.smartproxy.tcpip.UDPHeader
 import java.io.FileOutputStream
 import java.io.IOException
 

@@ -2,6 +2,7 @@ package me.smartproxy.core;
 
 import android.util.SparseArray;
 
+import me.smartproxy.dns.DnsProxy;
 import me.smartproxy.tcpip.CommonMethods;
 
 public class NatSessionManager {

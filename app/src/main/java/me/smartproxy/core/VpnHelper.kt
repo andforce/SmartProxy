@@ -7,8 +7,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import me.smartproxy.core.viewmodel.LocalVpnViewModel
+import me.smartproxy.dns.DnsProcessor
+import me.smartproxy.dns.DnsProxyHelper
 import me.smartproxy.tcpip.CommonMethods
 import me.smartproxy.tcpip.IPHeader
+import me.smartproxy.tcpip.TcpProxyClient
 import me.smartproxy.tcpip.UDPHeader
 import org.koin.java.KoinJavaComponent
 import java.io.FileInputStream

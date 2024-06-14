@@ -2,6 +2,7 @@ package me.smartproxy.core
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import me.smartproxy.tcpip.TcpProxyServer
 
 object TcpProxyHelper {
 

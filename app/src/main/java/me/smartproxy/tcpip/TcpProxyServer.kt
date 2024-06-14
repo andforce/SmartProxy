@@ -1,8 +1,12 @@
-package me.smartproxy.core
+package me.smartproxy.tcpip
 
 import android.net.VpnService
 import android.util.Log
-import me.smartproxy.tcpip.CommonMethods
+import me.smartproxy.core.LocalVpnService
+import me.smartproxy.core.NatSessionManager
+import me.smartproxy.core.ProxyConfig
+import me.smartproxy.core.TunnelFactory
+import me.smartproxy.core.getOrNull
 import me.smartproxy.tunnel.Tunnel
 import java.net.InetSocketAddress
 import java.nio.channels.SelectionKey

@@ -4,12 +4,13 @@ import android.net.Uri;
 import android.util.Base64;
 
 import java.net.InetSocketAddress;
+import java.nio.charset.StandardCharsets;
 
 import me.smartproxy.tunnel.Config;
 
 public class ShadowsocksConfig extends Config {
-    public String EncryptMethod;
-    public String Password;
+    public String encryptMethod;
+    public String password;
 
     public static ShadowsocksConfig parse(String proxyInfo) throws Exception {
         ShadowsocksConfig config = new ShadowsocksConfig();
@@ -23,9 +24,9 @@ public class ShadowsocksConfig extends Config {
         String userInfoString = uri.getUserInfo();
         if (userInfoString != null) {
             String[] userStrings = userInfoString.split(":");
-            config.EncryptMethod = userStrings[0];
+            config.encryptMethod = userStrings[0];
             if (userStrings.length >= 2) {
-                config.Password = userStrings[1];
+                config.password = userStrings[1];
             }
         }
         config.ServerAddress = new InetSocketAddress(uri.getHost(), uri.getPort());
@@ -42,6 +43,6 @@ public class ShadowsocksConfig extends Config {
 
     @Override
     public String toString() {
-        return String.format("ss://%s:%s@%s", EncryptMethod, Password, ServerAddress);
+        return String.format("ss://%s:%s@%s", encryptMethod, password, ServerAddress);
     }
 }
