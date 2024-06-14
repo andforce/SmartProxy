@@ -1,6 +1,7 @@
 package me.smartproxy.core.viewmodel
 
 import android.app.Application
+import android.content.Intent
 import android.net.VpnService
 import android.os.ParcelFileDescriptor
 import androidx.lifecycle.ViewModel
@@ -9,6 +10,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import me.smartproxy.core.LocalVpnService
 import me.smartproxy.core.ProxyConfig
 import me.smartproxy.core.VpnHelper
 import me.smartproxy.tcpip.IPHeader
@@ -18,7 +20,7 @@ import java.net.Socket
 
 class LocalVpnViewModel(private val context: Application) : ViewModel() {
 
-    private val helper = VpnHelper(context)
+    private val helper = VpnHelper()
 
     private val _vpnStatusStateFlow = MutableStateFlow(-1)
     val vpnStatusStateFlow: StateFlow<Int> = _vpnStatusStateFlow
@@ -41,6 +43,7 @@ class LocalVpnViewModel(private val context: Application) : ViewModel() {
 
     fun tryStop() {
         helper.tryStop()
+        context.stopService(Intent(context, LocalVpnService::class.java))
     }
 
     fun sendUDPPacket(ipHeader: IPHeader, udpHeader: UDPHeader) {
@@ -48,11 +51,11 @@ class LocalVpnViewModel(private val context: Application) : ViewModel() {
     }
 
     fun protect(service: VpnService, datagramSocket: DatagramSocket): Boolean {
-        return helper.protect(service, datagramSocket) ?: false
+        return helper.protect(service, datagramSocket)
     }
 
     fun protect(service: VpnService, socket: Socket): Boolean {
-        return helper.protect(service, socket) ?: false
+        return helper.protect(service, socket)
     }
 
     private val _requestResult = MutableSharedFlow<Int>(

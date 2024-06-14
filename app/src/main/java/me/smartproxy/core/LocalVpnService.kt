@@ -36,30 +36,28 @@ class LocalVpnService : CoroutinesService() {
 
             val pfd = VpnEstablishHelper.establishVPN(config)
             Log.d(TAG, "VPNService pfd: $pfd")
-
-            launch {
-                Log.d(TAG, "VPNService startDnsProxy pre")
-                vpnViewModel.startDnsProxy(config)
-                Log.d(TAG, "VPNService startDnsProxy end")
-            }
-
-            launch {
-                Log.d(TAG, "VPNService startTcpProxy pre")
-                vpnViewModel.startTcpProxy(config)
-                Log.d(TAG, "VPNService startTcpProxy end")
-            }
-
-            // 等待DNS和TCP代理启动
-            delay(500)
-
             pfd?.let {
+                launch {
+                    Log.d(TAG, "VPNService startDnsProxy pre")
+                    vpnViewModel.startDnsProxy(config)
+                    Log.d(TAG, "VPNService startDnsProxy end")
+                }
+
+                launch {
+                    Log.d(TAG, "VPNService startTcpProxy pre")
+                    vpnViewModel.startTcpProxy(config)
+                    Log.d(TAG, "VPNService startTcpProxy end")
+                }
+
+                // 等待DNS和TCP代理启动
+                delay(500)
+
                 Log.d(TAG, "VPNService startProcessPacket pre")
                 vpnViewModel.startProcessPacket(config, pfd)
-            }?.onFailure {
-                Log.e(TAG, "VPNService failed to establish VPN: $it")
+            } ?: run {
+                Log.e(TAG, "VPNService failed to establishVPN() pfd is null")
+                vpnViewModel.tryStop()
             }
-
-            Log.d(TAG, "VPNService startProcessPacket end")
         }
     }
 

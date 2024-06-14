@@ -1,7 +1,5 @@
 package me.smartproxy.core
 
-import android.content.Context
-import android.content.Intent
 import android.net.VpnService
 import android.os.ParcelFileDescriptor
 import android.util.Log
@@ -22,7 +20,7 @@ import java.net.DatagramSocket
 import java.net.Socket
 import java.nio.ByteBuffer
 
-class VpnHelper(private val context: Context) {
+class VpnHelper {
 
     companion object {
         const val TAG = "VpnHelper"
@@ -134,8 +132,6 @@ class VpnHelper(private val context: Context) {
 
         this.proxyConfig?.stopTimer()
         stop("tryStop()")
-        //service.stopSelf()
-        context.stopService(Intent(context, LocalVpnService::class.java))
     }
 
     fun sendUDPPacket(ipHeader: IPHeader, udpHeader: UDPHeader?) {
