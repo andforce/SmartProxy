@@ -10,7 +10,6 @@ import me.smartproxy.core.viewmodel.LocalVpnViewModel
 import me.smartproxy.dns.DnsPacket
 import me.smartproxy.tcpip.CommonMethods
 import me.smartproxy.tcpip.IPHeader
-import me.smartproxy.tcpip.TCPHeader
 import me.smartproxy.tcpip.UDPHeader
 import org.koin.java.KoinJavaComponent
 import java.io.FileInputStream
@@ -35,14 +34,14 @@ class VpnHelper {
 
     private var isRunning = false
 
-    private var m_SentBytes: Long = 0
-    private var m_ReceivedBytes: Long = 0
+
+    private var tcpClient: TcpProxyClient? = null
 
     private var m_VPNOutputStream: FileOutputStream? = null
 
     private val m_Packet = ByteArray(20000)
     private val m_IPHeader = IPHeader(m_Packet, 0)
-    private val m_TCPHeader = TCPHeader(m_Packet, 20)
+
     private val m_UDPHeader = UDPHeader(m_Packet, 20)
     private val m_DNSBuffer: ByteBuffer =
         (ByteBuffer.wrap(m_Packet).position(28) as ByteBuffer).slice()
@@ -78,6 +77,7 @@ class VpnHelper {
             viewModel.updateVpnStatus(1)
 
             pfd.use { vpnInterface ->
+                tcpClient = TcpProxyClient(vpnInterface, m_Packet, vpnLocalIpInt)
 
                 m_VPNOutputStream = FileOutputStream(vpnInterface.fileDescriptor)
 
@@ -92,7 +92,7 @@ class VpnHelper {
                             }
                             when (m_IPHeader.protocol) {
                                 IPHeader.TCP -> {
-                                    onTCPPacketReceived(m_IPHeader, m_TCPHeader, size)
+                                    tcpClient?.onTCPPacketReceived(m_IPHeader, size)
                                 }
 
                                 IPHeader.UDP -> {
@@ -171,89 +171,6 @@ class VpnHelper {
             m_VPNOutputStream?.flush()
         } catch (e: IOException) {
             Log.e(TAG, "sendUDPPacket: ", e)
-        }
-    }
-
-    @Throws(IOException::class)
-    private fun onTCPPacketReceived(ipHeader: IPHeader, tcpHeader: TCPHeader, size: Int) {
-        tcpHeader.m_Offset = ipHeader.headerLength
-        if (ipHeader.sourceIP == vpnLocalIpInt) {
-            // 收到本地 TcpProxyServer 服务器数据
-            if (tcpHeader.sourcePort == TcpProxyHelper.getPort()) {
-                val session =
-                    NatSessionManager.getSession(tcpHeader.destinationPort.toInt())
-                if (session != null) {
-                    Log.d(
-                        "LocalVpnService",
-                        "onIPPacketReceived: 收到本地 TcpProxyServer 服务器数据, $ipHeader $tcpHeader"
-                    )
-                    ipHeader.sourceIP = ipHeader.destinationIP
-                    tcpHeader.sourcePort = session.remotePort
-                    ipHeader.destinationIP = vpnLocalIpInt
-
-                    CommonMethods.ComputeTCPChecksum(ipHeader, tcpHeader)
-                    m_VPNOutputStream?.write(ipHeader.m_Data, ipHeader.m_Offset, size)
-                    m_VPNOutputStream?.flush()
-                    m_ReceivedBytes += size.toLong()
-                } else {
-                    Log.d(
-                        TAG,
-                        "onIPPacketReceived: NoSession, $ipHeader $tcpHeader"
-                    )
-                }
-            } else {
-                // 添加端口映射
-
-                val portKey = tcpHeader.sourcePort.toInt()
-                var session = NatSessionManager.getSession(portKey)
-                if (session == null || session.remoteIP != ipHeader.destinationIP || session.remotePort != tcpHeader.destinationPort) {
-                    session = NatSessionManager.createSession(
-                        portKey,
-                        ipHeader.destinationIP,
-                        tcpHeader.destinationPort
-                    )
-                }
-
-                session?.let {
-                    session.lastNanoTime = System.nanoTime()
-                    session.packetSent++ //注意顺序
-
-                    val tcpDataSize = ipHeader.dataLength - tcpHeader.headerLength
-                    if (session.packetSent == 2 && tcpDataSize == 0) {
-                        return  //丢弃tcp握手的第二个ACK报文。因为客户端发数据的时候也会带上ACK，这样可以在服务器Accept之前分析出HOST信息。
-                    }
-
-                    //分析数据，找到host
-                    if (session.bytesSent == 0 && tcpDataSize > 10) {
-                        val dataOffset = tcpHeader.m_Offset + tcpHeader.headerLength
-                        val host = HttpHostHeaderParser.parseHost(
-                            tcpHeader.m_Data,
-                            dataOffset,
-                            tcpDataSize
-                        )
-                        if (host != null) {
-                            session.remoteHost = host
-                        }
-                    }
-
-                    // 转发给本地 TcpProxyServer 服务器
-                    Log.d(
-                        "LocalVpnService",
-                        "onIPPacketReceived: 转发给本地 TcpProxyServer 服务器, $ipHeader $tcpHeader"
-                    )
-                    ipHeader.sourceIP = ipHeader.destinationIP
-                    ipHeader.destinationIP = vpnLocalIpInt
-                    tcpHeader.destinationPort = TcpProxyHelper.getPort()
-
-                    CommonMethods.ComputeTCPChecksum(ipHeader, tcpHeader)
-                    m_VPNOutputStream?.write(ipHeader.m_Data, ipHeader.m_Offset, size)
-                    m_VPNOutputStream?.flush()
-                    session.bytesSent += tcpDataSize //注意顺序
-                    m_SentBytes += size.toLong()
-                }
-            }
-        } else {
-            Log.e(TAG, "onIPPacketReceived, TCP: 收到非本地数据包, $ipHeader $tcpHeader")
         }
     }
 

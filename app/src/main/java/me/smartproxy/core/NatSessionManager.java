@@ -8,7 +8,7 @@ public class NatSessionManager {
 
     static final int MAX_SESSION_COUNT = 60;
     static final long SESSION_TIMEOUT_NS = 60 * 1000000000L;
-    static final SparseArray<NatSession> Sessions = new SparseArray<NatSession>();
+    static final SparseArray<NatSession> Sessions = new SparseArray<>();
 
     public static NatSession getSession(int portKey) {
         return Sessions.get(portKey);
