@@ -56,7 +56,7 @@ public class HttpConnectTunnel extends Tunnel {
 
     @Override
     protected void beforeSend(ByteBuffer buffer) throws Exception {
-        if (proxyConfig.isM_isolate_http_host_header()) {
+        if (proxyConfig.isIsolateHttpHostHeader()) {
             trySendPartOfHeader(buffer);//尝试发送请求头的一部分，让请求头的host在第二个包里面发送，从而绕过机房的白名单机制。
         }
     }

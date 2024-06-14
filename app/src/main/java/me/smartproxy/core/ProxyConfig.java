@@ -16,116 +16,115 @@ public class ProxyConfig {
     public final static int FAKE_NETWORK_MASK = CommonMethods.ipStringToInt("255.255.0.0");
     public final static int FAKE_NETWORK_IP = CommonMethods.ipStringToInt("10.231.0.0");
 
-    private ArrayList<IPAddress> m_IpList = new ArrayList<>();
-    private ArrayList<IPAddress> m_DnsList = new ArrayList<>();
-    private ArrayList<IPAddress> m_RouteList = new ArrayList<>();
-    private ArrayList<Config> m_ProxyList = new ArrayList<>();
-    private HashMap<String, Boolean> m_DomainMap = new HashMap<>();
+    private ArrayList<IPAddress> ipList = new ArrayList<>();
+    private ArrayList<IPAddress> dnsList = new ArrayList<>();
+    private ArrayList<IPAddress> routeList = new ArrayList<>();
+    private ArrayList<Config> proxyList = new ArrayList<>();
+    private HashMap<String, Boolean> domainMap = new HashMap<>();
 
-    private int m_dns_ttl;
-    private String m_welcome_info;
-    private String m_session_name;
-    private String m_user_agent;
-    private boolean m_outside_china_use_proxy = true;
-    private boolean m_isolate_http_host_header = true;
-    private int m_mtu;
+    private int dnsTtl;
+    private String welcomeInfo;
+    private String sessionName;
+    private String userAgent;
+    private boolean outsideChinaUseProxy = true;
+    private boolean isolateHttpHostHeader = true;
+    private int mtu;
 
     private Timer m_Timer;
 
-    public ArrayList<IPAddress> getM_IpList() {
-        return m_IpList;
+    public ArrayList<IPAddress> getIpList() {
+        return ipList;
     }
 
-    public void setM_IpList(ArrayList<IPAddress> m_IpList) {
-        this.m_IpList = m_IpList;
+    public void setIpList(ArrayList<IPAddress> ipList) {
+        this.ipList = ipList;
     }
 
-    public ArrayList<IPAddress> getM_DnsList() {
-        return m_DnsList;
+    public ArrayList<IPAddress> getDnsList() {
+        return dnsList;
     }
 
-    public void setM_DnsList(ArrayList<IPAddress> m_DnsList) {
-        this.m_DnsList = m_DnsList;
+    public void setDnsList(ArrayList<IPAddress> dnsList) {
+        this.dnsList = dnsList;
     }
 
-    public ArrayList<IPAddress> getM_RouteList() {
-        return m_RouteList;
+    public ArrayList<IPAddress> getRouteList() {
+        return routeList;
     }
 
-    public void setM_RouteList(ArrayList<IPAddress> m_RouteList) {
-        this.m_RouteList = m_RouteList;
+    public void setRouteList(ArrayList<IPAddress> routeList) {
+        this.routeList = routeList;
     }
 
-    public ArrayList<Config> getM_ProxyList() {
-        return m_ProxyList;
+    public ArrayList<Config> getProxyList() {
+        return proxyList;
     }
 
-    public void setM_ProxyList(ArrayList<Config> m_ProxyList) {
-        this.m_ProxyList = m_ProxyList;
+    public void setProxyList(ArrayList<Config> proxyList) {
+        this.proxyList = proxyList;
     }
 
-    public HashMap<String, Boolean> getM_DomainMap() {
-        return m_DomainMap;
+    public HashMap<String, Boolean> getDomainMap() {
+        return domainMap;
     }
 
-    public void setM_DomainMap(HashMap<String, Boolean> m_DomainMap) {
-        this.m_DomainMap = m_DomainMap;
+    public void setDomainMap(HashMap<String, Boolean> domainMap) {
+        this.domainMap = domainMap;
     }
 
-    public int getM_dns_ttl() {
-        return m_dns_ttl;
+    public int getDnsTtl() {
+        return dnsTtl;
     }
 
-    public void setM_dns_ttl(int m_dns_ttl) {
-        this.m_dns_ttl = m_dns_ttl;
+    public void setDnsTtl(int dnsTtl) {
+        this.dnsTtl = dnsTtl;
     }
 
-    public String getM_welcome_info() {
-        return m_welcome_info;
+    public String getWelcomeInfo() {
+        return welcomeInfo;
     }
 
-    public void setM_welcome_info(String m_welcome_info) {
-        this.m_welcome_info = m_welcome_info;
+    public void setWelcomeInfo(String welcomeInfo) {
+        this.welcomeInfo = welcomeInfo;
     }
 
-    public String getM_session_name() {
-        return m_session_name;
+    public void setSessionName(String sessionName) {
+        this.sessionName = sessionName;
     }
 
-    public void setM_session_name(String m_session_name) {
-        this.m_session_name = m_session_name;
+    public String getSessionName() {
+        if (VpnHelper.IS_ENABLE_REMOTE_PROXY) {
+            if (sessionName == null) {
+                sessionName = getDefaultProxy().socketAddress.getHostName();
+            }
+            return sessionName;
+        } else {
+            return "m_session_name";
+        }
     }
 
-    public String getM_user_agent() {
-        return m_user_agent;
+    public void setUserAgent(String userAgent) {
+        this.userAgent = userAgent;
     }
 
-    public void setM_user_agent(String m_user_agent) {
-        this.m_user_agent = m_user_agent;
+    public boolean isOutsideChinaUseProxy() {
+        return outsideChinaUseProxy;
     }
 
-    public boolean isM_outside_china_use_proxy() {
-        return m_outside_china_use_proxy;
+    public void setOutsideChinaUseProxy(boolean outsideChinaUseProxy) {
+        this.outsideChinaUseProxy = outsideChinaUseProxy;
     }
 
-    public void setM_outside_china_use_proxy(boolean m_outside_china_use_proxy) {
-        this.m_outside_china_use_proxy = m_outside_china_use_proxy;
+    public boolean isIsolateHttpHostHeader() {
+        return isolateHttpHostHeader;
     }
 
-    public boolean isM_isolate_http_host_header() {
-        return m_isolate_http_host_header;
+    public void setIsolateHttpHostHeader(boolean isolateHttpHostHeader) {
+        this.isolateHttpHostHeader = isolateHttpHostHeader;
     }
 
-    public void setM_isolate_http_host_header(boolean m_isolate_http_host_header) {
-        this.m_isolate_http_host_header = m_isolate_http_host_header;
-    }
-
-    public int getM_mtu() {
-        return m_mtu;
-    }
-
-    public void setM_mtu(int m_mtu) {
-        this.m_mtu = m_mtu;
+    public void setMtu(int mtu) {
+        this.mtu = mtu;
     }
 
     private TimerTask m_Task = new TimerTask() {
@@ -134,9 +133,9 @@ public class ProxyConfig {
 
             //定时更新dns缓存
             try {
-                for (int i = 0; i < m_ProxyList.size(); i++) {
+                for (int i = 0; i < proxyList.size(); i++) {
                     try {
-                        Config config = m_ProxyList.get(0);
+                        Config config = proxyList.get(0);
                         InetAddress address = InetAddress.getByName(config.socketAddress.getHostName());
                         if (address != null && !address.equals(config.socketAddress.getAddress())) {
                             config.socketAddress = new InetSocketAddress(address, config.socketAddress.getPort());
@@ -156,8 +155,8 @@ public class ProxyConfig {
     }
 
     public Config getDefaultProxy() {
-        if (!m_ProxyList.isEmpty()) {
-            return m_ProxyList.get(0);
+        if (!proxyList.isEmpty()) {
+            return proxyList.get(0);
         } else {
             return null;
         }
@@ -168,53 +167,30 @@ public class ProxyConfig {
     }
 
     public IPAddress getDefaultLocalIP() {
-        if (!m_IpList.isEmpty()) {
-            return m_IpList.get(0);
+        if (!ipList.isEmpty()) {
+            return ipList.get(0);
         } else {
             return new IPAddress("10.8.0.2", 32);
         }
     }
 
-    public ArrayList<IPAddress> getDnsList() {
-        return m_DnsList;
-    }
-
-    public ArrayList<IPAddress> getRouteList() {
-        return m_RouteList;
-    }
-
     public int getDnsTTL() {
-        if (m_dns_ttl < 30) {
-            m_dns_ttl = 30;
+        if (dnsTtl < 30) {
+            dnsTtl = 30;
         }
-        return m_dns_ttl;
-    }
-
-    public String getWelcomeInfo() {
-        return m_welcome_info;
-    }
-
-    public String getSessionName() {
-        if (VpnHelper.IS_ENABLE_REMOTE_PROXY) {
-            if (m_session_name == null) {
-                m_session_name = getDefaultProxy().socketAddress.getHostName();
-            }
-            return m_session_name;
-        } else {
-            return "m_session_name";
-        }
+        return dnsTtl;
     }
 
     public String getUserAgent() {
-        if (m_user_agent == null || m_user_agent.isEmpty()) {
-            m_user_agent = System.getProperty("http.agent");
+        if (userAgent == null || userAgent.isEmpty()) {
+            userAgent = System.getProperty("http.agent");
         }
-        return m_user_agent;
+        return userAgent;
     }
 
-    public int getMTU() {
-        if (m_mtu > 1400 && m_mtu <= 20000) {
-            return m_mtu;
+    public int getMtu() {
+        if (mtu > 1400 && mtu <= 20000) {
+            return mtu;
         } else {
             return 20000;
         }
@@ -223,7 +199,7 @@ public class ProxyConfig {
     private Boolean getDomainState(String domain) {
         domain = domain.toLowerCase();
         while (!domain.isEmpty()) {
-            Boolean stateBoolean = m_DomainMap.get(domain);
+            Boolean stateBoolean = domainMap.get(domain);
             if (stateBoolean != null) {
                 return stateBoolean;
             } else {
@@ -252,32 +228,31 @@ public class ProxyConfig {
         if (isFakeIP(ip))
             return true;
 
-        if (m_outside_china_use_proxy && ip != 0) {
+        if (outsideChinaUseProxy && ip != 0) {
             return !ChinaIpMaskManager.isIPInChina(ip);
         }
         return false;
     }
 
     public void clear() {
-        m_IpList.clear();
-        m_DnsList.clear();
-        m_RouteList.clear();
-        m_ProxyList.clear();
-        m_DomainMap.clear();
+        ipList.clear();
+        dnsList.clear();
+        routeList.clear();
+        proxyList.clear();
+        domainMap.clear();
     }
 
     public void addIPAddressToList(String[] items, int offset) {
-        addIPAddressToList(items, offset, m_IpList);
+        addIPAddressToList(items, offset, ipList);
     }
 
     public void addDnsToList(String[] items, int offset) {
-        addIPAddressToList(items, offset, m_DnsList);
+        addIPAddressToList(items, offset, dnsList);
     }
 
     public void addRouteToList(String[] items, int offset) {
-        addIPAddressToList(items, offset, m_RouteList);
+        addIPAddressToList(items, offset, routeList);
     }
-
 
     private void addIPAddressToList(String[] items, int offset, ArrayList<IPAddress> list) {
         for (int i = offset; i < items.length; i++) {
@@ -294,13 +269,13 @@ public class ProxyConfig {
     }
 
     public void addDomainMap(String key, boolean value) {
-        m_DomainMap.put(key, value);
+        domainMap.put(key, value);
     }
 
     public void addProxyConfig(Config config) {
-        if (!m_ProxyList.contains(config)) {
-            m_ProxyList.add(config);
-            m_DomainMap.put(config.socketAddress.getHostName(), false);
+        if (!proxyList.contains(config)) {
+            proxyList.add(config);
+            domainMap.put(config.socketAddress.getHostName(), false);
         }
     }
 
@@ -318,5 +293,4 @@ public class ProxyConfig {
         m_Timer.cancel();
         m_Timer = null;
     }
-
 }

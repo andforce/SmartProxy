@@ -57,25 +57,25 @@ object ProxyConfigHelper {
                         addDomainToHashMap(config, items, 1, true)
                     } else if (tagString == "dns_ttl") {
                         //m_dns_ttl = items[1].toInt()
-                        config.m_dns_ttl = items[1].toInt()
+                        config.dnsTtl = items[1].toInt()
                     } else if (tagString == "welcome_info") {
                         val m_welcome_info = line.substring(line.indexOf(" ")).trim { it <= ' ' }
-                        config.m_welcome_info = m_welcome_info
+                        config.welcomeInfo = m_welcome_info
                     } else if (tagString == "session_name") {
                         val m_session_name = items[1]
-                        config.m_session_name = m_session_name
+                        config.sessionName = m_session_name
                     } else if (tagString == "user_agent") {
                         val m_user_agent = line.substring(line.indexOf(" ")).trim { it <= ' ' }
-                        config.m_user_agent = m_user_agent
+                        config.userAgent = m_user_agent
                     } else if (tagString == "outside_china_use_proxy") {
                         val m_outside_china_use_proxy = convertToBool(items[1])
-                        config.isM_outside_china_use_proxy = m_outside_china_use_proxy
+                        config.isOutsideChinaUseProxy = m_outside_china_use_proxy
                     } else if (tagString == "isolate_http_host_header") {
                         val m_isolate_http_host_header = convertToBool(items[1])
-                        config.isM_isolate_http_host_header = m_isolate_http_host_header
+                        config.isIsolateHttpHostHeader = m_isolate_http_host_header
                     } else if (tagString == "mtu") {
                         val m_mtu = items[1].toInt()
-                        config.m_mtu = m_mtu
+                        config.setMtu(m_mtu)
                     }
                 }
             } catch (e: Exception) {
@@ -91,7 +91,7 @@ object ProxyConfigHelper {
         }
 
         //查找默认代理。
-        if (config.m_ProxyList.isEmpty()) {
+        if (config.proxyList.isEmpty()) {
             tryAddProxy(c = config, lines)
         }
 
