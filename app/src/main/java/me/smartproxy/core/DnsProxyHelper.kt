@@ -30,7 +30,7 @@ object DnsProxyHelper {
         dnsProxy = null
     }
 
-    fun onDnsRequestReceived(ipHeader: IPHeader?, udpHeader: UDPHeader?, dnsPacket: DnsPacket?) {
+    fun onDnsRequestReceived(ipHeader: IPHeader, udpHeader: UDPHeader, dnsPacket: DnsPacket) {
         dnsProxy?.onDnsRequestReceived(ipHeader, udpHeader, dnsPacket)
     }
 }
