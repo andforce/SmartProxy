@@ -112,10 +112,6 @@ object ProxyConfigHelper {
                 }
                 config = HttpConnectConfig.parse(proxyString)
             }
-//            if (!m_ProxyList.contains(config)) {
-//                m_ProxyList.add(config)
-//                m_DomainMap.put(config!!.ServerAddress.hostName, false)
-//            }
             c.addProxyConfig(config)
         }
     }

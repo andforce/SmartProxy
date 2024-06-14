@@ -12,21 +12,21 @@ import java.io.IOException
 
 class TcpProxyClient(pfd: ParcelFileDescriptor, buffer: ByteArray, private val vpnLocalIpInt: Int) {
 
-    private var m_VPNOutputStream: FileOutputStream? = null
-    private val m_TCPHeader: TCPHeader
+    private var vpnOutputStream: FileOutputStream? = null
+    private val tcpHeader: TCPHeader
 
-    private var m_ReceivedBytes: Long = 0
-    private var m_SentBytes: Long = 0
+    private var receivedBytes: Long = 0
+    private var sentBytes: Long = 0
 
 
     init {
-        m_VPNOutputStream = FileOutputStream(pfd.fileDescriptor)
-        m_TCPHeader = TCPHeader(buffer, 20)
+        vpnOutputStream = FileOutputStream(pfd.fileDescriptor)
+        tcpHeader = TCPHeader(buffer, 20)
     }
 
 
     fun onTCPPacketReceived(ipHeader: IPHeader, size: Int) {
-        val tcpHeader = m_TCPHeader
+        val tcpHeader = tcpHeader
 
         tcpHeader.m_Offset = ipHeader.headerLength
         if (ipHeader.sourceIP == vpnLocalIpInt) {
@@ -44,9 +44,9 @@ class TcpProxyClient(pfd: ParcelFileDescriptor, buffer: ByteArray, private val v
                     ipHeader.destinationIP = vpnLocalIpInt
 
                     CommonMethods.ComputeTCPChecksum(ipHeader, tcpHeader)
-                    m_VPNOutputStream?.write(ipHeader.m_Data, ipHeader.m_Offset, size)
-                    m_VPNOutputStream?.flush()
-                    m_ReceivedBytes += size.toLong()
+                    vpnOutputStream?.write(ipHeader.m_Data, ipHeader.m_Offset, size)
+                    vpnOutputStream?.flush()
+                    receivedBytes += size.toLong()
                 } else {
                     Log.d(
                         TAG,
@@ -98,10 +98,10 @@ class TcpProxyClient(pfd: ParcelFileDescriptor, buffer: ByteArray, private val v
                     tcpHeader.destinationPort = TcpProxyHelper.getPort()
 
                     CommonMethods.ComputeTCPChecksum(ipHeader, tcpHeader)
-                    m_VPNOutputStream?.write(ipHeader.m_Data, ipHeader.m_Offset, size)
-                    m_VPNOutputStream?.flush()
+                    vpnOutputStream?.write(ipHeader.m_Data, ipHeader.m_Offset, size)
+                    vpnOutputStream?.flush()
                     session.bytesSent += tcpDataSize //注意顺序
-                    m_SentBytes += size.toLong()
+                    sentBytes += size.toLong()
                 }
             }
         } else {
@@ -113,8 +113,8 @@ class TcpProxyClient(pfd: ParcelFileDescriptor, buffer: ByteArray, private val v
     fun sendUDPPacket(ipHeader: IPHeader, udpHeader: UDPHeader?) {
         try {
             CommonMethods.ComputeUDPChecksum(ipHeader, udpHeader)
-            m_VPNOutputStream?.write(ipHeader.m_Data, ipHeader.m_Offset, ipHeader.totalLength)
-            m_VPNOutputStream?.flush()
+            vpnOutputStream?.write(ipHeader.m_Data, ipHeader.m_Offset, ipHeader.totalLength)
+            vpnOutputStream?.flush()
         } catch (e: IOException) {
             Log.e(TAG, "sendUDPPacket: ", e)
         }
@@ -122,8 +122,8 @@ class TcpProxyClient(pfd: ParcelFileDescriptor, buffer: ByteArray, private val v
 
     fun stop() {
         Log.e(TAG, "TcpProxyClient stopped.")
-        m_VPNOutputStream?.use {
-            m_VPNOutputStream = null
+        vpnOutputStream?.use {
+            vpnOutputStream = null
         }
     }
 }

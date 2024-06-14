@@ -2,7 +2,6 @@ package me.smartproxy.ui
 
 import android.app.Activity
 import android.net.VpnService
-import android.os.Bundle
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import me.smartproxy.core.viewmodel.LocalVpnViewModel
@@ -18,9 +17,6 @@ open class RequestVpnPermissionActivity : AppCompatActivity() {
             vpnViewModel.updateRequestResult(it.resultCode)
         }
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-    }
 
     override fun onDestroy() {
         super.onDestroy()

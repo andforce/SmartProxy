@@ -34,8 +34,8 @@ class VpnHelper {
     private var tcpClient: TcpProxyClient? = null
     private var dnsProcessor: DnsProcessor? = null
 
-    private val m_Packet = ByteArray(20000)
-    private val m_IPHeader = IPHeader(m_Packet, 0)
+    private val packetBuffer = ByteArray(20000)
+    private val ipHeader = IPHeader(packetBuffer, 0)
 
     private var proxyConfig: ProxyConfig? = null
 
@@ -68,30 +68,30 @@ class VpnHelper {
             viewModel.updateVpnStatus(1)
 
             pfd.use { vpnInterface ->
-                tcpClient = TcpProxyClient(vpnInterface, m_Packet, vpnLocalIpInt)
-                dnsProcessor = DnsProcessor(m_Packet, vpnLocalIpInt)
+                tcpClient = TcpProxyClient(vpnInterface, packetBuffer, vpnLocalIpInt)
+                dnsProcessor = DnsProcessor(packetBuffer, vpnLocalIpInt)
 
                 FileInputStream(vpnInterface.fileDescriptor).use { fis ->
                     var size: Int
                     kotlin.runCatching {
                         while (isRunning) {
-                            size = fis.read(m_Packet)
+                            size = fis.read(packetBuffer)
                             if (size <= 0) {
                                 delay(10)
                                 continue
                             }
-                            when (m_IPHeader.protocol) {
+                            when (ipHeader.protocol) {
                                 IPHeader.TCP -> {
-                                    tcpClient?.onTCPPacketReceived(m_IPHeader, size)
+                                    tcpClient?.onTCPPacketReceived(ipHeader, size)
                                 }
 
                                 IPHeader.UDP -> {
                                     // 转发DNS数据包：
-                                    dnsProcessor?.processUdpPacket(m_IPHeader)
+                                    dnsProcessor?.processUdpPacket(ipHeader)
                                 }
 
                                 else -> {
-                                    Log.d(TAG, "onIPPacketReceived, 不支持的协议: $m_IPHeader")
+                                    Log.d(TAG, "onIPPacketReceived, 不支持的协议: $ipHeader")
                                 }
                             }
                         }
