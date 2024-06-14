@@ -159,13 +159,13 @@ class DnsProxy(private val config: ProxyConfig) {
             //DNS污染，默认污染海外网站
             dnsPollution(udpHeader.m_Data, dnsPacket)
 
-            dnsPacket.Header.id = state!!.ClientQueryID
-            ipHeader.sourceIP = state!!.RemoteIP
-            ipHeader.destinationIP = state!!.ClientIP
+            dnsPacket.Header.id = state!!.clientQueryID
+            ipHeader.sourceIP = state!!.remoteIP
+            ipHeader.destinationIP = state!!.clientIP
             ipHeader.protocol = IPHeader.UDP
             ipHeader.totalLength = 20 + 8 + dnsPacket.Size
-            udpHeader.sourcePort = state!!.RemotePort
-            udpHeader.destinationPort = state!!.ClientPort
+            udpHeader.sourcePort = state!!.remotePort
+            udpHeader.destinationPort = state!!.clientPort
             udpHeader.totalLength = 8 + dnsPacket.Size
 
             localVpnViewModel.sendUDPPacket(ipHeader, udpHeader)
@@ -217,7 +217,7 @@ class DnsProxy(private val config: ProxyConfig) {
 
         for (i in queryArray.size() - 1 downTo 0) {
             val state = queryArray.valueAt(i)
-            if ((now - state.QueryNanoTime) > timeOutNS) {
+            if ((now - state.queryNanoTime) > timeOutNS) {
                 queryArray.removeAt(i)
             }
         }
@@ -227,12 +227,12 @@ class DnsProxy(private val config: ProxyConfig) {
         if (!interceptDns(ipHeader, udpHeader, dnsPacket)) {
             //转发DNS
             val state = QueryState()
-            state.ClientQueryID = dnsPacket.Header.ID
-            state.QueryNanoTime = System.nanoTime()
-            state.ClientIP = ipHeader.sourceIP
-            state.ClientPort = udpHeader.sourcePort
-            state.RemoteIP = ipHeader.destinationIP
-            state.RemotePort = udpHeader.destinationPort
+            state.clientQueryID = dnsPacket.Header.ID
+            state.queryNanoTime = System.nanoTime()
+            state.clientIP = ipHeader.sourceIP
+            state.clientPort = udpHeader.sourcePort
+            state.remoteIP = ipHeader.destinationIP
+            state.remotePort = udpHeader.destinationPort
 
             // 转换QueryID
             queryID++ // 增加ID
@@ -244,8 +244,8 @@ class DnsProxy(private val config: ProxyConfig) {
             }
 
             val remoteAddress = InetSocketAddress(
-                CommonMethods.ipIntToInet4Address(state.RemoteIP),
-                state.RemotePort.toInt()
+                CommonMethods.ipIntToInet4Address(state.remoteIP),
+                state.remotePort.toInt()
             )
             val packet = DatagramPacket(udpHeader.m_Data, udpHeader.m_Offset + 8, dnsPacket.Size)
             packet.socketAddress = remoteAddress

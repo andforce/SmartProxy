@@ -52,23 +52,23 @@ object VpnEstablishHelper {
             Log.d(VpnHelper.TAG, "setMtu: " + config.mtu)
 
             val ipAddress = config.defaultLocalIP
-            builder.addAddress(ipAddress.Address, ipAddress.PrefixLength)
+            builder.addAddress(ipAddress.address, ipAddress.prefixLength)
             Log.d(
                 VpnHelper.TAG,
-                "addAddress: " + ipAddress.Address + "/" + ipAddress.PrefixLength
+                "addAddress: " + ipAddress.address + "/" + ipAddress.prefixLength
             )
 
             for (dns in config.dnsList) {
-                builder.addDnsServer(dns.Address)
-                Log.d(VpnHelper.TAG, "addDnsServer: " + dns.Address)
+                builder.addDnsServer(dns.address)
+                Log.d(VpnHelper.TAG, "addDnsServer: " + dns.address)
             }
 
             if (config.routeList.isNotEmpty()) {
                 for (routeAddress in config.routeList) {
-                    builder.addRoute(routeAddress.Address, routeAddress.PrefixLength)
+                    builder.addRoute(routeAddress.address, routeAddress.prefixLength)
                     Log.d(
                         VpnHelper.TAG,
-                        "addRoute: " + routeAddress.Address + "/" + routeAddress.PrefixLength
+                        "addRoute: " + routeAddress.address + "/" + routeAddress.prefixLength
                     )
                 }
                 builder.addRoute(CommonMethods.ipIntToString(ProxyConfig.FAKE_NETWORK_IP), 16)

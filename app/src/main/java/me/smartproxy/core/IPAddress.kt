@@ -1,41 +1,43 @@
-package me.smartproxy.core;
+package me.smartproxy.core
 
-import androidx.annotation.NonNull;
+import java.util.Locale
 
-import java.util.Locale;
+class IPAddress {
+    val address: String
+    val prefixLength: Int
 
-public class IPAddress {
-    public final String Address;
-    public final int PrefixLength;
-
-    public IPAddress(String address, int prefixLength) {
-        this.Address = address;
-        this.PrefixLength = prefixLength;
+    constructor(address: String, prefixLength: Int) {
+        this.address = address
+        this.prefixLength = prefixLength
     }
 
-    public IPAddress(String ipAddresString) {
-        String[] arrStrings = ipAddresString.split("/");
-        String address = arrStrings[0];
-        int prefixLength = 32;
-        if (arrStrings.length > 1) {
-            prefixLength = Integer.parseInt(arrStrings[1]);
+    constructor(addressStr: String) {
+        val arrStrings =
+            addressStr.split("/".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
+        val address = arrStrings[0]
+        var prefixLength = 32
+        if (arrStrings.size > 1) {
+            prefixLength = arrStrings[1].toInt()
         }
-        this.Address = address;
-        this.PrefixLength = prefixLength;
+        this.address = address
+        this.prefixLength = prefixLength
     }
 
-    @NonNull
-    @Override
-    public String toString() {
-        return String.format(Locale.ENGLISH, "%s/%d", Address, PrefixLength);
+    override fun toString(): String {
+        return String.format(Locale.ENGLISH, "%s/%d", address, prefixLength)
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (o == null) {
-            return false;
+    override fun equals(o: Any?): Boolean {
+        return if (o == null) {
+            false
         } else {
-            return this.toString().equals(o.toString());
+            this.toString() == o.toString()
         }
+    }
+
+    override fun hashCode(): Int {
+        var result = address.hashCode()
+        result = 31 * result + prefixLength
+        return result
     }
 }

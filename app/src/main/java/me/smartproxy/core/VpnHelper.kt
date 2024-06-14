@@ -63,7 +63,7 @@ class VpnHelper {
             proxyConfig?.startTimer()
 
 
-            vpnLocalIpInt = CommonMethods.ipStringToInt(config.defaultLocalIP.Address)
+            vpnLocalIpInt = CommonMethods.ipStringToInt(config.defaultLocalIP.address)
 
             isRunning = true
 

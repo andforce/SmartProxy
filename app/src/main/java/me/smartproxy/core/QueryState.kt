@@ -1,16 +1,10 @@
 package me.smartproxy.core
 
 class QueryState {
-    @JvmField
-    var ClientQueryID: Short = 0
-    @JvmField
-    var QueryNanoTime: Long = 0
-    @JvmField
-    var ClientIP: Int = 0
-    @JvmField
-    var ClientPort: Short = 0
-    @JvmField
-    var RemoteIP: Int = 0
-    @JvmField
-    var RemotePort: Short = 0
+    var clientQueryID: Short = 0
+    var queryNanoTime: Long = 0
+    var clientIP: Int = 0
+    var clientPort: Short = 0
+    var remoteIP: Int = 0
+    var remotePort: Short = 0
 }
