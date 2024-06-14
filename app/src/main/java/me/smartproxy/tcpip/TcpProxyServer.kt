@@ -1,12 +1,9 @@
 package me.smartproxy.tcpip
 
-import android.net.VpnService
 import android.util.Log
-import me.smartproxy.core.LocalVpnService
 import me.smartproxy.core.NatSessionManager
 import me.smartproxy.core.ProxyConfig
 import me.smartproxy.core.TunnelFactory
-import me.smartproxy.core.getOrNull
 import me.smartproxy.tunnel.Tunnel
 import java.net.InetSocketAddress
 import java.nio.channels.SelectionKey
@@ -58,7 +55,6 @@ class TcpProxyServer(private val config: ProxyConfig, port: Int) {
     }
 
     fun start() {
-        val service = LocalVpnService::class.getOrNull()
         selector?.let { selector ->
             try {
                 while (true) {
@@ -75,7 +71,7 @@ class TcpProxyServer(private val config: ProxyConfig, port: Int) {
                                 } else if (key.isConnectable) {
                                     (key.attachment() as Tunnel).onConnectable()
                                 } else if (key.isAcceptable) {
-                                    onAccepted(service)
+                                    onAccepted()
                                 }
                             } catch (e: Exception) {
                                 Log.e(TAG, "inner run: ", e)
@@ -123,7 +119,7 @@ class TcpProxyServer(private val config: ProxyConfig, port: Int) {
         return null
     }
 
-    private fun onAccepted(service: VpnService?) {
+    private fun onAccepted() {
         var localTunnel: Tunnel? = null
         try {
             serverSocketChannel?.let { socketChannel->
@@ -138,7 +134,7 @@ class TcpProxyServer(private val config: ProxyConfig, port: Int) {
                             TunnelFactory.createTunnelByConfig(config, destAddress, s)
                         remoteTunnel.setBrotherTunnel(localTunnel) //关联兄弟
                         localTunnel?.setBrotherTunnel(remoteTunnel) //关联兄弟
-                        remoteTunnel.connect(service, destAddress) //开始连接
+                        remoteTunnel.connect(destAddress) //开始连接
                     } else {
                         localTunnel?.dispose()
                     }

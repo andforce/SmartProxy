@@ -13,8 +13,8 @@ public class ChinaIpMaskManager {
 
     private static final String TAG = "ChinaIpMaskManager";
 
-    static SparseIntArray ChinaIpMaskDict = new SparseIntArray(3000);
-    static SparseIntArray MaskDict = new SparseIntArray();
+    private static SparseIntArray ChinaIpMaskDict = new SparseIntArray(3000);
+    private static SparseIntArray MaskDict = new SparseIntArray();
 
     public static boolean isIPInChina(int ip) {
         boolean found = false;

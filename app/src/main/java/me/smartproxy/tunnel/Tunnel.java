@@ -57,8 +57,8 @@ public abstract class Tunnel {
         this.brotherTunnel = brotherTunnel;
     }
 
-    public void connect(VpnService service, InetSocketAddress destAddress) throws Exception {
-        if (localVpnViewModel.protect(service, innerChannel.socket())) {//保护socket不走vpn
+    public void connect(InetSocketAddress destAddress) throws Exception {
+        if (localVpnViewModel.protect(innerChannel.socket())) {//保护socket不走vpn
             this.destAddress = destAddress;
             innerChannel.register(selector, SelectionKey.OP_CONNECT, this);//注册连接事件
             innerChannel.connect(serverEP);//连接目标

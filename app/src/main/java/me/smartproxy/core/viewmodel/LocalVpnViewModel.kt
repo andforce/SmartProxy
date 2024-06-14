@@ -50,12 +50,12 @@ class LocalVpnViewModel(private val context: Application) : ViewModel() {
         helper.sendUDPPacket(ipHeader, udpHeader)
     }
 
-    fun protect(service: VpnService, datagramSocket: DatagramSocket): Boolean {
-        return helper.protect(service, datagramSocket)
+    fun protect(datagramSocket: DatagramSocket): Boolean {
+        return helper.protect(datagramSocket)
     }
 
-    fun protect(service: VpnService, socket: Socket): Boolean {
-        return helper.protect(service, socket)
+    fun protect(socket: Socket): Boolean {
+        return helper.protect(socket)
     }
 
     private val _requestResult = MutableSharedFlow<Int>(

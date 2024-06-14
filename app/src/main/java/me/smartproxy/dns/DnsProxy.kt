@@ -36,10 +36,10 @@ class DnsProxy(private val config: ProxyConfig) {
         client = null
     }
 
-    fun start(service: VpnService) {
+    fun start() {
         try {
             client?.let { client->
-                val protect = localVpnViewModel.protect(service, client)
+                val protect = localVpnViewModel.protect(client)
 
                 Log.e(TAG, "DNS Proxy, protect result: $protect")
 

@@ -143,11 +143,13 @@ class VpnHelper {
         tcpClient?.sendUDPPacket(ipHeader, udpHeader)
     }
 
-    fun protect(service: VpnService, mClient: DatagramSocket): Boolean {
-        return service.protect(mClient)
+    fun protect(datagramSocket: DatagramSocket): Boolean {
+        val service = LocalVpnService::class.getOrNull()
+        return service?.protect(datagramSocket) ?: false
     }
 
-    fun protect(service: VpnService, socket: Socket): Boolean {
-        return service.protect(socket)
+    fun protect(socket: Socket): Boolean {
+        val service = LocalVpnService::class.getOrNull()
+        return service?.protect(socket) ?: false
     }
 }
