@@ -165,7 +165,7 @@ class VpnHelper(private val context: Context) {
                                 "onIPPacketReceived: 收到本地 TcpProxyServer 服务器数据, $ipHeader $tcpHeader"
                             )
                             ipHeader.sourceIP = ipHeader.destinationIP
-                            tcpHeader.sourcePort = session.RemotePort
+                            tcpHeader.sourcePort = session.remotePort
                             ipHeader.destinationIP = vpnLocalIpInt
 
                             CommonMethods.ComputeTCPChecksum(ipHeader, tcpHeader)
@@ -183,7 +183,7 @@ class VpnHelper(private val context: Context) {
 
                         val portKey = tcpHeader.sourcePort.toInt()
                         var session = NatSessionManager.getSession(portKey)
-                        if (session == null || session.RemoteIP != ipHeader.destinationIP || session.RemotePort != tcpHeader.destinationPort) {
+                        if (session == null || session.remoteIP != ipHeader.destinationIP || session.remotePort != tcpHeader.destinationPort) {
                             session = NatSessionManager.createSession(
                                 portKey,
                                 ipHeader.destinationIP,
@@ -192,16 +192,16 @@ class VpnHelper(private val context: Context) {
                         }
 
                         session?.let {
-                            session.LastNanoTime = System.nanoTime()
-                            session.PacketSent++ //注意顺序
+                            session.lastNanoTime = System.nanoTime()
+                            session.packetSent++ //注意顺序
 
                             val tcpDataSize = ipHeader.dataLength - tcpHeader.headerLength
-                            if (session.PacketSent == 2 && tcpDataSize == 0) {
+                            if (session.packetSent == 2 && tcpDataSize == 0) {
                                 return  //丢弃tcp握手的第二个ACK报文。因为客户端发数据的时候也会带上ACK，这样可以在服务器Accept之前分析出HOST信息。
                             }
 
                             //分析数据，找到host
-                            if (session.BytesSent == 0 && tcpDataSize > 10) {
+                            if (session.bytesSent == 0 && tcpDataSize > 10) {
                                 val dataOffset = tcpHeader.m_Offset + tcpHeader.headerLength
                                 val host = HttpHostHeaderParser.parseHost(
                                     tcpHeader.m_Data,
@@ -209,7 +209,7 @@ class VpnHelper(private val context: Context) {
                                     tcpDataSize
                                 )
                                 if (host != null) {
-                                    session.RemoteHost = host
+                                    session.remoteHost = host
                                 }
                             }
 
@@ -225,7 +225,7 @@ class VpnHelper(private val context: Context) {
                             CommonMethods.ComputeTCPChecksum(ipHeader, tcpHeader)
                             m_VPNOutputStream?.write(ipHeader.m_Data, ipHeader.m_Offset, size)
                             m_VPNOutputStream?.flush()
-                            session.BytesSent += tcpDataSize //注意顺序
+                            session.bytesSent += tcpDataSize //注意顺序
                             m_SentBytes += size.toLong()
                         }
                     }
