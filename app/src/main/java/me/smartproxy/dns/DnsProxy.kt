@@ -45,7 +45,7 @@ class DnsProxy(private val config: ProxyConfig) {
 
                 val receiveBuffer = ByteArray(2000)
                 val ipHeader = IPHeader(receiveBuffer, 0)
-                ipHeader.Default()
+                ipHeader.defaultHeader()
                 val udpHeader = UDPHeader(receiveBuffer, 20)
 
                 var dnsBuffer = ByteBuffer.wrap(receiveBuffer)

@@ -27,10 +27,10 @@ public class ShadowsocksTunnel extends Tunnel {
         //构造socks5请求（跳过前3个字节）
         buffer.clear();
         buffer.put((byte) 0x03);//domain
-        byte[] domainBytes = m_DestAddress.getHostName().getBytes();
+        byte[] domainBytes = destAddress.getHostName().getBytes();
         buffer.put((byte) domainBytes.length);//domain length;
         buffer.put(domainBytes);
-        buffer.putShort((short) m_DestAddress.getPort());
+        buffer.putShort((short) destAddress.getPort());
         buffer.flip();
 
         encryptor.encrypt(buffer);

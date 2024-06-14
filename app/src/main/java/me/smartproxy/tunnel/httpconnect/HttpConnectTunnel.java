@@ -24,8 +24,8 @@ public class HttpConnectTunnel extends Tunnel {
     protected void onConnected(ByteBuffer buffer) throws Exception {
         String request = String.format(Locale.ENGLISH,
                 "CONNECT %s:%d HTTP/1.0\r\nProxy-Connection: keep-alive\r\nUser-Agent: %s\r\n\r\n",
-                m_DestAddress.getHostName(),
-                m_DestAddress.getPort(),
+                destAddress.getHostName(),
+                destAddress.getPort(),
                 proxyConfig.getUserAgent());
 
         buffer.clear();
@@ -47,7 +47,7 @@ public class HttpConnectTunnel extends Tunnel {
                 super.write(buffer, false);
                 bytesSent = 10 - buffer.remaining();
                 buffer.limit(limit);
-                System.out.printf("Send %d bytes(%s) to %s\n", bytesSent, firString, m_DestAddress);
+                System.out.printf("Send %d bytes(%s) to %s\n", bytesSent, firString, destAddress);
 
             }
         }

@@ -12,7 +12,7 @@ public class IPHeader {
         this.offset = offset;
     }
 
-    public void Default() {
+    public void defaultHeader() {
         setHeaderLength(20);
         setTos((byte) 0);
         setTotalLength(0);
