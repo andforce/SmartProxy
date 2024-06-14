@@ -11,42 +11,42 @@ import java.nio.channels.ServerSocketChannel
 import java.nio.channels.SocketChannel
 
 class TcpProxyServer(private val config: ProxyConfig, port: Int) {
-    var Stopped: Boolean = false
-    var Port: Short = 0
+    var stopped: Boolean = false
+    var tcpServerPort: Short = 0
 
-    private var m_Selector: Selector?
-    private var m_ServerSocketChannel: ServerSocketChannel?
+    private var selector: Selector?
+    private var serverSocketChannel: ServerSocketChannel?
 
     init {
-        m_Selector = Selector.open()
-        m_ServerSocketChannel = ServerSocketChannel.open()
+        selector = Selector.open()
+        serverSocketChannel = ServerSocketChannel.open()
 
-        m_ServerSocketChannel?.let {
+        serverSocketChannel?.let {
             it.configureBlocking(false)
             it.socket().bind(InetSocketAddress(port))
-            it.register(m_Selector, SelectionKey.OP_ACCEPT)
-            this.Port = it.socket().localPort.toShort()
-            Log.d(TAG, "AsyncTcpServer listen on " + (Port.toInt() and 0xFFFF) + " success.")
+            it.register(selector, SelectionKey.OP_ACCEPT)
+            this.tcpServerPort = it.socket().localPort.toShort()
+            Log.d(TAG, "AsyncTcpServer listen on " + (tcpServerPort.toInt() and 0xFFFF) + " success.")
         } ?: run {
             Log.e(TAG, "AsyncTcpServer listen on 0 failed.")
         }
     }
 
     fun stop() {
-        this.Stopped = true
-        m_Selector?.let {
+        this.stopped = true
+        selector?.let {
             try {
                 it.close()
-                m_Selector = null
+                selector = null
             } catch (e: Exception) {
                 Log.e(TAG, "stop, m_Selector: ", e)
             }
         }
 
-        m_ServerSocketChannel?.let {
+        serverSocketChannel?.let {
             try {
                 it.close()
-                m_ServerSocketChannel = null
+                serverSocketChannel = null
             } catch (e: Exception) {
                 Log.e(TAG, "stop, m_ServerSocketChannel: ", e)
             }
@@ -54,7 +54,7 @@ class TcpProxyServer(private val config: ProxyConfig, port: Int) {
     }
 
     fun start(service: VpnService) {
-        m_Selector?.let { selector ->
+        selector?.let { selector ->
             try {
                 while (true) {
                     selector.select()
@@ -121,14 +121,14 @@ class TcpProxyServer(private val config: ProxyConfig, port: Int) {
     private fun onAccepted(service: VpnService) {
         var localTunnel: Tunnel? = null
         try {
-            m_ServerSocketChannel?.let { socketChannel->
+            serverSocketChannel?.let { socketChannel->
                 val localChannel = socketChannel.accept()
-                localTunnel = TunnelFactory.wrap(localChannel, m_Selector)
+                localTunnel = TunnelFactory.wrap(localChannel, selector)
 
                 val destAddress = getDestAddress(localChannel)
                 if (destAddress != null) {
                     val remoteTunnel =
-                        TunnelFactory.createTunnelByConfig(config, destAddress, m_Selector)
+                        TunnelFactory.createTunnelByConfig(config, destAddress, selector)
                     remoteTunnel.setBrotherTunnel(localTunnel) //关联兄弟
                     localTunnel?.setBrotherTunnel(remoteTunnel) //关联兄弟
                     remoteTunnel.connect(service, destAddress) //开始连接

@@ -17,27 +17,27 @@ import java.net.InetSocketAddress
 import java.nio.ByteBuffer
 import java.util.concurrent.ConcurrentHashMap
 
-class DnsProxy(private val m_Config: ProxyConfig) {
+class DnsProxy(private val config: ProxyConfig) {
     private val localVpnViewModel = get<LocalVpnViewModel>(LocalVpnViewModel::class.java)
 
-    var Stopped: Boolean = false
-    private var m_Client: DatagramSocket?
-    private var m_QueryID: Short = 0
-    private val m_QueryArray = SparseArray<QueryState>()
+    var stopped: Boolean = false
+    private var client: DatagramSocket?
+    private var queryID: Short = 0
+    private val queryArray = SparseArray<QueryState>()
 
     init {
-        m_Client = DatagramSocket(0)
+        client = DatagramSocket(0)
     }
 
     fun stop() {
-        Stopped = true
-        m_Client?.close()
-        m_Client = null
+        stopped = true
+        client?.close()
+        client = null
     }
 
     fun start(service: VpnService) {
         try {
-            m_Client?.let { client->
+            client?.let { client->
                 val protect = localVpnViewModel.protect(service, client)
 
                 Log.e(TAG, "DNS Proxy, protect result: $protect")
@@ -53,7 +53,7 @@ class DnsProxy(private val m_Config: ProxyConfig) {
 
                 val packet = DatagramPacket(receiveBuffer, 28, receiveBuffer.size - 28)
 
-                while (m_Client != null && client.isClosed.not()) {
+                while (this.client != null && client.isClosed.not()) {
                     packet.length = receiveBuffer.size - 28
                     client.receive(packet)
 
@@ -98,7 +98,7 @@ class DnsProxy(private val m_Config: ProxyConfig) {
         rPointer.setDomain(0xC00C.toShort())
         rPointer.type = question.Type
         rPointer.setClass(question.Class)
-        rPointer.ttl = m_Config.dnsTTL
+        rPointer.ttl = config.dnsTTL
         rPointer.dataLength = 4.toShort()
         rPointer.ip = newIP
 
@@ -126,7 +126,7 @@ class DnsProxy(private val m_Config: ProxyConfig) {
             val question = dnsPacket.Questions[0]
             if (question.Type.toInt() == 1) {
                 val realIP = getFirstIP(dnsPacket)
-                if (m_Config.needProxy(question.Domain, realIP)) {
+                if (config.needProxy(question.Domain, realIP)) {
                     val fakeIP = getOrCreateFakeIP(question.Domain)
                     tamperDnsResponse(rawPacket, dnsPacket, fakeIP)
                     Log.d(
@@ -147,11 +147,11 @@ class DnsProxy(private val m_Config: ProxyConfig) {
         udpHeader: UDPHeader,
         dnsPacket: DnsPacket
     ) {
-        var state: QueryState? = null
-        synchronized(m_QueryArray) {
-            state = m_QueryArray[dnsPacket.Header.ID.toInt()]
+        var state: QueryState?
+        synchronized(queryArray) {
+            state = queryArray[dnsPacket.Header.ID.toInt()]
             if (state != null) {
-                m_QueryArray.remove(dnsPacket.Header.ID.toInt())
+                queryArray.remove(dnsPacket.Header.ID.toInt())
             }
         }
 
@@ -185,7 +185,7 @@ class DnsProxy(private val m_Config: ProxyConfig) {
         val question = dnsPacket.Questions[0]
         Log.d(TAG, "DNS Qeury " + question.Domain)
         if (question.Type.toInt() == 1) {
-            if (m_Config.needProxy(question.Domain, getIPFromCache(question.Domain))) {
+            if (config.needProxy(question.Domain, getIPFromCache(question.Domain))) {
                 val fakeIP = getOrCreateFakeIP(question.Domain)
                 tamperDnsResponse(ipHeader.m_Data, dnsPacket, fakeIP)
 
@@ -213,12 +213,12 @@ class DnsProxy(private val m_Config: ProxyConfig) {
 
     private fun clearExpiredQueries() {
         val now = System.nanoTime()
-        val QUERY_TIMEOUT_NS = 10 * 1000000000L
+        val timeOutNS = 10 * 1000000000L
 
-        for (i in m_QueryArray.size() - 1 downTo 0) {
-            val state = m_QueryArray.valueAt(i)
-            if ((now - state.QueryNanoTime) > QUERY_TIMEOUT_NS) {
-                m_QueryArray.removeAt(i)
+        for (i in queryArray.size() - 1 downTo 0) {
+            val state = queryArray.valueAt(i)
+            if ((now - state.QueryNanoTime) > timeOutNS) {
+                queryArray.removeAt(i)
             }
         }
     }
@@ -235,12 +235,12 @@ class DnsProxy(private val m_Config: ProxyConfig) {
             state.RemotePort = udpHeader.destinationPort
 
             // 转换QueryID
-            m_QueryID++ // 增加ID
-            dnsPacket.Header.id = m_QueryID
+            queryID++ // 增加ID
+            dnsPacket.Header.id = queryID
 
-            synchronized(m_QueryArray) {
+            synchronized(queryArray) {
                 clearExpiredQueries() //清空过期的查询，减少内存开销。
-                m_QueryArray.put(m_QueryID.toInt(), state) // 关联数据
+                queryArray.put(queryID.toInt(), state) // 关联数据
             }
 
             val remoteAddress = InetSocketAddress(
@@ -251,7 +251,7 @@ class DnsProxy(private val m_Config: ProxyConfig) {
             packet.socketAddress = remoteAddress
 
             try {
-                m_Client!!.send(packet)
+                client!!.send(packet)
             } catch (e: IOException) {
                 Log.e(TAG, "onDnsRequestReceived Error: ", e)
             }

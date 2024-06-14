@@ -17,7 +17,7 @@ object TcpProxyHelper {
     }
 
     fun isRunning(): Boolean {
-        return tcpProxy?.Stopped == false
+        return tcpProxy?.stopped == false
     }
 
     fun stopTcpProxy() {
@@ -25,5 +25,5 @@ object TcpProxyHelper {
         tcpProxy = null
     }
 
-    fun getPort() = tcpProxy?.Port ?: 0
+    fun getPort() = tcpProxy?.tcpServerPort ?: 0
 }

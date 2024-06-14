@@ -139,7 +139,6 @@ public abstract class Tunnel {
                 this.dispose();//连接已关闭，释放资源。
             }
         } catch (Exception e) {
-            e.printStackTrace();
             this.dispose();
             Log.e("Tunnel", "onReadable: ", e);
         }

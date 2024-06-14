@@ -22,7 +22,7 @@ object DnsProxyHelper {
     }
 
     fun isRunning(): Boolean {
-        return dnsProxy?.Stopped == false
+        return dnsProxy?.stopped == false
     }
 
     fun stopDnsProxy() {
