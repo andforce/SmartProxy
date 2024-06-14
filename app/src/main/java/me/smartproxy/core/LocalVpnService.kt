@@ -10,7 +10,7 @@ import org.koin.core.qualifier.named
 import org.koin.core.scope.Scope
 import org.koin.java.KoinJavaComponent.get
 
-class LocalVpnService : CoroutinesService() {
+class LocalVpnService : CoroutinesService(), IVpnWrapper {
     companion object {
         private const val TAG = "LocalVpnService"
     }
@@ -26,14 +26,13 @@ class LocalVpnService : CoroutinesService() {
     }
 
     override fun onCreate() {
-        // 把当前Service实例绑定到Koin的Scope中
-        koinScope = GlobalContext.get().getOrCreateScope(this.javaClass.name, named(this.javaClass.name))
+        val name = this.javaClass.name
+        koinScope = GlobalContext.get().getOrCreateScope(name, named(name))
         koinScope.declare(this)
 
-        val localVpnService: LocalVpnService = GlobalContext.get().getScope(this.javaClass.name).get()
-
         super.onCreate()
-        Log.d(TAG, "VPNService created: $localVpnService")
+
+        Log.d(TAG, "VPNService created()")
 
         serviceScope.launch {
             val config = VpnEstablishHelper.buildProxyConfig(this@LocalVpnService, "")
@@ -75,7 +74,8 @@ class LocalVpnService : CoroutinesService() {
     }
 
     override fun onDestroy() {
-        Log.e(TAG, "VPNService destroyed")
+        super.onDestroy()
         GlobalContext.get().deleteScope(koinScope.id)
+        Log.e(TAG, "VPNService destroyed")
     }
 }
