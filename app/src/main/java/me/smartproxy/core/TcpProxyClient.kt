@@ -6,21 +6,22 @@ import me.smartproxy.core.VpnHelper.Companion.TAG
 import me.smartproxy.tcpip.CommonMethods
 import me.smartproxy.tcpip.IPHeader
 import me.smartproxy.tcpip.TCPHeader
+import me.smartproxy.tcpip.UDPHeader
 import java.io.FileOutputStream
+import java.io.IOException
 
 class TcpProxyClient(pfd: ParcelFileDescriptor, buffer: ByteArray, private val vpnLocalIpInt: Int) {
 
-    private var m_VPNOutputStream: FileOutputStream
+    private var m_VPNOutputStream: FileOutputStream? = null
     private val m_TCPHeader: TCPHeader
 
-    private var m_ReceivedBytes : Long = 0
+    private var m_ReceivedBytes: Long = 0
     private var m_SentBytes: Long = 0
 
 
     init {
         m_VPNOutputStream = FileOutputStream(pfd.fileDescriptor)
         m_TCPHeader = TCPHeader(buffer, 20)
-
     }
 
 
@@ -105,6 +106,24 @@ class TcpProxyClient(pfd: ParcelFileDescriptor, buffer: ByteArray, private val v
             }
         } else {
             Log.e(TAG, "onIPPacketReceived, TCP: 收到非本地数据包, $ipHeader $tcpHeader")
+        }
+    }
+
+
+    fun sendUDPPacket(ipHeader: IPHeader, udpHeader: UDPHeader?) {
+        try {
+            CommonMethods.ComputeUDPChecksum(ipHeader, udpHeader)
+            m_VPNOutputStream?.write(ipHeader.m_Data, ipHeader.m_Offset, ipHeader.totalLength)
+            m_VPNOutputStream?.flush()
+        } catch (e: IOException) {
+            Log.e(TAG, "sendUDPPacket: ", e)
+        }
+    }
+
+    fun stop() {
+        Log.e(TAG, "TcpProxyClient stopped.")
+        m_VPNOutputStream?.use {
+            m_VPNOutputStream = null
         }
     }
 }

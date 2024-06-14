@@ -7,17 +7,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import me.smartproxy.core.viewmodel.LocalVpnViewModel
-import me.smartproxy.dns.DnsPacket
 import me.smartproxy.tcpip.CommonMethods
 import me.smartproxy.tcpip.IPHeader
 import me.smartproxy.tcpip.UDPHeader
 import org.koin.java.KoinJavaComponent
 import java.io.FileInputStream
-import java.io.FileOutputStream
-import java.io.IOException
 import java.net.DatagramSocket
 import java.net.Socket
-import java.nio.ByteBuffer
 
 class VpnHelper {
 
@@ -36,15 +32,10 @@ class VpnHelper {
 
 
     private var tcpClient: TcpProxyClient? = null
-
-    private var m_VPNOutputStream: FileOutputStream? = null
+    private var dnsProcessor: DnsProcessor? = null
 
     private val m_Packet = ByteArray(20000)
     private val m_IPHeader = IPHeader(m_Packet, 0)
-
-    private val m_UDPHeader = UDPHeader(m_Packet, 20)
-    private val m_DNSBuffer: ByteBuffer =
-        (ByteBuffer.wrap(m_Packet).position(28) as ByteBuffer).slice()
 
     private var proxyConfig: ProxyConfig? = null
 
@@ -78,8 +69,7 @@ class VpnHelper {
 
             pfd.use { vpnInterface ->
                 tcpClient = TcpProxyClient(vpnInterface, m_Packet, vpnLocalIpInt)
-
-                m_VPNOutputStream = FileOutputStream(vpnInterface.fileDescriptor)
+                dnsProcessor = DnsProcessor(m_Packet, vpnLocalIpInt)
 
                 FileInputStream(vpnInterface.fileDescriptor).use { fis ->
                     var size: Int
@@ -97,24 +87,7 @@ class VpnHelper {
 
                                 IPHeader.UDP -> {
                                     // 转发DNS数据包：
-                                    m_UDPHeader.m_Offset = m_IPHeader.headerLength
-                                    if (m_IPHeader.sourceIP == vpnLocalIpInt && m_UDPHeader.destinationPort.toInt() == 53) {
-                                        m_DNSBuffer.clear()
-                                        m_DNSBuffer.limit(m_IPHeader.dataLength - 8)
-                                        val dnsPacket = DnsPacket.FromBytes(m_DNSBuffer)
-                                        if (dnsPacket != null && dnsPacket.Header.QuestionCount > 0) {
-                                            DnsProxyHelper.onDnsRequestReceived(
-                                                m_IPHeader,
-                                                m_UDPHeader,
-                                                dnsPacket
-                                            )
-                                        }
-                                    } else {
-                                        Log.e(
-                                            TAG,
-                                            "onIPPacketReceived, UDP: 收到非本地数据包, $m_IPHeader $m_UDPHeader"
-                                        )
-                                    }
+                                    dnsProcessor?.processUdpPacket(m_IPHeader)
                                 }
 
                                 else -> {
@@ -145,9 +118,7 @@ class VpnHelper {
 
         isRunning = false
 
-        m_VPNOutputStream?.use {
-            m_VPNOutputStream = null
-        }
+        tcpClient?.stop()
 
         TcpProxyHelper.stopTcpProxy()
 
@@ -165,13 +136,7 @@ class VpnHelper {
     }
 
     fun sendUDPPacket(ipHeader: IPHeader, udpHeader: UDPHeader?) {
-        try {
-            CommonMethods.ComputeUDPChecksum(ipHeader, udpHeader)
-            m_VPNOutputStream?.write(ipHeader.m_Data, ipHeader.m_Offset, ipHeader.totalLength)
-            m_VPNOutputStream?.flush()
-        } catch (e: IOException) {
-            Log.e(TAG, "sendUDPPacket: ", e)
-        }
+        tcpClient?.sendUDPPacket(ipHeader, udpHeader)
     }
 
     fun protect(service: VpnService, mClient: DatagramSocket): Boolean {
