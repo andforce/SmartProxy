@@ -229,7 +229,7 @@ public class ProxyConfig {
             return true;
 
         if (outsideChinaUseProxy && ip != 0) {
-            return !ChinaIpMaskManager.isIPInChina(ip);
+            return !ChinaIpMaskManager.INSTANCE.isIPInChina(ip);
         }
         return false;
     }
