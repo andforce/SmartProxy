@@ -103,7 +103,7 @@ object ProxyConfigHelper {
     private fun addProxyToList(c: ProxyConfig, items: Array<String>, offset: Int) {
         for (i in offset until items.size) {
             var proxyString = items[i].trim { it <= ' ' }
-            var config: Config? = null
+            var config: Config?
             if (proxyString.startsWith("ss://")) {
                 config = ShadowsocksConfig.parse(proxyString)
             } else {
@@ -132,11 +132,11 @@ object ProxyConfigHelper {
         }
     }
 
-    private fun convertToBool(valueString: String): Boolean {
-        var valueString: String? = valueString
-        if (valueString == null || valueString.isEmpty()) return false
-        valueString = valueString.lowercase().trim { it <= ' ' }
-        return if (valueString == "on" || valueString == "1" || valueString == "true" || valueString == "yes") {
+    private fun convertToBool(valueString: String?): Boolean {
+        var valueStr: String? = valueString
+        if (valueStr.isNullOrEmpty()) return false
+        valueStr = valueStr.lowercase().trim { it <= ' ' }
+        return if (valueStr == "on" || valueStr == "1" || valueStr == "true" || valueStr == "yes") {
             true
         } else {
             false

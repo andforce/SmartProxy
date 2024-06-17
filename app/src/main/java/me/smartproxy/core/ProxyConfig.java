@@ -132,7 +132,7 @@ public class ProxyConfig {
         this.mtu = mtu;
     }
 
-    private TimerTask m_Task = new TimerTask() {
+    private final TimerTask m_Task = new TimerTask() {
         @Override
         public void run() {
 
@@ -155,7 +155,7 @@ public class ProxyConfig {
                     }
                 }
             } catch (Exception e) {
-
+                Log.e("ProxyConfig", "update dns cache error", e);
             }
         }
     };
@@ -232,7 +232,7 @@ public class ProxyConfig {
         if (host != null) {
             Boolean stateBoolean = getDomainState(host);
             if (stateBoolean != null) {
-                return stateBoolean.booleanValue();
+                return stateBoolean;
             }
         }
 

@@ -9,10 +9,10 @@ public class EncryptorFactory {
     private static final HashMap<String, IEncryptor> EncryptorCache = new HashMap<String, IEncryptor>();
 
     public static IEncryptor createEncryptorByConfig(ShadowsocksConfig config) throws Exception {
-        if ("table".equals(config.encryptMethod)) {
+        if ("table".equals(config.getEncryptMethod())) {
             IEncryptor tableEncryptor = EncryptorCache.get(config.toString());
             if (tableEncryptor == null) {
-                tableEncryptor = new TableEncryptor(config.password);
+                tableEncryptor = new TableEncryptor(config.getPassword());
                 if (EncryptorCache.size() > 2) {
                     EncryptorCache.clear();
                 }
@@ -20,6 +20,6 @@ public class EncryptorFactory {
             }
             return tableEncryptor;
         }
-        throw new Exception(String.format("Does not support the '%s' method. Only 'table' encrypt method was supported.", config.encryptMethod));
+        throw new Exception(String.format("Does not support the '%s' method. Only 'table' encrypt method was supported.", config.getEncryptMethod()));
     }
 }
