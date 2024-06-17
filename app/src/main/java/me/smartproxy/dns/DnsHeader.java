@@ -16,7 +16,7 @@ public class DnsHeader {
     public static DnsHeader fromBytes(ByteBuffer buffer) {
         DnsHeader header = new DnsHeader(buffer.array(), buffer.arrayOffset() + buffer.position());
         header.ID = buffer.getShort();
-        header.Flags = DnsFlags.parse(buffer.getShort());
+        header.Flags = DnsFlagsKt.parse(buffer.getShort());
         header.QuestionCount = buffer.getShort();
         header.ResourceCount = buffer.getShort();
         header.AResourceCount = buffer.getShort();
