@@ -35,15 +35,15 @@ public class DnsPacket {
         }
 
         for (int i = 0; i < packet.resources.length; i++) {
-            packet.resources[i] = Resource.fromBytes(buffer);
+            packet.resources[i] = Resource.Companion.fromBytes(buffer);
         }
 
         for (int i = 0; i < packet.aResources.length; i++) {
-            packet.aResources[i] = Resource.fromBytes(buffer);
+            packet.aResources[i] = Resource.Companion.fromBytes(buffer);
         }
 
         for (int i = 0; i < packet.eResources.length; i++) {
-            packet.eResources[i] = Resource.fromBytes(buffer);
+            packet.eResources[i] = Resource.Companion.fromBytes(buffer);
         }
 
         return packet;
