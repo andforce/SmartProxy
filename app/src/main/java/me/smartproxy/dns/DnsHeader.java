@@ -33,12 +33,12 @@ public class DnsHeader {
         buffer.putShort(this.EResourceCount);
     }
 
-    static final short offset_ID = 0;
-    static final short offset_Flags = 2;
-    static final short offset_QuestionCount = 4;
-    static final short offset_ResourceCount = 6;
-    static final short offset_AResourceCount = 8;
-    static final short offset_EResourceCount = 10;
+    private static final short offset_ID = 0;
+    private static final short offset_Flags = 2;
+    private static final short offset_QuestionCount = 4;
+    private static final short offset_ResourceCount = 6;
+    private static final short offset_AResourceCount = 8;
+    private static final short offset_EResourceCount = 10;
 
     public byte[] Data;
     public int Offset;

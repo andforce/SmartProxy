@@ -3,12 +3,12 @@ package me.smartproxy.dns;
 import me.smartproxy.tcpip.CommonMethods;
 
 public class ResourcePointer {
-    static final short offset_Domain = 0;
-    static final short offset_Type = 2;
-    static final short offset_Class = 4;
-    static final int offset_TTL = 6;
-    static final short offset_DataLength = 10;
-    static final int offset_IP = 12;
+    private static final short offset_Domain = 0;
+    private static final short offset_Type = 2;
+    private static final short offset_Class = 4;
+    private static final int offset_TTL = 6;
+    private static final short offset_DataLength = 10;
+    private static final int offset_IP = 12;
 
     byte[] data;
     int offset;

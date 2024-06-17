@@ -17,7 +17,7 @@ import me.smartproxy.core.viewmodel.LocalVpnViewModel;
 
 public abstract class Tunnel {
     private final LocalVpnViewModel localVpnViewModel = KoinJavaComponent.get(LocalVpnViewModel.class);
-    final static ByteBuffer GL_BUFFER = ByteBuffer.allocate(20000);
+    private final static ByteBuffer GL_BUFFER = ByteBuffer.allocate(20000);
     public static long SessionCount;
 
     protected abstract void onConnected(ByteBuffer buffer) throws Exception;

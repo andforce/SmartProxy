@@ -7,9 +7,9 @@ import me.smartproxy.tcpip.CommonMethods;
 
 public class NatSessionManager {
 
-    static final int MAX_SESSION_COUNT = 60;
-    static final long SESSION_TIMEOUT_NS = 60 * 1000000000L;
-    static final SparseArray<NatSession> Sessions = new SparseArray<>();
+    private static final int MAX_SESSION_COUNT = 60;
+    private static final long SESSION_TIMEOUT_NS = 60 * 1000000000L;
+    private static final SparseArray<NatSession> Sessions = new SparseArray<>();
 
     public static NatSession getSession(int portKey) {
         return Sessions.get(portKey);
