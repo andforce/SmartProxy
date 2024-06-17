@@ -1,11 +1,9 @@
-package me.smartproxy.tunnel;
+package me.smartproxy.tunnel
 
-import java.nio.ByteBuffer;
+import java.nio.ByteBuffer
 
-public interface IEncryptor {
+interface IEncryptor {
+    fun encrypt(buffer: ByteBuffer)
 
-    void encrypt(ByteBuffer buffer);
-
-    void decrypt(ByteBuffer buffer);
-
+    fun decrypt(buffer: ByteBuffer)
 }
