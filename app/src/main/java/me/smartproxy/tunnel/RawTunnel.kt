@@ -1,43 +1,35 @@
-package me.smartproxy.tunnel;
+package me.smartproxy.tunnel
 
-import java.net.InetSocketAddress;
-import java.nio.ByteBuffer;
-import java.nio.channels.Selector;
-import java.nio.channels.SocketChannel;
+import java.net.InetSocketAddress
+import java.nio.ByteBuffer
+import java.nio.channels.Selector
+import java.nio.channels.SocketChannel
 
-public class RawTunnel extends Tunnel {
+class RawTunnel : Tunnel {
+    constructor(serverAddress: InetSocketAddress?, selector: Selector?) : super(
+        serverAddress,
+        selector
+    )
 
-    public RawTunnel(InetSocketAddress serverAddress, Selector selector) throws Exception {
-        super(serverAddress, selector);
+    constructor(innerChannel: SocketChannel?, selector: Selector?) : super(innerChannel, selector)
+
+    @Throws(Exception::class)
+    override fun onConnected(buffer: ByteBuffer) {
+        onTunnelEstablished()
     }
 
-    public RawTunnel(SocketChannel innerChannel, Selector selector) {
-        super(innerChannel, selector);
+    @Throws(Exception::class)
+    override fun beforeSend(buffer: ByteBuffer) {
     }
 
-    @Override
-    protected void onConnected(ByteBuffer buffer) throws Exception {
-        onTunnelEstablished();
+    @Throws(Exception::class)
+    override fun afterReceived(buffer: ByteBuffer) {
     }
 
-    @Override
-    protected void beforeSend(ByteBuffer buffer) throws Exception {
-
+    override fun isTunnelEstablished(): Boolean {
+        return true
     }
 
-    @Override
-    protected void afterReceived(ByteBuffer buffer) throws Exception {
-
+    override fun onDispose() {
     }
-
-    @Override
-    protected boolean isTunnelEstablished() {
-        return true;
-    }
-
-    @Override
-    protected void onDispose() {
-
-    }
-
 }
