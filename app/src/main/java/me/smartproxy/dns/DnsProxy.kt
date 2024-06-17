@@ -81,7 +81,7 @@ class DnsProxy(private val config: ProxyConfig) {
     }
 
     private fun getFirstIP(dnsPacket: DnsPacket): Int {
-        for (i in 0 until dnsPacket.dnsHeader.ResourceCount) {
+        for (i in 0 until dnsPacket.dnsHeader.resourceCount) {
             val resource = dnsPacket.resources[i]
             if (resource.type.toInt() == 1) {
                 return CommonMethods.readInt(resource.data, 0)
@@ -93,9 +93,9 @@ class DnsProxy(private val config: ProxyConfig) {
     private fun tamperDnsResponse(rawPacket: ByteArray, dnsPacket: DnsPacket, newIP: Int) {
         val question = dnsPacket.questions[0]
 
-        dnsPacket.dnsHeader.ResourceCount = 1.toShort()
-        dnsPacket.dnsHeader.AResourceCount = 0.toShort()
-        dnsPacket.dnsHeader.EResourceCount = 0.toShort()
+        dnsPacket.dnsHeader.resourceCount = 1.toShort()
+        dnsPacket.dnsHeader.aResourceCount = 0.toShort()
+        dnsPacket.dnsHeader.eResourceCount = 0.toShort()
 
         val rPointer = ResourcePointer(rawPacket, question.offset + question.length)
         rPointer.setDomain(0xC00C.toShort())
@@ -125,7 +125,7 @@ class DnsProxy(private val config: ProxyConfig) {
     }
 
     private fun dnsPollution(rawPacket: ByteArray, dnsPacket: DnsPacket): Boolean {
-        if (dnsPacket.dnsHeader.QuestionCount > 0) {
+        if (dnsPacket.dnsHeader.questionCount > 0) {
             val question = dnsPacket.questions[0]
             if (question.type.toInt() == 1) {
                 val realIP = getFirstIP(dnsPacket)

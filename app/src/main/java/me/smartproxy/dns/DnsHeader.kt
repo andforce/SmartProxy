@@ -3,55 +3,55 @@ package me.smartproxy.dns
 import me.smartproxy.tcpip.CommonMethods
 import java.nio.ByteBuffer
 
-class DnsHeader(var Data: ByteArray, var Offset: Int) {
+class DnsHeader(var data: ByteArray, var offset: Int) {
     var ID: Short
         set(value) {
-            CommonMethods.writeShort(Data, Offset + offset_ID, value)
+            CommonMethods.writeShort(data, offset + offset_ID, value)
         }
         get() {
-            return CommonMethods.readShort(Data, Offset + offset_ID)
+            return CommonMethods.readShort(data, offset + offset_ID)
         }
     lateinit var Flags: DnsFlags
 
-    var QuestionCount: Short
+    var questionCount: Short
         set(value) {
-            CommonMethods.writeShort(Data, Offset + offset_QuestionCount, value)
+            CommonMethods.writeShort(data, offset + offset_QuestionCount, value)
         }
         get() {
-            return CommonMethods.readShort(Data, Offset + offset_QuestionCount)
+            return CommonMethods.readShort(data, offset + offset_QuestionCount)
         }
 
-    var ResourceCount: Short
+    var resourceCount: Short
         set(value) {
-            CommonMethods.writeShort(Data, Offset + offset_ResourceCount, value)
+            CommonMethods.writeShort(data, offset + offset_ResourceCount, value)
         }
         get() {
-            return CommonMethods.readShort(Data, Offset + offset_ResourceCount)
+            return CommonMethods.readShort(data, offset + offset_ResourceCount)
         }
 
-    var AResourceCount: Short
+    var aResourceCount: Short
         set(value) {
-            CommonMethods.writeShort(Data, Offset + offset_AResourceCount, value)
+            CommonMethods.writeShort(data, offset + offset_AResourceCount, value)
         }
         get() {
-            return CommonMethods.readShort(Data, Offset + offset_AResourceCount)
+            return CommonMethods.readShort(data, offset + offset_AResourceCount)
         }
 
-    var EResourceCount: Short
+    var eResourceCount: Short
         set(value) {
-            CommonMethods.writeShort(Data, Offset + offset_EResourceCount, value)
+            CommonMethods.writeShort(data, offset + offset_EResourceCount, value)
         }
         get() {
-            return CommonMethods.readShort(Data, Offset + offset_EResourceCount)
+            return CommonMethods.readShort(data, offset + offset_EResourceCount)
         }
 
     fun toBytes(buffer: ByteBuffer) {
         buffer.putShort(this.ID)
         buffer.putShort(Flags.toShort())
-        buffer.putShort(this.QuestionCount)
-        buffer.putShort(this.ResourceCount)
-        buffer.putShort(this.AResourceCount)
-        buffer.putShort(this.EResourceCount)
+        buffer.putShort(this.questionCount)
+        buffer.putShort(this.resourceCount)
+        buffer.putShort(this.aResourceCount)
+        buffer.putShort(this.eResourceCount)
     }
 
 
@@ -60,10 +60,10 @@ class DnsHeader(var Data: ByteArray, var Offset: Int) {
             val header = DnsHeader(buffer.array(), buffer.arrayOffset() + buffer.position())
             header.ID = buffer.getShort()
             header.Flags = parse(buffer.getShort())
-            header.QuestionCount = buffer.getShort()
-            header.ResourceCount = buffer.getShort()
-            header.AResourceCount = buffer.getShort()
-            header.EResourceCount = buffer.getShort()
+            header.questionCount = buffer.getShort()
+            header.resourceCount = buffer.getShort()
+            header.aResourceCount = buffer.getShort()
+            header.eResourceCount = buffer.getShort()
             return header
         }
 
