@@ -1,115 +1,120 @@
-package me.smartproxy.core;
+package me.smartproxy.core
 
-import android.util.Log;
+import android.util.Log
+import me.smartproxy.tcpip.CommonMethods
 
-import java.util.Locale;
+object HttpHostHeaderParser {
 
-import me.smartproxy.tcpip.CommonMethods;
+    private const val TAG = "HttpHostHeaderParser"
 
-
-public class HttpHostHeaderParser {
-
-    private static final String TAG = "HttpHostHeaderParser";
-
-    public static String parseHost(byte[] buffer, int offset, int count) {
+    fun parseHost(buffer: ByteArray, offset: Int, count: Int): String? {
         try {
-            switch (buffer[offset]) {
-                case 'G'://GET
-                case 'H'://HEAD
-                case 'P'://POST,PUT
-                case 'D'://DELETE
-                case 'O'://OPTIONS
-                case 'T'://TRACE
-                case 'C'://CONNECT
-                    return getHttpHost(buffer, offset, count);
-                case 0x16://SSL
-                    return getSNI(buffer, offset, count);
+            when (buffer[offset]) {
+                'G'.code.toByte(),
+                'H'.code.toByte(),
+                'P'.code.toByte(),
+                'D'.code.toByte(),
+                'O'.code.toByte(),
+                'T'.code.toByte(),
+                'C'.code.toByte() -> return getHttpHost(
+                    buffer,
+                    offset,
+                    count
+                )
+
+                0x16.toByte() -> return getSNI(buffer, offset, count)
             }
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
-        return null;
+        return null
     }
 
-    private static String getHttpHost(byte[] buffer, int offset, int count) {
-        String headerString = new String(buffer, offset, count);
-        String[] headerLines = headerString.split("\\r\\n");
-        String requestLine = headerLines[0];
-        if (requestLine.startsWith("GET") || requestLine.startsWith("POST") || requestLine.startsWith("HEAD") || requestLine.startsWith("OPTIONS")) {
-            for (int i = 1; i < headerLines.length; i++) {
-                String[] nameValueStrings = headerLines[i].split(":");
-                if (nameValueStrings.length == 2) {
-                    String name = nameValueStrings[0].toLowerCase(Locale.ENGLISH).trim();
-                    String value = nameValueStrings[1].trim();
-                    if ("host".equals(name)) {
-                        return value;
+
+    private fun getHttpHost(buffer: ByteArray, offset: Int, count: Int): String? {
+        val headerString = String(buffer, offset, count)
+        val headerLines = headerString.split("\\r\\n".toRegex()).dropLastWhile { it.isEmpty() }
+            .toTypedArray()
+        val requestLine = headerLines[0]
+        if (requestLine.startsWith("GET") || requestLine.startsWith("POST") || requestLine.startsWith(
+                "HEAD"
+            ) || requestLine.startsWith("OPTIONS")
+        ) {
+            for (i in 1 until headerLines.size) {
+                val nameValueStrings = headerLines[i].split(":")
+                if (nameValueStrings.size == 2) {
+                    val name = nameValueStrings[0].lowercase().trim { it <= ' ' }
+                    val value = nameValueStrings[1].trim { it <= ' ' }
+                    if ("host" == name) {
+                        return value
                     }
                 }
             }
         }
-        return null;
+        return null
     }
 
-    private static String getSNI(byte[] buffer, int offset, int count) {
-        int limit = offset + count;
-        if (count > 43 && buffer[offset] == 0x16) {//TLS Client Hello
-            offset += 43;//skip 43 bytes header
+
+    private fun getSNI(buffer: ByteArray, offset: Int, count: Int): String? {
+        var offsetValue = offset
+        val limit = offsetValue + count
+        if (count > 43 && buffer[offsetValue].toInt() == 0x16) { //TLS Client Hello
+            offsetValue += 43 //skip 43 bytes header
 
             //read sessionID:
-            if (offset + 1 > limit) return null;
-            int sessionIDLength = buffer[offset++] & 0xFF;
-            offset += sessionIDLength;
+            if (offsetValue + 1 > limit) return null
+            val sessionIDLength = buffer[offsetValue++].toInt() and 0xFF
+            offsetValue += sessionIDLength
 
             //read cipher suites:
-            if (offset + 2 > limit) return null;
-            int cipherSuitesLength = CommonMethods.readShort(buffer, offset) & 0xFFFF;
-            offset += 2;
-            offset += cipherSuitesLength;
+            if (offsetValue + 2 > limit) return null
+            val cipherSuitesLength = CommonMethods.readShort(buffer, offsetValue).toInt() and 0xFFFF
+            offsetValue += 2
+            offsetValue += cipherSuitesLength
 
             //read Compression method:
-            if (offset + 1 > limit) return null;
-            int compressionMethodLength = buffer[offset++] & 0xFF;
-            offset += compressionMethodLength;
+            if (offsetValue + 1 > limit) return null
+            val compressionMethodLength = buffer[offsetValue++].toInt() and 0xFF
+            offsetValue += compressionMethodLength
 
-            if (offset == limit) {
-                Log.e(TAG, "TLS Client Hello packet doesn't contains SNI info.(offset == limit)");
-                return null;
+            if (offsetValue == limit) {
+                Log.e(TAG, "TLS Client Hello packet doesn't contains SNI info.(offset == limit)")
+                return null
             }
 
             //read Extensions:
-            if (offset + 2 > limit) return null;
-            int extensionsLength = CommonMethods.readShort(buffer, offset) & 0xFFFF;
-            offset += 2;
+            if (offsetValue + 2 > limit) return null
+            val extensionsLength = CommonMethods.readShort(buffer, offsetValue).toInt() and 0xFFFF
+            offsetValue += 2
 
-            if (offset + extensionsLength > limit) {
-                Log.e(TAG, "TLS Client Hello packet is incomplete.");
-                return null;
+            if (offsetValue + extensionsLength > limit) {
+                Log.e(TAG, "TLS Client Hello packet is incomplete.")
+                return null
             }
 
-            while (offset + 4 <= limit) {
-                int type0 = buffer[offset++] & 0xFF;
-                int type1 = buffer[offset++] & 0xFF;
-                int length = CommonMethods.readShort(buffer, offset) & 0xFFFF;
-                offset += 2;
+            while (offsetValue + 4 <= limit) {
+                val type0 = buffer[offsetValue++].toInt() and 0xFF
+                val type1 = buffer[offsetValue++].toInt() and 0xFF
+                var length = CommonMethods.readShort(buffer, offsetValue).toInt() and 0xFFFF
+                offsetValue += 2
 
                 if (type0 == 0x00 && type1 == 0x00 && length > 5) { //have SNI
-                    offset += 5;//skip SNI header.
-                    length -= 5;//SNI size;
-                    if (offset + length > limit) return null;
-                    String serverName = new String(buffer, offset, length);
-                    Log.d(TAG, "SNI: " + serverName);
+                    offsetValue += 5 //skip SNI header.
+                    length -= 5 //SNI size;
+                    if (offsetValue + length > limit) return null
+                    val serverName = String(buffer, offsetValue, length)
+                    Log.d(TAG, "SNI: $serverName")
 
-                    return serverName;
+                    return serverName
                 } else {
-                    offset += length;
+                    offsetValue += length
                 }
             }
 
-            Log.e(TAG, "TLS Client Hello packet doesn't contains Host field info.");
-            return null;
+            Log.e(TAG, "TLS Client Hello packet doesn't contains Host field info.")
         } else {
-            Log.e(TAG, "Bad TLS Client Hello packet.");
-            return null;
+            Log.e(TAG, "Bad TLS Client Hello packet.")
         }
+        return null
     }
 }
