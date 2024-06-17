@@ -1,40 +1,43 @@
-package me.smartproxy.tunnel.httpconnect;
+package me.smartproxy.tunnel.httpconnect
 
-import android.net.Uri;
+import android.net.Uri
+import me.smartproxy.tunnel.Config
+import java.net.InetSocketAddress
+import java.util.Locale
 
-import java.net.InetSocketAddress;
-import java.util.Locale;
+class HttpConnectConfig : Config() {
+    var userName: String? = null
+    var password: String? = null
 
-import me.smartproxy.tunnel.Config;
+    override fun equals(other: Any?): Boolean {
+        if (other == null) return false
+        return this.toString() == other.toString()
+    }
 
-public class HttpConnectConfig extends Config {
-    public String userName;
-    public String password;
+    override fun toString(): String {
+        return String.format(Locale.ENGLISH, "http://%s:%s@%s", userName, password, socketAddress)
+    }
 
-    public static HttpConnectConfig parse(String proxyInfo) {
-        HttpConnectConfig config = new HttpConnectConfig();
-        Uri uri = Uri.parse(proxyInfo);
-        String userInfoString = uri.getUserInfo();
-        if (userInfoString != null) {
-            String[] userStrings = userInfoString.split(":");
-            config.userName = userStrings[0];
-            if (userStrings.length >= 2) {
-                config.password = userStrings[1];
+    override fun hashCode(): Int {
+        var result = userName?.hashCode() ?: 0
+        result = 31 * result + (password?.hashCode() ?: 0)
+        return result
+    }
+
+    companion object {
+        fun parse(proxyInfo: String?): HttpConnectConfig {
+            val config = HttpConnectConfig()
+            val uri = Uri.parse(proxyInfo)
+            val userInfoString = uri.userInfo
+            if (userInfoString != null) {
+                val userStrings = userInfoString.split(":").toTypedArray()
+                config.userName = userStrings[0]
+                if (userStrings.size >= 2) {
+                    config.password = userStrings[1]
+                }
             }
+            config.socketAddress = InetSocketAddress(uri.host, uri.port)
+            return config
         }
-        config.setSocketAddress(new InetSocketAddress(uri.getHost(), uri.getPort()));
-        return config;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (o == null)
-            return false;
-        return this.toString().equals(o.toString());
-    }
-
-    @Override
-    public String toString() {
-        return String.format(Locale.ENGLISH, "http://%s:%s@%s", userName, password, getSocketAddress());
     }
 }
