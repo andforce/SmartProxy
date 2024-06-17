@@ -22,7 +22,7 @@ public class HttpConnectConfig extends Config {
                 config.password = userStrings[1];
             }
         }
-        config.socketAddress = new InetSocketAddress(uri.getHost(), uri.getPort());
+        config.setSocketAddress(new InetSocketAddress(uri.getHost(), uri.getPort()));
         return config;
     }
 
@@ -35,6 +35,6 @@ public class HttpConnectConfig extends Config {
 
     @Override
     public String toString() {
-        return String.format(Locale.ENGLISH, "http://%s:%s@%s", userName, password, socketAddress);
+        return String.format(Locale.ENGLISH, "http://%s:%s@%s", userName, password, getSocketAddress());
     }
 }

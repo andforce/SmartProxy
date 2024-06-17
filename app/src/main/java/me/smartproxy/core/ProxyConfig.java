@@ -1,5 +1,7 @@
 package me.smartproxy.core;
 
+import android.util.Log;
+
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
@@ -95,7 +97,10 @@ public class ProxyConfig {
     public String getSessionName() {
         if (VpnHelper.IS_ENABLE_REMOTE_PROXY) {
             if (sessionName == null) {
-                sessionName = getDefaultProxy().socketAddress.getHostName();
+                InetSocketAddress socketAddress = getDefaultProxy().getSocketAddress();
+                if (socketAddress != null) {
+                    sessionName = socketAddress.getHostName();
+                }
             }
             return sessionName;
         } else {
@@ -136,11 +141,17 @@ public class ProxyConfig {
                 for (int i = 0; i < proxyList.size(); i++) {
                     try {
                         Config config = proxyList.get(0);
-                        InetAddress address = InetAddress.getByName(config.socketAddress.getHostName());
-                        if (address != null && !address.equals(config.socketAddress.getAddress())) {
-                            config.socketAddress = new InetSocketAddress(address, config.socketAddress.getPort());
+                        InetSocketAddress inetSocketAddress = config.getSocketAddress();
+                        if (inetSocketAddress == null) {
+                            continue;
+                        }
+                        InetAddress address = InetAddress.getByName(inetSocketAddress.getHostName());
+                        if (!address.equals(config.getSocketAddress().getAddress())) {
+                            config.setSocketAddress(new InetSocketAddress(address, config.getSocketAddress().getPort()));
+
                         }
                     } catch (Exception e) {
+                        Log.e("ProxyConfig", "update dns cache error", e);
                     }
                 }
             } catch (Exception e) {
@@ -275,7 +286,10 @@ public class ProxyConfig {
     public void addProxyConfig(Config config) {
         if (!proxyList.contains(config)) {
             proxyList.add(config);
-            domainMap.put(config.socketAddress.getHostName(), false);
+            InetSocketAddress inetSocketAddress = config.getSocketAddress();
+            if (inetSocketAddress != null) {
+                domainMap.put(inetSocketAddress.getHostName(), false);
+            }
         }
     }
 

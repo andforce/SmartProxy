@@ -13,12 +13,12 @@ public class ShadowsocksTunnel extends Tunnel {
     private boolean tunnelEstablished;
 
     public ShadowsocksTunnel(ShadowsocksConfig config, Selector selector) throws Exception {
-        super(config.socketAddress, selector);
-        if (config.encryptor == null) {
+        super(config.getSocketAddress(), selector);
+        if (config.getEncryptor() == null) {
             throw new Exception("Error: The Encryptor for ShadowsocksTunnel is null.");
         }
         this.config = config;
-        encryptor = config.encryptor;
+        encryptor = config.getEncryptor();
     }
 
     @Override

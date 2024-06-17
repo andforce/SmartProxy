@@ -15,7 +15,7 @@ public class HttpConnectTunnel extends Tunnel {
     private final ProxyConfig proxyConfig;
 
     public HttpConnectTunnel(ProxyConfig c, HttpConnectConfig config, Selector selector) throws IOException {
-        super(config.socketAddress, selector);
+        super(config.getSocketAddress(), selector);
         this.proxyConfig = c;
         this.config = config;
     }

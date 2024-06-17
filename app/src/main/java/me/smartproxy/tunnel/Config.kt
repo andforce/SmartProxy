@@ -1,8 +1,8 @@
-package me.smartproxy.tunnel;
+package me.smartproxy.tunnel
 
-import java.net.InetSocketAddress;
+import java.net.InetSocketAddress
 
-public abstract class Config {
-    public InetSocketAddress socketAddress;
-    public IEncryptor encryptor;
+abstract class Config {
+    var socketAddress: InetSocketAddress? = null
+    var encryptor: IEncryptor? = null
 }

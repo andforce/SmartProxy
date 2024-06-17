@@ -28,8 +28,8 @@ public class ShadowsocksConfig extends Config {
                 config.password = userStrings[1];
             }
         }
-        config.socketAddress = new InetSocketAddress(uri.getHost(), uri.getPort());
-        config.encryptor = EncryptorFactory.createEncryptorByConfig(config);
+        config.setSocketAddress(new InetSocketAddress(uri.getHost(), uri.getPort()));
+        config.setEncryptor(EncryptorFactory.createEncryptorByConfig(config));
         return config;
     }
 
@@ -42,6 +42,6 @@ public class ShadowsocksConfig extends Config {
 
     @Override
     public String toString() {
-        return String.format("ss://%s:%s@%s", encryptMethod, password, socketAddress);
+        return String.format("ss://%s:%s@%s", encryptMethod, password, getSocketAddress());
     }
 }
