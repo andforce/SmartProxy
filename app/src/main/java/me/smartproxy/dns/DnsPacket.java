@@ -19,16 +19,19 @@ public class DnsPacket {
 
         DnsPacket packet = new DnsPacket();
         packet.size = buffer.limit();
-        packet.dnsHeader = DnsHeader.fromBytes(buffer);
+        packet.dnsHeader = DnsHeader.Companion.fromBytes(buffer);
 
-        if (packet.dnsHeader.QuestionCount > 2 || packet.dnsHeader.ResourceCount > 50 || packet.dnsHeader.AResourceCount > 50 || packet.dnsHeader.EResourceCount > 50) {
+        if (packet.dnsHeader.getQuestionCount() > 2
+                || packet.dnsHeader.getResourceCount() > 50
+                || packet.dnsHeader.getAResourceCount() > 50
+                || packet.dnsHeader.getEResourceCount() > 50) {
             return null;
         }
 
-        packet.questions = new Question[packet.dnsHeader.QuestionCount];
-        packet.resources = new Resource[packet.dnsHeader.ResourceCount];
-        packet.aResources = new Resource[packet.dnsHeader.AResourceCount];
-        packet.eResources = new Resource[packet.dnsHeader.EResourceCount];
+        packet.questions = new Question[packet.dnsHeader.getQuestionCount()];
+        packet.resources = new Resource[packet.dnsHeader.getResourceCount()];
+        packet.aResources = new Resource[packet.dnsHeader.getAResourceCount()];
+        packet.eResources = new Resource[packet.dnsHeader.getEResourceCount()];
 
         for (int i = 0; i < packet.questions.length; i++) {
             packet.questions[i] = QuestionKt.fromBytes(buffer);
@@ -50,35 +53,40 @@ public class DnsPacket {
     }
 
     public void toBytes(ByteBuffer buffer) {
-        dnsHeader.QuestionCount = 0;
-        dnsHeader.ResourceCount = 0;
-        dnsHeader.AResourceCount = 0;
-        dnsHeader.EResourceCount = 0;
+        dnsHeader.setQuestionCount((short) 0);
+        dnsHeader.setResourceCount((short) 0);
+        dnsHeader.setAResourceCount((short) 0);
+        dnsHeader.setEResourceCount((short) 0);
 
-        if (questions != null)
-            dnsHeader.QuestionCount = (short) questions.length;
-        if (resources != null)
-            dnsHeader.ResourceCount = (short) resources.length;
-        if (aResources != null)
-            dnsHeader.AResourceCount = (short) aResources.length;
-        if (eResources != null)
-            dnsHeader.EResourceCount = (short) eResources.length;
+        if (questions != null) {
+            dnsHeader.setQuestionCount((short) questions.length);
+        }
+
+        if (resources != null) {
+            dnsHeader.setResourceCount((short) resources.length);
+        }
+        if (aResources != null) {
+            dnsHeader.setAResourceCount((short) aResources.length);
+        }
+        if (eResources != null) {
+            dnsHeader.setEResourceCount((short) eResources.length);
+        }
 
         this.dnsHeader.toBytes(buffer);
 
-        for (int i = 0; i < dnsHeader.QuestionCount; i++) {
+        for (int i = 0; i < dnsHeader.getQuestionCount(); i++) {
             this.questions[i].toBytes(buffer);
         }
 
-        for (int i = 0; i < dnsHeader.ResourceCount; i++) {
+        for (int i = 0; i < dnsHeader.getResourceCount(); i++) {
             this.resources[i].toBytes(buffer);
         }
 
-        for (int i = 0; i < dnsHeader.AResourceCount; i++) {
+        for (int i = 0; i < dnsHeader.getAResourceCount(); i++) {
             this.aResources[i].toBytes(buffer);
         }
 
-        for (int i = 0; i < dnsHeader.EResourceCount; i++) {
+        for (int i = 0; i < dnsHeader.getEResourceCount(); i++) {
             this.eResources[i].toBytes(buffer);
         }
     }

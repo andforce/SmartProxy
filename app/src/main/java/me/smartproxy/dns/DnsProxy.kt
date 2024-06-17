@@ -93,9 +93,9 @@ class DnsProxy(private val config: ProxyConfig) {
     private fun tamperDnsResponse(rawPacket: ByteArray, dnsPacket: DnsPacket, newIP: Int) {
         val question = dnsPacket.questions[0]
 
-        dnsPacket.dnsHeader.resourceCount = 1.toShort()
-        dnsPacket.dnsHeader.aResourceCount = 0.toShort()
-        dnsPacket.dnsHeader.eResourceCount = 0.toShort()
+        dnsPacket.dnsHeader.ResourceCount = 1.toShort()
+        dnsPacket.dnsHeader.AResourceCount = 0.toShort()
+        dnsPacket.dnsHeader.EResourceCount = 0.toShort()
 
         val rPointer = ResourcePointer(rawPacket, question.offset + question.length)
         rPointer.setDomain(0xC00C.toShort())
@@ -162,7 +162,7 @@ class DnsProxy(private val config: ProxyConfig) {
             //DNS污染，默认污染海外网站
             dnsPollution(udpHeader.data, dnsPacket)
 
-            dnsPacket.dnsHeader.id = state!!.clientQueryID
+            dnsPacket.dnsHeader.ID = state!!.clientQueryID
             ipHeader.sourceIP = state!!.remoteIP
             ipHeader.destinationIP = state!!.clientIP
             ipHeader.protocol = IPData.UDP
@@ -239,7 +239,7 @@ class DnsProxy(private val config: ProxyConfig) {
 
             // 转换QueryID
             queryID++ // 增加ID
-            dnsPacket.dnsHeader.id = queryID
+            dnsPacket.dnsHeader.ID = queryID
 
             synchronized(queryArray) {
                 clearExpiredQueries() //清空过期的查询，减少内存开销。
