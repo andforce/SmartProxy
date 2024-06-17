@@ -16,14 +16,16 @@ class Question {
         buffer.putShort(this.clazz)
         this.length = buffer.position() - this.offset
     }
-}
 
-fun fromBytes(buffer: ByteBuffer): Question {
-    val q = Question()
-    q.offset = buffer.arrayOffset() + buffer.position()
-    q.domain = DnsPacket.readDomain(buffer, buffer.arrayOffset())
-    q.type = buffer.getShort()
-    q.clazz = buffer.getShort()
-    q.length = buffer.arrayOffset() + buffer.position() - q.offset
-    return q
+    companion object {
+        fun fromBytes(buffer: ByteBuffer): Question {
+            val q = Question()
+            q.offset = buffer.arrayOffset() + buffer.position()
+            q.domain = DnsPacket.readDomain(buffer, buffer.arrayOffset())
+            q.type = buffer.getShort()
+            q.clazz = buffer.getShort()
+            q.length = buffer.arrayOffset() + buffer.position() - q.offset
+            return q
+        }
+    }
 }
