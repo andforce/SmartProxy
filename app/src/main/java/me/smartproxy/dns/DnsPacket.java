@@ -31,7 +31,7 @@ public class DnsPacket {
         packet.eResources = new Resource[packet.dnsHeader.EResourceCount];
 
         for (int i = 0; i < packet.questions.length; i++) {
-            packet.questions[i] = Question.fromBytes(buffer);
+            packet.questions[i] = QuestionKt.fromBytes(buffer);
         }
 
         for (int i = 0; i < packet.resources.length; i++) {

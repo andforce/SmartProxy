@@ -1,39 +1,29 @@
-package me.smartproxy.dns;
+package me.smartproxy.dns
 
-import java.nio.ByteBuffer;
+import java.nio.ByteBuffer
 
-public class Question {
-    public String domain;
-    public short type;
-    public short clazz;
+class Question {
+    var domain: String = ""
+    var type: Short = 0
+    var clazz: Short = 0
+    var length = 0
+    var offset = 0
 
-    private int offset;
-
-    public int Offset() {
-        return offset;
+    fun toBytes(buffer: ByteBuffer) {
+        this.offset = buffer.position()
+        DnsPacket.writeDomain(this.domain, buffer)
+        buffer.putShort(this.type)
+        buffer.putShort(this.clazz)
+        this.length = buffer.position() - this.offset
     }
+}
 
-    private int length;
-
-    public int Length() {
-        return length;
-    }
-
-    public static Question fromBytes(ByteBuffer buffer) {
-        Question q = new Question();
-        q.offset = buffer.arrayOffset() + buffer.position();
-        q.domain = DnsPacket.readDomain(buffer, buffer.arrayOffset());
-        q.type = buffer.getShort();
-        q.clazz = buffer.getShort();
-        q.length = buffer.arrayOffset() + buffer.position() - q.offset;
-        return q;
-    }
-
-    public void toBytes(ByteBuffer buffer) {
-        this.offset = buffer.position();
-        DnsPacket.writeDomain(this.domain, buffer);
-        buffer.putShort(this.type);
-        buffer.putShort(this.clazz);
-        this.length = buffer.position() - this.offset;
-    }
+fun fromBytes(buffer: ByteBuffer): Question {
+    val q = Question()
+    q.offset = buffer.arrayOffset() + buffer.position()
+    q.domain = DnsPacket.readDomain(buffer, buffer.arrayOffset())
+    q.type = buffer.getShort()
+    q.clazz = buffer.getShort()
+    q.length = buffer.arrayOffset() + buffer.position() - q.offset
+    return q
 }

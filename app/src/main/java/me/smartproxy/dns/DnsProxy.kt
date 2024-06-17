@@ -97,7 +97,7 @@ class DnsProxy(private val config: ProxyConfig) {
         dnsPacket.dnsHeader.aResourceCount = 0.toShort()
         dnsPacket.dnsHeader.eResourceCount = 0.toShort()
 
-        val rPointer = ResourcePointer(rawPacket, question.Offset() + question.Length())
+        val rPointer = ResourcePointer(rawPacket, question.offset + question.length)
         rPointer.setDomain(0xC00C.toShort())
         rPointer.type = question.type
         rPointer.setClass(question.clazz)
@@ -105,7 +105,7 @@ class DnsProxy(private val config: ProxyConfig) {
         rPointer.dataLength = 4.toShort()
         rPointer.ip = newIP
 
-        dnsPacket.size = 12 + question.Length() + 16
+        dnsPacket.size = 12 + question.length + 16
     }
 
     private fun getOrCreateFakeIP(domainString: String): Int {
