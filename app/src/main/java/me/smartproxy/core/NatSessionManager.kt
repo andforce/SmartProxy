@@ -1,52 +1,54 @@
-package me.smartproxy.core;
+package me.smartproxy.core
 
-import android.util.SparseArray;
+import android.util.SparseArray
+import me.smartproxy.dns.DnsProxy.Companion.reverseLookup
+import me.smartproxy.tcpip.CommonMethods
 
-import me.smartproxy.dns.DnsProxy;
-import me.smartproxy.tcpip.CommonMethods;
+object NatSessionManager {
+    private const val MAX_SESSION_COUNT: Int = 60
 
-public class NatSessionManager {
+    private const val SESSION_TIMEOUT_NS: Long = 60 * 1000000000L
 
-    private static final int MAX_SESSION_COUNT = 60;
-    private static final long SESSION_TIMEOUT_NS = 60 * 1000000000L;
-    private static final SparseArray<NatSession> Sessions = new SparseArray<>();
+    private val Sessions: SparseArray<NatSession> = SparseArray()
 
-    public static NatSession getSession(int portKey) {
-        return Sessions.get(portKey);
+    fun getSession(portKey: Int): NatSession? {
+        return Sessions[portKey]
     }
 
-    public static int getSessionCount() {
-        return Sessions.size();
+    fun getSessionCount(): Int {
+        return Sessions.size()
     }
 
-    private static void clearExpiredSessions() {
-        long now = System.nanoTime();
-        for (int i = Sessions.size() - 1; i >= 0; i--) {
-            NatSession session = Sessions.valueAt(i);
-            if (now - session.getLastNanoTime() > SESSION_TIMEOUT_NS) {
-                Sessions.removeAt(i);
+
+    private fun clearExpiredSessions() {
+        val now = System.nanoTime()
+        for (i in Sessions.size() - 1 downTo 0) {
+            val session = Sessions.valueAt(i)
+            if (now - session.lastNanoTime > SESSION_TIMEOUT_NS) {
+                Sessions.removeAt(i)
             }
         }
     }
 
-    public static NatSession createSession(int portKey, int remoteIP, short remotePort) {
+
+    fun createSession(portKey: Int, remoteIP: Int, remotePort: Short): NatSession {
         if (Sessions.size() > MAX_SESSION_COUNT) {
-            clearExpiredSessions();//清理过期的会话。
+            clearExpiredSessions() //清理过期的会话。
         }
 
-        NatSession session = new NatSession();
-        session.setLastNanoTime(System.nanoTime());
-        session.setRemoteIP(remoteIP);
-        session.setRemotePort(remotePort);
+        val session = NatSession()
+        session.lastNanoTime = System.nanoTime()
+        session.remoteIP = remoteIP
+        session.remotePort = remotePort
 
         if (ProxyConfig.isFakeIP(remoteIP)) {
-            session.setRemoteHost(DnsProxy.reverseLookup(remoteIP));
+            session.remoteHost = reverseLookup(remoteIP)
         }
 
-        if (session.getRemoteHost() == null) {
-            session.setRemoteHost(CommonMethods.ipIntToString(remoteIP));
+        if (session.remoteHost == null) {
+            session.remoteHost = CommonMethods.ipIntToString(remoteIP)
         }
-        Sessions.put(portKey, session);
-        return session;
+        Sessions.put(portKey, session)
+        return session
     }
 }
