@@ -1,7 +1,7 @@
 package me.smartproxy.core
 
-import android.util.Log
 import me.smartproxy.tcpip.CommonMethods
+import me.smartproxy.ui.utils.Logger
 
 object HttpHostHeaderParser {
 
@@ -78,7 +78,7 @@ object HttpHostHeaderParser {
             offsetValue += compressionMethodLength
 
             if (offsetValue == limit) {
-                Log.e(TAG, "TLS Client Hello packet doesn't contains SNI info.(offset == limit)")
+                Logger.e(TAG, "TLS Client Hello packet doesn't contains SNI info.(offset == limit)")
                 return null
             }
 
@@ -88,7 +88,7 @@ object HttpHostHeaderParser {
             offsetValue += 2
 
             if (offsetValue + extensionsLength > limit) {
-                Log.e(TAG, "TLS Client Hello packet is incomplete.")
+                Logger.e(TAG, "TLS Client Hello packet is incomplete.")
                 return null
             }
 
@@ -103,7 +103,7 @@ object HttpHostHeaderParser {
                     length -= 5 //SNI size;
                     if (offsetValue + length > limit) return null
                     val serverName = String(buffer, offsetValue, length)
-                    Log.d(TAG, "SNI: $serverName")
+                    Logger.d(TAG, "SNI: $serverName")
 
                     return serverName
                 } else {
@@ -111,9 +111,9 @@ object HttpHostHeaderParser {
                 }
             }
 
-            Log.e(TAG, "TLS Client Hello packet doesn't contains Host field info.")
+            Logger.e(TAG, "TLS Client Hello packet doesn't contains Host field info.")
         } else {
-            Log.e(TAG, "Bad TLS Client Hello packet.")
+            Logger.e(TAG, "Bad TLS Client Hello packet.")
         }
         return null
     }

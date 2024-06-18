@@ -1,12 +1,11 @@
 package me.smartproxy.core;
 
-import android.util.Log;
-
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Timer;
+import me.smartproxy.ui.utils.Logger;
 import java.util.TimerTask;
 
 import me.smartproxy.tcpip.CommonMethods;
@@ -151,11 +150,11 @@ public class ProxyConfig {
 
                         }
                     } catch (Exception e) {
-                        Log.e("ProxyConfig", "update dns cache error", e);
+                        Logger.e("ProxyConfig", "update dns cache error", e);
                     }
                 }
             } catch (Exception e) {
-                Log.e("ProxyConfig", "update dns cache error", e);
+                Logger.e("ProxyConfig", "update dns cache error", e);
             }
         }
     };

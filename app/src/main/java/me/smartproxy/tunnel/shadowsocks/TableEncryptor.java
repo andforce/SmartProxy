@@ -1,12 +1,11 @@
 package me.smartproxy.tunnel.shadowsocks;
 
-import android.util.Log;
-
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 
 import me.smartproxy.tunnel.IEncryptor;
+import me.smartproxy.ui.utils.Logger;
 
 public class TableEncryptor implements IEncryptor {
 
@@ -20,11 +19,11 @@ public class TableEncryptor implements IEncryptor {
             encryptTable[i] = (byte) i;
         }
 
-        Log.d("TableEncryptor", "mergeSort....");
+        Logger.d("TableEncryptor", "mergeSort....");
         long startTime = System.nanoTime();
         encryptTable = mergeSort(encryptTable, a);
         long endTime = System.nanoTime();
-        Log.d("TableEncryptor", "mergeSort done...." + (endTime - startTime) / 1000D / 1000D);
+        Logger.d("TableEncryptor", "mergeSort done...." + (endTime - startTime) / 1000D / 1000D);
 
         for (int i = 0; i < 256; i++) {
             decryptTable[encryptTable[i] & 0xFF] = (byte) i;

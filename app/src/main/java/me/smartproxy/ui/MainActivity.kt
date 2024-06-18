@@ -3,7 +3,6 @@ package me.smartproxy.ui
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import android.widget.CompoundButton
 import android.widget.ScrollView
 import android.widget.Toast
@@ -15,6 +14,7 @@ import kotlinx.coroutines.withContext
 import me.smartproxy.core.LocalVpnService
 import me.smartproxy.core.viewmodel.LocalVpnViewModel
 import me.smartproxy.databinding.ActivityMainBinding
+import me.smartproxy.ui.utils.Logger
 import org.koin.java.KoinJavaComponent.get
 
 open class MainActivity : RequestVpnPermissionActivity() {
@@ -50,7 +50,7 @@ open class MainActivity : RequestVpnPermissionActivity() {
 
         lifecycleScope.launch {
             vpnViewModel.vpnStatusStateFlow.collectLatest {
-                Log.d(TAG, "vpnStatusStateFlow: $it")
+                Logger.d(TAG, "vpnStatusStateFlow: $it")
                 withContext(Dispatchers.Main) {
                     binding.proxySwitch.isChecked = it == 1
                 }
@@ -59,7 +59,7 @@ open class MainActivity : RequestVpnPermissionActivity() {
 
         lifecycleScope.launch {
             vpnViewModel.vpnStatusSharedFlow.collectLatest {
-                Log.d(TAG, "vpnStatusSharedFlow: $it")
+                Logger.d(TAG, "vpnStatusSharedFlow: $it")
                 withContext(Dispatchers.Main) {
                     binding.textViewLog.text = "${binding.textViewLog.text}\r\n$it"
                 }
@@ -69,7 +69,7 @@ open class MainActivity : RequestVpnPermissionActivity() {
         binding.proxySwitch.setOnClickListener {
             val checkbox: CompoundButton = it as CompoundButton
             val isChecked = checkbox.isChecked
-            Log.d(TAG, "proxySwitch, setOnClickListener: ${checkbox.isChecked}, vpnViewModel.isRunning(): ${vpnViewModel.isRunning()}")
+            Logger.d(TAG, "proxySwitch, setOnClickListener: ${checkbox.isChecked}, vpnViewModel.isRunning(): ${vpnViewModel.isRunning()}")
 
             if (isChecked) {
                 if (!vpnViewModel.isRunning()) {

@@ -1,12 +1,12 @@
 package me.smartproxy.tcpip
 
-import android.util.Log
 import me.smartproxy.core.LocalVpnService
 import me.smartproxy.core.NatSessionManager
 import me.smartproxy.core.ProxyConfig
 import me.smartproxy.core.TunnelFactory
 import me.smartproxy.core.getOrNull
 import me.smartproxy.tunnel.Tunnel
+import me.smartproxy.ui.utils.Logger
 import java.net.InetSocketAddress
 import java.nio.channels.SelectionKey
 import java.nio.channels.Selector
@@ -29,9 +29,9 @@ class TcpProxyServer(private val config: ProxyConfig, port: Int) {
             it.socket().bind(InetSocketAddress(port))
             it.register(selector, SelectionKey.OP_ACCEPT)
             this.tcpServerPort = it.socket().localPort.toShort()
-            Log.d(TAG, "AsyncTcpServer listen on " + (tcpServerPort.toInt() and 0xFFFF) + " success.")
+            Logger.d(TAG, "AsyncTcpServer listen on " + (tcpServerPort.toInt() and 0xFFFF) + " success.")
         } ?: run {
-            Log.e(TAG, "AsyncTcpServer listen on 0 failed.")
+            Logger.e(TAG, "AsyncTcpServer listen on 0 failed.")
         }
     }
 
@@ -42,7 +42,7 @@ class TcpProxyServer(private val config: ProxyConfig, port: Int) {
                 it.close()
                 selector = null
             } catch (e: Exception) {
-                Log.e(TAG, "stop, m_Selector: ", e)
+                Logger.e(TAG, "stop, m_Selector: ", e)
             }
         }
 
@@ -51,7 +51,7 @@ class TcpProxyServer(private val config: ProxyConfig, port: Int) {
                 it.close()
                 serverSocketChannel = null
             } catch (e: Exception) {
-                Log.e(TAG, "stop, m_ServerSocketChannel: ", e)
+                Logger.e(TAG, "stop, m_ServerSocketChannel: ", e)
             }
         }
     }
@@ -76,17 +76,17 @@ class TcpProxyServer(private val config: ProxyConfig, port: Int) {
                                     onAccepted()
                                 }
                             } catch (e: Exception) {
-                                Log.e(TAG, "inner run: ", e)
+                                Logger.e(TAG, "inner run: ", e)
                             }
                         }
                         keyIterator.remove()
                     }
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "outer run: ", e)
+                Logger.e(TAG, "outer run: ", e)
             } finally {
                 this.stop()
-                Log.d(TAG, "TcpServer thread exited.")
+                Logger.d(TAG, "TcpServer thread exited.")
             }
         }
     }
@@ -96,7 +96,7 @@ class TcpProxyServer(private val config: ProxyConfig, port: Int) {
         val session = NatSessionManager.getSession(portKey.toInt())
         if (session != null) {
             if (config.needProxy(session.remoteHost, session.remoteIP)) {
-                Log.d(
+                Logger.d(
                     TAG,
                     "${NatSessionManager.getSessionCount()}/${Tunnel.SessionCount}:[PROXY] ${session.remoteHost}=>${CommonMethods.ipIntToString(session.remoteIP)}:${session.remotePort.toInt() and 0xFFFF}",
                 )
@@ -138,7 +138,7 @@ class TcpProxyServer(private val config: ProxyConfig, port: Int) {
                 }
             }
         } catch (e: Exception) {
-            Log.e(TAG, "onAccepted: ", e)
+            Logger.e(TAG, "onAccepted: ", e)
             localTunnel?.dispose()
         }
     }

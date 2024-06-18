@@ -2,7 +2,7 @@ package me.smartproxy.dns
 
 import android.content.Context
 import android.net.ConnectivityManager
-import android.util.Log
+import me.smartproxy.ui.utils.Logger
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.util.StringTokenizer
@@ -70,19 +70,19 @@ object DNSUtils {
                 if (networkInfo.isConnected) {
                     val linkProperties = connectivityManager.getLinkProperties(network)
                     linkProperties?.let {
-                        Log.d("DnsInfo", "iface = " + linkProperties.interfaceName)
+                        Logger.d("DnsInfo", "iface = " + linkProperties.interfaceName)
                         val addressList = linkProperties.dnsServers
                         for (address in addressList) {
                             address?.hostAddress?.let { host ->
-                                Log.d("DnsInfo", "dns = $host")
+                                Logger.d("DnsInfo", "dns = $host")
                                 if (address is java.net.Inet6Address) {
                                     val key = "ipv6_dns_$host"
                                     dns[key] = host
-                                    Log.d("DnsInfo", "key = $key, $host")
+                                    Logger.d("DnsInfo", "key = $key, $host")
                                 } else {
                                     val key = "dns_$host"
                                     dns[key] = host
-                                    Log.d("DnsInfo", "key = $key, $host")
+                                    Logger.d("DnsInfo", "key = $key, $host")
                                 }
                             }
                         }

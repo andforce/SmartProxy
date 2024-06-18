@@ -1,7 +1,6 @@
 package me.smartproxy.tunnel;
 
 import android.net.VpnService;
-import android.util.Log;
 
 import org.koin.java.KoinJavaComponent;
 
@@ -13,6 +12,7 @@ import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 
 import me.smartproxy.core.viewmodel.LocalVpnViewModel;
+import me.smartproxy.ui.utils.Logger;
 
 public abstract class Tunnel {
     private final LocalVpnViewModel localVpnViewModel = KoinJavaComponent.get(LocalVpnViewModel.class);
@@ -129,7 +129,7 @@ public abstract class Tunnel {
                     brotherTunnel.beforeSend(buffer);//发送之前，先让子类处理，例如做加密等。
                     if (!brotherTunnel.write(buffer, true)) {
                         key.cancel();//兄弟吃不消，就取消读取事件。
-                        Log.e("Tunnel", serverEP + " can not read more.");
+                        Logger.e("Tunnel", serverEP + " can not read more.");
                     }
                 }
             } else if (bytesRead < 0) {
@@ -137,7 +137,7 @@ public abstract class Tunnel {
             }
         } catch (Exception e) {
             this.dispose();
-            Log.e("Tunnel", "onReadable: ", e);
+            Logger.e("Tunnel", "onReadable: ", e);
         }
     }
 
@@ -163,7 +163,7 @@ public abstract class Tunnel {
 
     void disposeInternal(boolean disposeBrother) {
         if (disposed) {
-            Log.d("Tunnel", "Tunnel already disposed.");
+            Logger.d("Tunnel", "Tunnel already disposed.");
         } else {
             try {
                 innerChannel.close();

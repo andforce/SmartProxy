@@ -1,10 +1,10 @@
 package me.smartproxy.core
 
 import android.os.Build
-import android.util.Log
 import me.smartproxy.tunnel.Config
 import me.smartproxy.tunnel.httpconnect.HttpConnectConfig
 import me.smartproxy.tunnel.shadowsocks.ShadowsocksConfig
+import me.smartproxy.ui.utils.Logger
 import org.apache.http.client.HttpClient
 import org.apache.http.client.methods.HttpGet
 import org.apache.http.impl.client.DefaultHttpClient
@@ -41,7 +41,7 @@ object ProxyConfigHelper {
             val tagString = items[0].lowercase().trim { it <= ' ' }
             try {
                 if (!tagString.startsWith("#")) {
-                    Log.i("ProxyConfig", line)
+                    Logger.i("ProxyConfig", line)
 
                     if (tagString == "ip") {
                         config.addIPAddressToList(items, 1)

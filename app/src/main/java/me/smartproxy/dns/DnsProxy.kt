@@ -1,6 +1,5 @@
 package me.smartproxy.dns
 
-import android.util.Log
 import android.util.SparseArray
 import me.smartproxy.core.LocalVpnService
 import me.smartproxy.core.ProxyConfig
@@ -11,6 +10,7 @@ import me.smartproxy.tcpip.CommonMethods
 import me.smartproxy.tcpip.IPData
 import me.smartproxy.tcpip.IPHeader
 import me.smartproxy.tcpip.UDPHeader
+import me.smartproxy.ui.utils.Logger
 import org.koin.java.KoinJavaComponent.get
 import java.io.IOException
 import java.net.DatagramPacket
@@ -43,7 +43,7 @@ class DnsProxy(private val config: ProxyConfig) {
                 val service = LocalVpnService::class.getOrNull()
                 val protect = service?.protect(client)
 
-                Log.e(TAG, "DNS Proxy, protect result: $protect")
+                Logger.e(TAG, "DNS Proxy, protect result: $protect")
 
                 val receiveBuffer = ByteArray(2000)
                 val ipHeader = IPHeader(receiveBuffer, 0)
@@ -68,17 +68,17 @@ class DnsProxy(private val config: ProxyConfig) {
                             // 放入池中
                             DnsPacket.recycle(it)
                         } ?: run {
-                            Log.e(TAG, "Parse DNS Packet Error.")
+                            Logger.e(TAG, "Parse DNS Packet Error.")
                         }
                     } catch (e: Exception) {
-                        Log.e(TAG, "Parse DNS Packet Error: ", e)
+                        Logger.e(TAG, "Parse DNS Packet Error: ", e)
                     }
                 }
             }
         } catch (e: Exception) {
-            Log.e(TAG, "DnsResolver Error: ", e)
+            Logger.e(TAG, "DnsResolver Error: ", e)
         } finally {
-            Log.e(TAG, "DnsResolver Thread Exited.")
+            Logger.e(TAG, "DnsResolver Thread Exited.")
             this.stop()
         }
     }
@@ -135,7 +135,7 @@ class DnsProxy(private val config: ProxyConfig) {
                 if (config.needProxy(question.domain, realIP)) {
                     val fakeIP = getOrCreateFakeIP(question.domain)
                     tamperDnsResponse(rawPacket, dnsPacket, fakeIP)
-                    Log.d(
+                    Logger.d(
                         TAG,
                         "FakeDns: " + question.domain + "=>" + CommonMethods.ipIntToString(realIP) + "(" + CommonMethods.ipIntToString(
                             fakeIP
@@ -189,13 +189,13 @@ class DnsProxy(private val config: ProxyConfig) {
         dnsPacket: DnsPacket
     ): Boolean {
         val question = dnsPacket.questions[0]
-        Log.d(TAG, "DNS Qeury " + question.domain)
+        Logger.d(TAG, "DNS Qeury " + question.domain)
         if (question.type.toInt() == 1) {
             if (config.needProxy(question.domain, getIPFromCache(question.domain))) {
                 val fakeIP = getOrCreateFakeIP(question.domain)
                 tamperDnsResponse(ipHeader.data, dnsPacket, fakeIP)
 
-                Log.d(
+                Logger.d(
                     TAG,
                     "interceptDns FakeDns: " + question.domain + "=>" + CommonMethods.ipIntToString(
                         fakeIP
@@ -259,7 +259,7 @@ class DnsProxy(private val config: ProxyConfig) {
             try {
                 client!!.send(packet)
             } catch (e: IOException) {
-                Log.e(TAG, "onDnsRequestReceived Error: ", e)
+                Logger.e(TAG, "onDnsRequestReceived Error: ", e)
             }
         }
     }

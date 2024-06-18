@@ -1,9 +1,8 @@
 package me.smartproxy.core
 
-import android.util.Log
 import android.util.SparseIntArray
 import me.smartproxy.tcpip.CommonMethods
-import java.io.IOException
+import me.smartproxy.ui.utils.Logger
 import java.io.InputStream
 
 object ChinaIpMaskManager {
@@ -39,10 +38,10 @@ object ChinaIpMaskManager {
                         i += 8
                     }
                 }
-                Log.d(TAG, "loadFromFile: ChinaIpMask records count: ${ChinaIpMaskDict.size()}")
+                Logger.d(TAG, "loadFromFile: ChinaIpMask records count: ${ChinaIpMaskDict.size()}")
             }
         }.onFailure {
-            Log.e(TAG, "loadFromFile: ", it)
+            Logger.e(TAG, "loadFromFile: ", it)
         }
     }
 }

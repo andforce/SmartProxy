@@ -1,11 +1,11 @@
 package me.smartproxy.tcpip
 
 import android.os.ParcelFileDescriptor
-import android.util.Log
 import me.smartproxy.core.HttpHostHeaderParser
 import me.smartproxy.core.NatSessionManager
 import me.smartproxy.core.TcpProxyHelper
 import me.smartproxy.core.VpnHelper.Companion.TAG
+import me.smartproxy.ui.utils.Logger
 import java.io.FileOutputStream
 import java.io.IOException
 
@@ -36,7 +36,7 @@ class TcpProxyClient(pfd: ParcelFileDescriptor, buffer: ByteArray, private val v
                 natToTcpProxyServer(ipHeader, size)
             }
         } else {
-            Log.e(TAG, "onIPPacketReceived, TCP: 收到非本地数据包, $ipHeader $tcpHeader")
+            Logger.e(TAG, "onIPPacketReceived, TCP: 收到非本地数据包, $ipHeader $tcpHeader")
         }
     }
 
@@ -44,7 +44,7 @@ class TcpProxyClient(pfd: ParcelFileDescriptor, buffer: ByteArray, private val v
         val session =
             NatSessionManager.getSession(tcpHeader.destinationPort.toInt())
         if (session != null) {
-            Log.d(
+            Logger.d(
                 TAG,
                 "onIPPacketReceived: 收到本地 TcpProxyServer 服务器数据, $ipHeader $tcpHeader"
             )
@@ -57,7 +57,7 @@ class TcpProxyClient(pfd: ParcelFileDescriptor, buffer: ByteArray, private val v
             vpnOutputStream?.flush()
             receivedBytes += size.toLong()
         } else {
-            Log.d(
+            Logger.d(
                 TAG,
                 "onIPPacketReceived: NoSession, $ipHeader $tcpHeader"
             )
@@ -98,7 +98,7 @@ class TcpProxyClient(pfd: ParcelFileDescriptor, buffer: ByteArray, private val v
             }
 
             // 转发给本地 TcpProxyServer 服务器
-            Log.d(
+            Logger.d(
                 TAG,
                 "onIPPacketReceived: 转发给本地 TcpProxyServer 服务器, $ipHeader $tcpHeader"
             )
@@ -120,12 +120,12 @@ class TcpProxyClient(pfd: ParcelFileDescriptor, buffer: ByteArray, private val v
             vpnOutputStream?.write(ipHeader.data, ipHeader.offset, ipHeader.totalLength)
             vpnOutputStream?.flush()
         } catch (e: IOException) {
-            Log.e(TAG, "sendUDPPacket: ", e)
+            Logger.e(TAG, "sendUDPPacket: ", e)
         }
     }
 
     fun stop() {
-        Log.e(TAG, "TcpProxyClient stopped.")
+        Logger.e(TAG, "TcpProxyClient stopped.")
         vpnOutputStream?.use {
             vpnOutputStream = null
         }

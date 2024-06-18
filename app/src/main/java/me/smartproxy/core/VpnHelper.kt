@@ -1,7 +1,6 @@
 package me.smartproxy.core
 
 import android.os.ParcelFileDescriptor
-import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
@@ -13,6 +12,7 @@ import me.smartproxy.tcpip.IPData
 import me.smartproxy.tcpip.IPHeader
 import me.smartproxy.tcpip.TcpProxyClient
 import me.smartproxy.tcpip.UDPHeader
+import me.smartproxy.ui.utils.Logger
 import org.koin.java.KoinJavaComponent
 import java.io.FileInputStream
 
@@ -54,7 +54,7 @@ class VpnHelper {
 
     suspend fun startProcessPacket(config: ProxyConfig, pfd: ParcelFileDescriptor) =
         withContext(Dispatchers.IO) {
-            Log.d(TAG, "VPNService work thread is running...")
+            Logger.d(TAG, "VPNService work thread is running...")
 
             proxyConfig = config
 
@@ -92,7 +92,7 @@ class VpnHelper {
                                 }
 
                                 else -> {
-                                    Log.d(TAG, "onIPPacketReceived, 不支持的协议: $ipHeader")
+                                    Logger.d(TAG, "onIPPacketReceived, 不支持的协议: $ipHeader")
                                 }
                             }
                         }
@@ -100,25 +100,25 @@ class VpnHelper {
                         stop("while read stopped.")
 
                     }.onFailure {
-                        Log.e(TAG, "while read: ", it)
+                        Logger.e(TAG, "while read: ", it)
                         stop("while read failed, or onIPPacketReceived() IOException.")
                     }
                 }.onFailure {
-                    Log.e(TAG, "FileInputStream: ", it)
+                    Logger.e(TAG, "FileInputStream: ", it)
                     stop("FileInputStream failed.")
                 }
 
             }.onFailure {
-                Log.e(TAG, "ParcelFileDescriptor: ", it)
+                Logger.e(TAG, "ParcelFileDescriptor: ", it)
                 stop("ParcelFileDescriptor failed.")
             }
         }.onFailure {
-            Log.e(TAG, "startProcessPacket: ", it)
+            Logger.e(TAG, "startProcessPacket: ", it)
             stop("startProcessPacket failed.")
         }
 
     private fun stop(reason: String) {
-        Log.e(TAG, "VPNService stopped: $reason")
+        Logger.e(TAG, "VPNService stopped: $reason")
 
         isRunning = false
 

@@ -1,8 +1,8 @@
 package me.smartproxy.dns
 
-import android.util.Log
 import me.smartproxy.tcpip.IPHeader
 import me.smartproxy.tcpip.UDPHeader
+import me.smartproxy.ui.utils.Logger
 import java.nio.ByteBuffer
 
 class DnsProcessor(buffer: ByteArray, private val vpnLocalIpInt: Int) {
@@ -24,7 +24,7 @@ class DnsProcessor(buffer: ByteArray, private val vpnLocalIpInt: Int) {
                 )
             }
         } else {
-            Log.e(
+            Logger.e(
                 TAG,
                 "onIPPacketReceived, UDP: 收到非本地数据包, $header $udpHeader"
             )

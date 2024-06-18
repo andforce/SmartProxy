@@ -1,10 +1,10 @@
 package me.smartproxy.tcpip;
 
-import android.util.Log;
-
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+
+import me.smartproxy.ui.utils.Logger;
 
 public class CommonMethods {
 
@@ -16,7 +16,7 @@ public class CommonMethods {
         try {
             return Inet4Address.getByAddress(ipAddress);
         } catch (UnknownHostException e) {
-            Log.e(TAG, "ipIntToInet4Address: ", e);
+            Logger.e(TAG, "ipIntToInet4Address: ", e);
             return null;
         }
     }

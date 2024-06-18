@@ -1,10 +1,10 @@
 package me.smartproxy.core
 
 import android.content.Intent
-import android.util.Log
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import me.smartproxy.core.viewmodel.LocalVpnViewModel
+import me.smartproxy.ui.utils.Logger
 import org.koin.core.context.GlobalContext
 import org.koin.core.qualifier.named
 import org.koin.core.scope.Scope
@@ -28,34 +28,34 @@ class LocalVpnService : CoroutinesService() {
     override fun onCreate() {
         super.onCreate()
 
-        Log.d(TAG, "VPNService created()")
+        Logger.d(TAG, "VPNService created()")
 
         serviceScope.launch {
             val config = VpnEstablishHelper.buildProxyConfig("")
-            Log.d(TAG, "VPNService config: $config")
+            Logger.d(TAG, "VPNService config: $config")
 
             val pfd = VpnEstablishHelper.establishVPN(config)
-            Log.d(TAG, "VPNService pfd: $pfd")
+            Logger.d(TAG, "VPNService pfd: $pfd")
             pfd?.let {
                 launch {
-                    Log.d(TAG, "VPNService startDnsProxy pre")
+                    Logger.d(TAG, "VPNService startDnsProxy pre")
                     vpnViewModel.startDnsProxy(config)
-                    Log.d(TAG, "VPNService startDnsProxy end")
+                    Logger.d(TAG, "VPNService startDnsProxy end")
                 }
 
                 launch {
-                    Log.d(TAG, "VPNService startTcpProxy pre")
+                    Logger.d(TAG, "VPNService startTcpProxy pre")
                     vpnViewModel.startTcpProxy(config)
-                    Log.d(TAG, "VPNService startTcpProxy end")
+                    Logger.d(TAG, "VPNService startTcpProxy end")
                 }
 
                 // 等待DNS和TCP代理启动
                 delay(500)
 
-                Log.d(TAG, "VPNService startProcessPacket pre")
+                Logger.d(TAG, "VPNService startProcessPacket pre")
                 vpnViewModel.startProcessPacket(config, pfd)
             } ?: run {
-                Log.e(TAG, "VPNService failed to establishVPN() pfd is null")
+                Logger.e(TAG, "VPNService failed to establishVPN() pfd is null")
                 vpnViewModel.tryStop()
             }
         }
@@ -63,13 +63,13 @@ class LocalVpnService : CoroutinesService() {
 
 
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
-        Log.d(TAG, "VPNService onStartCommand")
+        Logger.d(TAG, "VPNService onStartCommand")
         return super.onStartCommand(intent, flags, startId)
     }
 
     override fun onDestroy() {
         super.onDestroy()
         GlobalContext.get().deleteScope(koinScope.id)
-        Log.e(TAG, "VPNService destroyed")
+        Logger.e(TAG, "VPNService destroyed")
     }
 }
