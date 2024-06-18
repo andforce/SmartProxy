@@ -33,12 +33,12 @@ object HttpHostHeaderParser {
 
     private fun getHttpHost(buffer: ByteArray, offset: Int, count: Int): String? {
         val headerString = String(buffer, offset, count)
-        val headerLines = headerString.split("\\r\\n".toRegex()).dropLastWhile { it.isEmpty() }
-            .toTypedArray()
+        val headerLines = headerString.split("\r\n").toTypedArray()
         val requestLine = headerLines[0]
-        if (requestLine.startsWith("GET") || requestLine.startsWith("POST") || requestLine.startsWith(
-                "HEAD"
-            ) || requestLine.startsWith("OPTIONS")
+        if (requestLine.startsWith("GET")
+            || requestLine.startsWith("POST")
+            || requestLine.startsWith("HEAD")
+            || requestLine.startsWith("OPTIONS")
         ) {
             for (i in 1 until headerLines.size) {
                 val nameValueStrings = headerLines[i].split(":")

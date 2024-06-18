@@ -1,5 +1,7 @@
 package me.smartproxy.tunnel.shadowsocks;
 
+import android.util.Log;
+
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -18,11 +20,11 @@ public class TableEncryptor implements IEncryptor {
             encryptTable[i] = (byte) i;
         }
 
-        System.out.println("mergeSort....");
+        Log.d("TableEncryptor", "mergeSort....");
         long startTime = System.nanoTime();
         encryptTable = mergeSort(encryptTable, a);
         long endTime = System.nanoTime();
-        System.out.printf("mergeSort: %3fms\n", (endTime - startTime) / 1000D / 1000D);
+        Log.d("TableEncryptor", "mergeSort done...." + (endTime - startTime) / 1000D / 1000D);
 
         for (int i = 0; i < 256; i++) {
             decryptTable[encryptTable[i] & 0xFF] = (byte) i;

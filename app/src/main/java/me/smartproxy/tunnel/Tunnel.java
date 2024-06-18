@@ -131,8 +131,7 @@ public abstract class Tunnel {
                     brotherTunnel.beforeSend(buffer);//发送之前，先让子类处理，例如做加密等。
                     if (!brotherTunnel.write(buffer, true)) {
                         key.cancel();//兄弟吃不消，就取消读取事件。
-
-                        System.out.printf("%s can not read more.\n", serverEP);
+                        Log.e("Tunnel", serverEP + " can not read more.");
                     }
                 }
             } else if (bytesRead < 0) {

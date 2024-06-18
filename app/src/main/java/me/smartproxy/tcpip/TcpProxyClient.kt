@@ -75,7 +75,7 @@ class TcpProxyClient(pfd: ParcelFileDescriptor, buffer: ByteArray, private val v
             )
         }
 
-        session?.let {
+        session.let {
             session.lastNanoTime = System.nanoTime()
             session.packetSent++ //注意顺序
 

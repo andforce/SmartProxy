@@ -1,5 +1,7 @@
 package me.smartproxy.tunnel.httpconnect;
 
+import android.util.Log;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.Selector;
@@ -47,7 +49,7 @@ public class HttpConnectTunnel extends Tunnel {
                 super.write(buffer, false);
                 bytesSent = 10 - buffer.remaining();
                 buffer.limit(limit);
-                System.out.printf("Send %d bytes(%s) to %s\n", bytesSent, firString, destAddress);
+                Log.d("HttpConnectTunnel", String.format("Send %d bytes(%s) to %s", bytesSent, firString, destAddress));
 
             }
         }
