@@ -3,8 +3,6 @@ package me.smartproxy.tcpip;
 
 import androidx.annotation.NonNull;
 
-import java.util.Locale;
-
 public class TCPHeader {
 
     public static final int FIN = 1;
@@ -89,19 +87,32 @@ public class TCPHeader {
         return CommonMethods.readInt(data, offset + offset_ack);
     }
 
+    private String parseAction() {
+        StringBuilder sb = new StringBuilder();
+        if ((getFlags() & SYN) == SYN) {
+            sb.append("SYN ");
+        }
+        if ((getFlags() & ACK) == ACK) {
+            sb.append("ACK ");
+        }
+        if ((getFlags() & PSH) == PSH) {
+            sb.append("PSH ");
+        }
+        if ((getFlags() & RST) == RST) {
+            sb.append("RST ");
+        }
+        if ((getFlags() & FIN) == FIN) {
+            sb.append("FIN ");
+        }
+        if ((getFlags() & URG) == URG) {
+            sb.append("URG ");
+        }
+        return sb.toString();
+    }
+
     @NonNull
     @Override
     public String toString() {
-        return String.format(Locale.ENGLISH, "%s%s%s%s%s%s%d->%d %s:%s",
-                (getFlags() & SYN) == SYN ? "SYN " : "",
-                (getFlags() & ACK) == ACK ? "ACK " : "",
-                (getFlags() & PSH) == PSH ? "PSH " : "",
-                (getFlags() & RST) == RST ? "RST " : "",
-                (getFlags() & FIN) == FIN ? "FIN " : "",
-                (getFlags() & URG) == URG ? "URG " : "",
-                getSourcePort() & 0xFFFF,
-                getDestinationPort() & 0xFFFF,
-                getSeqID(),
-                getAckID());
+        return parseAction() + (getSourcePort() & 0xFFFF) + "->" + (getDestinationPort() & 0xFFFF) + " " + getSeqID() + ":" + getAckID();
     }
 }

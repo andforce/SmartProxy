@@ -1,6 +1,6 @@
 package me.smartproxy.tcpip;
 
-import java.util.Locale;
+import androidx.annotation.NonNull;
 
 public class UDPHeader {
     private static final short offset_src_port = 0; // Source port
@@ -65,8 +65,8 @@ public class UDPHeader {
     }
 
     @Override
+    @NonNull
     public String toString() {
-        return String.format(Locale.ENGLISH, "%d->%d", getSourcePort() & 0xFFFF,
-                getDestinationPort() & 0xFFFF);
+        return getSourcePort() + "->" + getDestinationPort();
     }
 }

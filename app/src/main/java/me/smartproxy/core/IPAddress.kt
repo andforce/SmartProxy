@@ -1,7 +1,5 @@
 package me.smartproxy.core
 
-import java.util.Locale
-
 class IPAddress {
     val address: String
     val prefixLength: Int
@@ -24,7 +22,7 @@ class IPAddress {
     }
 
     override fun toString(): String {
-        return String.format(Locale.ENGLISH, "%s/%d", address, prefixLength)
+        return "$address/$prefixLength"
     }
 
     override fun equals(o: Any?): Boolean {

@@ -80,12 +80,7 @@ object ProxyConfigHelper {
                 }
             } catch (e: Exception) {
                 throw Exception(
-                    String.format(
-                        "SmartProxy config file parse error: line:%d, tag:%s, error:%s",
-                        lineNumber,
-                        tagString,
-                        e
-                    )
+                    "SmartProxy config file parse error: line:$lineNumber, tag:$tagString, error:$e"
                 )
             }
         }
@@ -173,7 +168,7 @@ object ProxyConfigHelper {
                 .toTypedArray()
             return lines
         } catch (e: java.lang.Exception) {
-            throw java.lang.Exception(String.format("Download config file from %s failed.", url))
+            throw java.lang.Exception("Download config file from $url failed.")
         }
     }
 
@@ -191,7 +186,7 @@ object ProxyConfigHelper {
             return sBuilder.toString().split("\\n".toRegex()).dropLastWhile { it.isEmpty() }
                 .toTypedArray()
         } catch (e: java.lang.Exception) {
-            throw java.lang.Exception(String.format("Can't read config file: %s", path))
+            throw java.lang.Exception("Can't read config file: $path")
         } finally {
             if (inputStream != null) {
                 try {

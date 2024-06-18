@@ -3,7 +3,6 @@ package me.smartproxy.tunnel.httpconnect
 import android.net.Uri
 import me.smartproxy.tunnel.Config
 import java.net.InetSocketAddress
-import java.util.Locale
 
 class HttpConnectConfig : Config() {
     var userName: String? = null
@@ -15,7 +14,7 @@ class HttpConnectConfig : Config() {
     }
 
     override fun toString(): String {
-        return String.format(Locale.ENGLISH, "http://%s:%s@%s", userName, password, socketAddress)
+        return "http://$userName:$password@$socketAddress"
     }
 
     override fun hashCode(): Int {

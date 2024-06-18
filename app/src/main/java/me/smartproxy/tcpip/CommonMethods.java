@@ -22,12 +22,11 @@ public class CommonMethods {
     }
 
     public static String ipIntToString(int ip) {
-        return String.format("%s.%s.%s.%s", (ip >> 24) & 0x00FF,
-                (ip >> 16) & 0x00FF, (ip >> 8) & 0x00FF, ip & 0x00FF);
+        return ((ip >> 24) & 0x00FF) + "." + ((ip >> 16) & 0x00FF) + "." + ((ip >> 8) & 0x00FF) + "." + (ip & 0x00FF);
     }
 
     public static String ipBytesToString(byte[] ip) {
-        return String.format("%s.%s.%s.%s", ip[0] & 0x00FF, ip[1] & 0x00FF, ip[2] & 0x00FF, ip[3] & 0x00FF);
+        return (ip[0] & 0xFF) + "." + (ip[1] & 0xFF) + "." + (ip[2] & 0xFF) + "." + (ip[3] & 0xFF);
     }
 
     public static int ipStringToInt(String ip) {

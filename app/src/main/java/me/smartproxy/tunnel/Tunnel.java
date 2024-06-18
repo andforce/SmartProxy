@@ -1,6 +1,5 @@
 package me.smartproxy.tunnel;
 
-import android.annotation.SuppressLint;
 import android.net.VpnService;
 import android.util.Log;
 
@@ -106,7 +105,6 @@ public abstract class Tunnel {
         brotherTunnel.beginReceive();//兄弟也开始收数据吧
     }
 
-    @SuppressLint("DefaultLocale")
     public void onConnectable() {
         try {
             if (innerChannel.finishConnect()) {//连接成功
@@ -165,7 +163,7 @@ public abstract class Tunnel {
 
     void disposeInternal(boolean disposeBrother) {
         if (disposed) {
-            return;
+            Log.d("Tunnel", "Tunnel already disposed.");
         } else {
             try {
                 innerChannel.close();

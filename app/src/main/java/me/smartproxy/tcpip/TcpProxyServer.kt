@@ -98,14 +98,7 @@ class TcpProxyServer(private val config: ProxyConfig, port: Int) {
             if (config.needProxy(session.remoteHost, session.remoteIP)) {
                 Log.d(
                     TAG,
-                    String.format(
-                        "%d/%d:[PROXY] %s=>%s:%d",
-                        NatSessionManager.getSessionCount(),
-                        Tunnel.SessionCount,
-                        session.remoteHost,
-                        CommonMethods.ipIntToString(session.remoteIP),
-                        session.remotePort.toInt() and 0xFFFF
-                    )
+                    "${NatSessionManager.getSessionCount()}/${Tunnel.SessionCount}:[PROXY] ${session.remoteHost}=>${CommonMethods.ipIntToString(session.remoteIP)}:${session.remotePort.toInt() and 0xFFFF}",
                 )
                 return InetSocketAddress.createUnresolved(
                     session.remoteHost,

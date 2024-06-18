@@ -1,6 +1,6 @@
 package me.smartproxy.tcpip;
 
-import java.util.Locale;
+import androidx.annotation.NonNull;
 
 public class IPHeader {
 
@@ -106,8 +106,9 @@ public class IPHeader {
     }
 
     @Override
+    @NonNull
     public String toString() {
-        return String.format(Locale.ENGLISH, "%s->%s Pro=%s,HLen=%d", CommonMethods.ipIntToString(getSourceIP()), CommonMethods.ipIntToString(getDestinationIP()), getProtocol(), getHeaderLength());
+        return CommonMethods.ipIntToString(getSourceIP()) + "->" + CommonMethods.ipIntToString(getDestinationIP()) + " Pro=" + getProtocol() + ",HLen=" + getHeaderLength();
     }
 
 }

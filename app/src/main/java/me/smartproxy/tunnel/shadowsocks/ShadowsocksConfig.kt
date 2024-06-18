@@ -15,7 +15,7 @@ class ShadowsocksConfig : Config() {
     }
 
     override fun toString(): String {
-        return String.format("ss://%s:%s@%s", encryptMethod, password, socketAddress)
+        return "ss://$encryptMethod:$password@$socketAddress"
     }
 
     override fun hashCode(): Int {
