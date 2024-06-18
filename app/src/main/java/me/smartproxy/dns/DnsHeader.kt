@@ -1,9 +1,14 @@
 package me.smartproxy.dns
 
+import me.smartproxy.core.Pool
 import me.smartproxy.tcpip.CommonMethods
 import java.nio.ByteBuffer
 
-class DnsHeader(var data: ByteArray, var offset: Int) {
+class DnsHeader {
+    lateinit var data: ByteArray
+
+    var offset: Int = 0
+
     var ID: Short
         set(value) {
             CommonMethods.writeShort(data, offset + offset_ID, value)
@@ -56,8 +61,14 @@ class DnsHeader(var data: ByteArray, var offset: Int) {
 
 
     companion object {
-        fun fromBytes(buffer: ByteBuffer): DnsHeader {
-            val header = DnsHeader(buffer.array(), buffer.arrayOffset() + buffer.position())
+        fun recycle(header: DnsHeader) {
+            DnsHeaderPool.recycle(header)
+        }
+
+        fun takeFromPoll(buffer: ByteBuffer): DnsHeader {
+            val header = DnsHeaderPool.take()
+            header.data = buffer.array()
+            header.offset = buffer.arrayOffset() + buffer.position()
             header.ID = buffer.getShort()
             header.Flags = parse(buffer.getShort())
             header.questionCount = buffer.getShort()
@@ -73,5 +84,11 @@ class DnsHeader(var data: ByteArray, var offset: Int) {
         private const val offset_ResourceCount: Short = 6
         private const val offset_AResourceCount: Short = 8
         private const val offset_EResourceCount: Short = 10
+    }
+}
+
+object DnsHeaderPool : Pool<DnsHeader>() {
+    override fun create(): DnsHeader {
+        return DnsHeader()
     }
 }

@@ -63,9 +63,12 @@ class DnsProxy(private val config: ProxyConfig) {
                     dnsBuffer.clear()
                     dnsBuffer.limit(packet.length)
                     try {
-                        val dnsPacket = DnsPacket.fromBytes(dnsBuffer)
-                        if (dnsPacket != null) {
-                            onDnsResponseReceived(ipHeader, udpHeader, dnsPacket)
+                        DnsPacket.takeFromPoll(dnsBuffer)?.let {
+                            onDnsRequestReceived(ipHeader, udpHeader, it)
+                            // 放入池中
+                            DnsPacket.recycle(it)
+                        } ?: run {
+                            Log.e(TAG, "Parse DNS Packet Error.")
                         }
                     } catch (e: Exception) {
                         Log.e(TAG, "Parse DNS Packet Error: ", e)

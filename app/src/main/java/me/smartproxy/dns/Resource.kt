@@ -1,5 +1,6 @@
 package me.smartproxy.dns
 
+import me.smartproxy.core.Pool
 import java.nio.ByteBuffer
 
 class Resource {
@@ -32,8 +33,12 @@ class Resource {
 
 
     companion object {
-        fun fromBytes(buffer: ByteBuffer): Resource {
-            val r = Resource()
+        fun recycle(r: Resource) {
+            ResourcePool.recycle(r)
+        }
+
+        fun takeFromPoll(buffer: ByteBuffer): Resource {
+            val r = ResourcePool.take()
             r.offset = buffer.arrayOffset() + buffer.position()
             r.domain = DnsPacket.readDomain(buffer, buffer.arrayOffset())
             r.type = buffer.getShort()
@@ -45,5 +50,12 @@ class Resource {
             r.length = buffer.arrayOffset() + buffer.position() - r.offset
             return r
         }
+    }
+}
+
+
+object ResourcePool : Pool<Resource>() {
+    override fun create(): Resource {
+        return Resource()
     }
 }
