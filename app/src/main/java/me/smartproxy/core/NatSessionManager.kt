@@ -4,39 +4,43 @@ import android.util.SparseArray
 import me.smartproxy.dns.DnsProxy.Companion.reverseLookup
 import me.smartproxy.tcpip.CommonMethods
 
-object NatSessionManager {
+object NatSessionManager : Pool<NatSession>() {
     private const val MAX_SESSION_COUNT: Int = 60
 
     private const val SESSION_TIMEOUT_NS: Long = 60 * 1000000000L
 
-    private val Sessions: SparseArray<NatSession> = SparseArray()
+    private val sessionsCache: SparseArray<NatSession> = SparseArray()
 
     fun getSession(portKey: Int): NatSession? {
-        return Sessions[portKey]
+        return sessionsCache[portKey]
     }
 
     fun getSessionCount(): Int {
-        return Sessions.size()
+        return sessionsCache.size()
     }
-
 
     private fun clearExpiredSessions() {
         val now = System.nanoTime()
-        for (i in Sessions.size() - 1 downTo 0) {
-            val session = Sessions.valueAt(i)
+        for (i in sessionsCache.size() - 1 downTo 0) {
+            val session = sessionsCache.valueAt(i)
             if (now - session.lastNanoTime > SESSION_TIMEOUT_NS) {
-                Sessions.removeAt(i)
+                sessionsCache.removeAt(i)
+
+                // Clear the session and recycle it
+                session.clear().also {
+                    recycle(session)
+                }
             }
         }
     }
 
 
     fun createSession(portKey: Int, remoteIP: Int, remotePort: Short): NatSession {
-        if (Sessions.size() > MAX_SESSION_COUNT) {
+        if (sessionsCache.size() > MAX_SESSION_COUNT) {
             clearExpiredSessions() //清理过期的会话。
         }
 
-        val session = NatSession()
+        val session = take()
         session.lastNanoTime = System.nanoTime()
         session.remoteIP = remoteIP
         session.remotePort = remotePort
@@ -48,7 +52,16 @@ object NatSessionManager {
         if (session.remoteHost == null) {
             session.remoteHost = CommonMethods.ipIntToString(remoteIP)
         }
-        Sessions.put(portKey, session)
+
+        session.bytesSent = 0
+        session.packetSent = 0
+
+
+        sessionsCache.put(portKey, session)
         return session
+    }
+
+    override fun create(): NatSession {
+        return NatSession()
     }
 }
