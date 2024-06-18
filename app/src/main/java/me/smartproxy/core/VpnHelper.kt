@@ -11,6 +11,7 @@ import me.smartproxy.tcpip.CommonMethods
 import me.smartproxy.tcpip.IPData
 import me.smartproxy.tcpip.IPHeader
 import me.smartproxy.tcpip.TcpProxyClient
+import me.smartproxy.tcpip.TcpProxyServer
 import me.smartproxy.tcpip.UDPHeader
 import me.smartproxy.ui.utils.Logger
 import org.koin.java.KoinJavaComponent
@@ -39,6 +40,7 @@ class VpnHelper {
     private val ipHeader = IPHeader(packetBuffer, 0)
 
     private var proxyConfig: ProxyConfig? = null
+    private var tcpProxy: TcpProxyServer? = null
 
     suspend fun startDnsProxy(config: ProxyConfig) {
         withContext(Dispatchers.IO) {
@@ -47,8 +49,9 @@ class VpnHelper {
     }
 
     suspend fun startTcpProxy(config: ProxyConfig) {
+        tcpProxy = TcpProxyServer(config, 0)
         withContext(Dispatchers.IO) {
-            TcpProxyHelper.startTcpProxy(config)
+            tcpProxy?.start()
         }
     }
 
@@ -69,50 +72,54 @@ class VpnHelper {
             viewModel.updateVpnStatus(1)
 
             pfd.use { vpnInterface ->
-                tcpClient = TcpProxyClient(vpnInterface, packetBuffer, vpnLocalIpInt)
-                dnsProcessor = DnsProcessor(packetBuffer, vpnLocalIpInt)
+                tcpProxy?.let {tcpProxy->
+                    tcpClient = TcpProxyClient(vpnInterface, packetBuffer, vpnLocalIpInt, tcpProxy.tcpServerPort)
+                    dnsProcessor = DnsProcessor(packetBuffer, vpnLocalIpInt)
 
-                FileInputStream(vpnInterface.fileDescriptor).use { fis ->
-                    var size: Int
-                    kotlin.runCatching {
-                        while (isRunning) {
-                            size = fis.read(packetBuffer)
-                            if (size <= 0) {
-                                delay(10)
-                                continue
+                    FileInputStream(vpnInterface.fileDescriptor).use { fis ->
+                        var size: Int
+                        kotlin.runCatching {
+                            while (isRunning) {
+                                size = fis.read(packetBuffer)
+                                if (size <= 0) {
+                                    delay(10)
+                                    continue
+                                }
+                                when (ipHeader.protocol) {
+                                    IPData.TCP -> {
+                                        tcpClient?.onTCPPacketReceived(ipHeader, size)
+                                    }
+
+                                    IPData.UDP -> {
+                                        // 转发DNS数据包：
+                                        dnsProcessor?.processUdpPacket(ipHeader)
+                                    }
+
+                                    else -> {
+                                        Logger.d(TAG, "onIPPacketReceived, 不支持的协议: $ipHeader")
+                                    }
+                                }
                             }
-                            when (ipHeader.protocol) {
-                                IPData.TCP -> {
-                                    tcpClient?.onTCPPacketReceived(ipHeader, size)
-                                }
 
-                                IPData.UDP -> {
-                                    // 转发DNS数据包：
-                                    dnsProcessor?.processUdpPacket(ipHeader)
-                                }
+                            stop("while read stopped.")
 
-                                else -> {
-                                    Logger.d(TAG, "onIPPacketReceived, 不支持的协议: $ipHeader")
-                                }
-                            }
+                        }.onFailure {
+                            Logger.e(TAG, "while read: ", it)
+                            stop("while read failed, or onIPPacketReceived() IOException.")
                         }
-
-                        stop("while read stopped.")
-
                     }.onFailure {
-                        Logger.e(TAG, "while read: ", it)
-                        stop("while read failed, or onIPPacketReceived() IOException.")
+                        Logger.e(TAG, "FileInputStream: ", it)
+                        stop("FileInputStream failed.")
                     }
-                }.onFailure {
-                    Logger.e(TAG, "FileInputStream: ", it)
-                    stop("FileInputStream failed.")
+                }?.onFailure {
+                    Logger.e(TAG, "tcpProxy: ", it)
+                    stop("tcpProxy is null.")
                 }
-
-            }.onFailure {
+            }?.onFailure {
                 Logger.e(TAG, "ParcelFileDescriptor: ", it)
                 stop("ParcelFileDescriptor failed.")
             }
-        }.onFailure {
+        }?.onFailure {
             Logger.e(TAG, "startProcessPacket: ", it)
             stop("startProcessPacket failed.")
         }
@@ -124,7 +131,8 @@ class VpnHelper {
 
         tcpClient?.stop()
 
-        TcpProxyHelper.stopTcpProxy()
+        tcpProxy?.stop()
+        tcpProxy = null
 
         DnsProxyHelper.stopDnsProxy()
 
@@ -133,7 +141,9 @@ class VpnHelper {
 
     fun tryStop() {
         DnsProxyHelper.stopDnsProxy()
-        TcpProxyHelper.stopTcpProxy()
+
+        tcpProxy?.stop()
+        tcpProxy = null
 
         this.proxyConfig?.stopTimer()
         stop("tryStop()")

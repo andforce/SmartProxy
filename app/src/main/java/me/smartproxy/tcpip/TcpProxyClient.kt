@@ -3,12 +3,11 @@ package me.smartproxy.tcpip
 import android.os.ParcelFileDescriptor
 import me.smartproxy.core.HttpHostHeaderParser
 import me.smartproxy.core.NatSessionManager
-import me.smartproxy.core.TcpProxyHelper
 import me.smartproxy.ui.utils.Logger
 import java.io.FileOutputStream
 import java.io.IOException
 
-class TcpProxyClient(pfd: ParcelFileDescriptor, buffer: ByteArray, private val vpnLocalIpInt: Int) {
+class TcpProxyClient(pfd: ParcelFileDescriptor, buffer: ByteArray, private val vpnLocalIpInt: Int, private val localTcpServerPort: Short) {
 
     private var vpnOutputStream: FileOutputStream? = null
     private val tcpHeader: TCPHeader
@@ -32,7 +31,7 @@ class TcpProxyClient(pfd: ParcelFileDescriptor, buffer: ByteArray, private val v
 
         if (ipHeader.sourceIP == vpnLocalIpInt) {
             // 收到本地 TcpProxyServer 服务器数据
-            if (tcpHeader.sourcePort == TcpProxyHelper.getPort()) {
+            if (tcpHeader.sourcePort == localTcpServerPort) {
                 natToRealClient(ipHeader, size)
             } else {
                 // 添加端口映射
@@ -111,7 +110,7 @@ class TcpProxyClient(pfd: ParcelFileDescriptor, buffer: ByteArray, private val v
             }
             ipHeader.sourceIP = ipHeader.destinationIP
             ipHeader.destinationIP = vpnLocalIpInt
-            tcpHeader.destinationPort = TcpProxyHelper.getPort()
+            tcpHeader.destinationPort = localTcpServerPort
 
             CommonMethods.computeTCPChecksum(ipHeader, tcpHeader)
             vpnOutputStream?.write(ipHeader.data, ipHeader.offset, size)
