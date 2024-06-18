@@ -4,7 +4,6 @@ import android.os.ParcelFileDescriptor
 import me.smartproxy.core.HttpHostHeaderParser
 import me.smartproxy.core.NatSessionManager
 import me.smartproxy.core.TcpProxyHelper
-import me.smartproxy.core.VpnHelper.Companion.TAG
 import me.smartproxy.ui.utils.Logger
 import java.io.FileOutputStream
 import java.io.IOException
@@ -17,6 +16,10 @@ class TcpProxyClient(pfd: ParcelFileDescriptor, buffer: ByteArray, private val v
     private var receivedBytes: Long = 0
     private var sentBytes: Long = 0
 
+    companion object {
+        const val TAG = "TcpProxyClient"
+        const val ENABLE_LOG = true
+    }
 
     init {
         vpnOutputStream = FileOutputStream(pfd.fileDescriptor)
@@ -44,10 +47,12 @@ class TcpProxyClient(pfd: ParcelFileDescriptor, buffer: ByteArray, private val v
         val session =
             NatSessionManager.getSession(tcpHeader.destinationPort.toInt())
         if (session != null) {
-            Logger.d(
-                TAG,
-                "onIPPacketReceived: 收到本地 TcpProxyServer 服务器数据, $ipHeader $tcpHeader"
-            )
+            if (ENABLE_LOG) {
+                Logger.d(
+                    TAG,
+                    "onIPPacketReceived: 转发给本地客户端, $ipHeader $tcpHeader"
+                )
+            }
             ipHeader.sourceIP = ipHeader.destinationIP
             tcpHeader.sourcePort = session.remotePort
             ipHeader.destinationIP = vpnLocalIpInt
@@ -98,10 +103,12 @@ class TcpProxyClient(pfd: ParcelFileDescriptor, buffer: ByteArray, private val v
             }
 
             // 转发给本地 TcpProxyServer 服务器
-            Logger.d(
-                TAG,
-                "onIPPacketReceived: 转发给本地 TcpProxyServer 服务器, $ipHeader $tcpHeader"
-            )
+            if (ENABLE_LOG) {
+                Logger.d(
+                    TAG,
+                    "onIPPacketReceived: 转发给本地 TcpProxyServer 服务器, $ipHeader $tcpHeader"
+                )
+            }
             ipHeader.sourceIP = ipHeader.destinationIP
             ipHeader.destinationIP = vpnLocalIpInt
             tcpHeader.destinationPort = TcpProxyHelper.getPort()
