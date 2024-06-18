@@ -112,6 +112,9 @@ class VpnHelper {
                 Log.e(TAG, "ParcelFileDescriptor: ", it)
                 stop("ParcelFileDescriptor failed.")
             }
+        }.onFailure {
+            Log.e(TAG, "startProcessPacket: ", it)
+            stop("startProcessPacket failed.")
         }
 
     private fun stop(reason: String) {
