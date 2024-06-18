@@ -10,14 +10,14 @@ class DnsProcessor(buffer: ByteArray, private val vpnLocalIpInt: Int) {
     private val dnsBuffer: ByteBuffer =
         (ByteBuffer.wrap(buffer).position(28) as ByteBuffer).slice()
 
-    fun processUdpPacket(header: IPHeader) {
+    fun processUdpPacket(header: IPHeader, dnsProxy: DnsProxy?) {
         udpHeader.offset = header.headerLength
         if (header.sourceIP == vpnLocalIpInt && udpHeader.destinationPort.toInt() == 53) {
             dnsBuffer.clear()
             dnsBuffer.limit(header.dataLength - 8)
             val dnsPacket = DnsPacket.takeFromPoll(dnsBuffer)
             if (dnsPacket != null && dnsPacket.dnsHeader.questionCount > 0) {
-                DnsProxyHelper.onDnsRequestReceived(
+                dnsProxy?.onDnsRequestReceived(
                     header,
                     udpHeader,
                     dnsPacket

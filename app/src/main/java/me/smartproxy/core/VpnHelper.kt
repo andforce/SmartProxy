@@ -6,7 +6,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import me.smartproxy.core.viewmodel.LocalVpnViewModel
 import me.smartproxy.dns.DnsProcessor
-import me.smartproxy.dns.DnsProxyHelper
+import me.smartproxy.dns.DnsProxy
 import me.smartproxy.tcpip.CommonMethods
 import me.smartproxy.tcpip.IPData
 import me.smartproxy.tcpip.IPHeader
@@ -42,9 +42,12 @@ class VpnHelper {
     private var proxyConfig: ProxyConfig? = null
     private var tcpProxy: TcpProxyServer? = null
 
+    private var dnsProxy: DnsProxy? = null
+
     suspend fun startDnsProxy(config: ProxyConfig) {
+        dnsProxy = DnsProxy(config)
         withContext(Dispatchers.IO) {
-            DnsProxyHelper.startDnsProxy(config)
+            dnsProxy?.start()
         }
     }
 
@@ -92,7 +95,7 @@ class VpnHelper {
 
                                     IPData.UDP -> {
                                         // 转发DNS数据包：
-                                        dnsProcessor?.processUdpPacket(ipHeader)
+                                        dnsProcessor?.processUdpPacket(ipHeader, dnsProxy)
                                     }
 
                                     else -> {
@@ -134,13 +137,15 @@ class VpnHelper {
         tcpProxy?.stop()
         tcpProxy = null
 
-        DnsProxyHelper.stopDnsProxy()
+        dnsProxy?.stop()
+        dnsProxy = null
 
         viewModel.updateVpnStatus(0)
     }
 
     fun tryStop() {
-        DnsProxyHelper.stopDnsProxy()
+        dnsProxy?.stop()
+        dnsProxy = null
 
         tcpProxy?.stop()
         tcpProxy = null
