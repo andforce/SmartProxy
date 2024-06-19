@@ -16,12 +16,10 @@ class DnsProcessor(buffer: ByteArray, private val vpnLocalIpInt: Int) {
             dnsBuffer.clear()
             dnsBuffer.limit(header.dataLength - 8)
             val dnsPacket = DnsPacket.takeFromPoll(dnsBuffer)
-            if (dnsPacket != null && dnsPacket.dnsHeader.questionCount > 0) {
-                dnsProxy?.onDnsRequestReceived(
-                    header,
-                    udpHeader,
-                    dnsPacket
-                )
+            dnsPacket?.let {
+                if (dnsPacket.dnsHeader.questionCount > 0) {
+                    dnsProxy?.onDnsRequestReceived(header, udpHeader, dnsPacket)
+                }
             }
         } else {
             Logger.e(

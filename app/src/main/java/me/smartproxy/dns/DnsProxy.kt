@@ -64,7 +64,7 @@ class DnsProxy(private val config: ProxyConfig) {
                     dnsBuffer.limit(packet.length)
                     try {
                         DnsPacket.takeFromPoll(dnsBuffer)?.let {
-                            onDnsRequestReceived(ipHeader, udpHeader, it)
+                            onDnsResponseReceived(ipHeader, udpHeader, it)
                             // 放入池中
                             DnsPacket.recycle(it)
                         } ?: run {

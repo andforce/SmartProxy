@@ -136,8 +136,13 @@ public abstract class Tunnel {
                 this.dispose();//连接已关闭，释放资源。
             }
         } catch (Exception e) {
+            try {
+                Logger.e("Tunnel", "onReadable: innerChannel failed: " + innerChannel.getLocalAddress() + " -> " + innerChannel.getRemoteAddress()  + ": " + e.getLocalizedMessage());
+            } catch (IOException ex) {
+                // ignore
+                Logger.e("Tunnel", "onReadable: innerChannel failed: " +  e.getLocalizedMessage());
+            }
             this.dispose();
-            Logger.e("Tunnel", "onReadable: ", e);
         }
     }
 
@@ -168,6 +173,7 @@ public abstract class Tunnel {
             try {
                 innerChannel.close();
             } catch (Exception e) {
+                // ignore
             }
 
             if (brotherTunnel != null && disposeBrother) {
