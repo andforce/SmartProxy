@@ -14,6 +14,8 @@ import me.smartproxy.core.ProxyConfig
 import me.smartproxy.core.VpnHelper
 import me.smartproxy.tcpip.IPHeader
 import me.smartproxy.tcpip.UDPHeader
+import java.io.FileInputStream
+import java.io.FileOutputStream
 
 class LocalVpnViewModel(private val context: Application) : ViewModel() {
 
@@ -58,13 +60,13 @@ class LocalVpnViewModel(private val context: Application) : ViewModel() {
         _requestResult.tryEmit(it)
     }
 
-    suspend fun startDnsProxy(config: ProxyConfig) {
-        helper.startDnsProxy(config)
+    suspend fun startDnsProxy(config: ProxyConfig, fos: FileOutputStream) {
+        helper.startDnsProxy(config, fos)
     }
 
     suspend fun startTcpProxy(config: ProxyConfig) {
         helper.startTcpProxy(config)
     }
 
-    suspend fun startProcessPacket(config: ProxyConfig, pfd: ParcelFileDescriptor) = helper.startProcessPacket(config, pfd)
+    suspend fun startProcessPacket(config: ProxyConfig, fis: FileInputStream, fos: FileOutputStream) = helper.startProcessPacket(config, fis, fos)
 }

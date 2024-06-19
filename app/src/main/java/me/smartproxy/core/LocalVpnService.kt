@@ -9,6 +9,8 @@ import org.koin.core.context.GlobalContext
 import org.koin.core.qualifier.named
 import org.koin.core.scope.Scope
 import org.koin.java.KoinJavaComponent.get
+import java.io.FileInputStream
+import java.io.FileOutputStream
 
 class LocalVpnService : CoroutinesService() {
     companion object {
@@ -36,10 +38,13 @@ class LocalVpnService : CoroutinesService() {
 
             val pfd = VpnEstablishHelper.establishVPN(config)
             Logger.d(TAG, "pfd: $pfd")
-            pfd?.let {
+            pfd?.use {
+                val fis = FileInputStream(it.fileDescriptor)
+                val fos = FileOutputStream(it.fileDescriptor)
+
                 launch {
                     Logger.d(TAG, "startDnsProxy pre")
-                    vpnViewModel.startDnsProxy(config)
+                    vpnViewModel.startDnsProxy(config, fos)
                     Logger.d(TAG, "startDnsProxy end")
                 }
 
@@ -53,7 +58,7 @@ class LocalVpnService : CoroutinesService() {
                 delay(100)
 
                 Logger.d(TAG, "startProcessPacket pre")
-                vpnViewModel.startProcessPacket(config, pfd)
+                vpnViewModel.startProcessPacket(config, fis, fos)
             } ?: run {
                 Logger.e(TAG, "failed to establishVPN() pfd is null")
                 vpnViewModel.tryStop()

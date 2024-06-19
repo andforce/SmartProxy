@@ -36,12 +36,20 @@ public class UDPHeader {
         return CommonMethods.readShort(data, offset + offset_src_port);
     }
 
+    public int getSourcePortInt() {
+        return getSourcePort() & 0xFFFF;
+    }
+
     public void setSourcePort(short value) {
         CommonMethods.writeShort(data, offset + offset_src_port, value);
     }
 
     public short getDestinationPort() {
         return CommonMethods.readShort(data, offset + offset_dest_port);
+    }
+
+    public int getDestinationPortInt() {
+        return getDestinationPort() & 0xFFFF;
     }
 
     public void setDestinationPort(short value) {

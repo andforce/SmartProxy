@@ -1,16 +1,13 @@
 package me.smartproxy.tcpip
 
-import android.os.ParcelFileDescriptor
 import me.smartproxy.core.HttpHostHeaderParser
 import me.smartproxy.core.NatSessionManager
 import me.smartproxy.ui.utils.Logger
 import java.io.FileOutputStream
 import java.io.IOException
-import kotlin.experimental.and
 
-class TcpProxyClient(pfd: ParcelFileDescriptor, buffer: ByteArray, private val vpnLocalIpInt: Int, private val localTcpServerPort: Short) {
+class TcpProxyClient(private var vpnOutputStream: FileOutputStream?, buffer: ByteArray, private val vpnLocalIpInt: Int, private val localTcpServerPort: Short) {
 
-    private var vpnOutputStream: FileOutputStream? = null
     private val tcpHeader: TCPHeader
 
     private var receivedBytes: Long = 0
@@ -22,7 +19,7 @@ class TcpProxyClient(pfd: ParcelFileDescriptor, buffer: ByteArray, private val v
     }
 
     init {
-        vpnOutputStream = FileOutputStream(pfd.fileDescriptor)
+        //vpnOutputStream = FileOutputStream(pfd.fileDescriptor)
         tcpHeader = TCPHeader(buffer, 20)
     }
 
