@@ -74,14 +74,14 @@ class VpnHelper {
             // 更新状态
             viewModel.updateVpnStatus(1)
 
-            pfd.use { vpnInterface ->
-                tcpProxy?.let {tcpProxy->
-                    tcpClient = TcpProxyClient(vpnInterface, packetBuffer, vpnLocalIpInt, tcpProxy.tcpServerPort)
-                    dnsProcessor = DnsProcessor(packetBuffer, vpnLocalIpInt)
+            runCatching {
+                pfd.use { vpnInterface ->
+                    tcpProxy?.let { tcpProxy ->
+                        tcpClient = TcpProxyClient(vpnInterface, packetBuffer, vpnLocalIpInt, tcpProxy.tcpServerPort)
+                        dnsProcessor = DnsProcessor(packetBuffer, vpnLocalIpInt)
 
-                    FileInputStream(vpnInterface.fileDescriptor).use { fis ->
-                        var size: Int
-                        kotlin.runCatching {
+                        FileInputStream(vpnInterface.fileDescriptor).use { fis ->
+                            var size: Int
                             while (isRunning) {
                                 size = fis.read(packetBuffer)
                                 if (size <= 0) {
@@ -105,26 +105,16 @@ class VpnHelper {
                             }
 
                             stop("while read stopped.")
-
-                        }.onFailure {
-                            Logger.e(TAG, "while read: ", it)
-                            stop("while read failed, or onIPPacketReceived() IOException.")
                         }
-                    }.onFailure {
-                        Logger.e(TAG, "FileInputStream: ", it)
-                        stop("FileInputStream failed.")
+                    } ?: run {
+                        Logger.e(TAG, "tcpProxy: ", Exception("tcpProxy is null."))
+                        stop("tcpProxy is null.")
                     }
-                }?.onFailure {
-                    Logger.e(TAG, "tcpProxy: ", it)
-                    stop("tcpProxy is null.")
                 }
-            }?.onFailure {
-                Logger.e(TAG, "ParcelFileDescriptor: ", it)
-                stop("ParcelFileDescriptor failed.")
+            }.onFailure {
+                Logger.e(TAG, "startProcessPacket: ", it)
+                stop("startProcessPacket failed.")
             }
-        }?.onFailure {
-            Logger.e(TAG, "startProcessPacket: ", it)
-            stop("startProcessPacket failed.")
         }
 
     private fun stop(reason: String) {
