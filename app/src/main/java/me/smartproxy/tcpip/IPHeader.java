@@ -4,12 +4,20 @@ import androidx.annotation.NonNull;
 
 public class IPHeader {
 
-    public byte[] data;
-    public int offset;
+    private byte[] data;
+    private int offset;
 
     public IPHeader(byte[] data, int offset) {
         this.data = data;
         this.offset = offset;
+    }
+
+    public byte[] getData() {
+        return data;
+    }
+
+    public int getOffset() {
+        return offset;
     }
 
     public void defaultHeader() {

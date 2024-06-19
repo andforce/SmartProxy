@@ -91,7 +91,7 @@ public class CommonMethods {
     }
 
     // 计算校验和
-    public static short checksum(long sum, byte[] buf, int offset, int len) {
+    private static short checksum(long sum, byte[] buf, int offset, int len) {
         sum += getsum(buf, offset, len);
         while ((sum >> 16) > 0)
             sum = (sum & 0xFFFF) + (sum >> 16);
@@ -113,11 +113,10 @@ public class CommonMethods {
     }
 
     // 计算IP包的校验和
-    public static boolean computeIPChecksum(IPHeader ipHeader) {
+    private static boolean computeIPChecksum(IPHeader ipHeader) {
         short oldCrc = ipHeader.getCrc();
         ipHeader.setCrc((short) 0);// 计算前置零
-        short newCrc = CommonMethods.checksum(0, ipHeader.data,
-                ipHeader.offset, ipHeader.getHeaderLength());
+        short newCrc = checksum(0, ipHeader.getData(), ipHeader.getOffset(), ipHeader.getHeaderLength());
         ipHeader.setCrc(newCrc);
         return oldCrc == newCrc;
     }
@@ -129,7 +128,7 @@ public class CommonMethods {
         if (ipData_len < 0)
             return false;
         // 计算为伪首部和
-        long sum = getsum(ipHeader.data, ipHeader.offset
+        long sum = getsum(ipHeader.getData(), ipHeader.getOffset()
                 + IPData.offset_src_ip, 8);
         sum += ipHeader.getProtocol() & 0xFF;
         sum += ipData_len;
@@ -145,13 +144,16 @@ public class CommonMethods {
 
     // 计算TCP或UDP的校验和
     public static boolean computeUDPChecksum(IPHeader ipHeader, UDPHeader udpHeader) {
-        computeIPChecksum(ipHeader);//计算IP校验和
-        int ipData_len = ipHeader.getTotalLength() - ipHeader.getHeaderLength();// IP数据长度
-        if (ipData_len < 0)
+        boolean ipChecksum = computeIPChecksum(ipHeader);//计算IP校验和
+        if (!ipChecksum) {
             return false;
-        // 计算为伪首部和
-        long sum = getsum(ipHeader.data, ipHeader.offset
-                + IPData.offset_src_ip, 8);
+        }
+        int ipData_len = ipHeader.getTotalLength() - ipHeader.getHeaderLength();// IP数据长度
+        if (ipData_len < 0) {
+            return false;
+        }
+        // 计算 伪首部和
+        long sum = getsum(ipHeader.getData(), ipHeader.getOffset() + IPData.offset_src_ip, 8);
         sum += ipHeader.getProtocol() & 0xFF;
         sum += ipData_len;
 

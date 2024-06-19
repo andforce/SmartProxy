@@ -115,6 +115,7 @@ class TcpProxyClient(pfd: ParcelFileDescriptor, buffer: ByteArray, private val v
             CommonMethods.computeTCPChecksum(ipHeader, tcpHeader)
             vpnOutputStream?.write(ipHeader.data, ipHeader.offset, size)
             vpnOutputStream?.flush()
+
             session.bytesSent += tcpDataSize //注意顺序
             sentBytes += size.toLong()
         }
