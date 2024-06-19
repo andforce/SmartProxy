@@ -7,8 +7,6 @@ android {
     namespace 'me.smartproxy'
     compileSdk 34
 
-    useLibrary('org.apache.http.legacy')
-
     defaultConfig {
         applicationId "me.smartproxy"
         minSdk 27

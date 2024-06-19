@@ -11,7 +11,7 @@ class IPAddress {
 
     constructor(addressStr: String) {
         val arrStrings =
-            addressStr.split("/".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
+            addressStr.split("/").dropLastWhile { it.isEmpty() }.toTypedArray()
         val address = arrStrings[0]
         var prefixLength = 32
         if (arrStrings.size > 1) {

@@ -129,7 +129,7 @@ class DnsPacket {
                 return
             }
 
-            val arr = domain.split("\\.".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
+            val arr = domain.split(".").dropLastWhile { it.isEmpty() }.toTypedArray()
             for (item in arr) {
                 if (arr.size > 1) {
                     buffer.put(item.length.toByte())

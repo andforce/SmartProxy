@@ -257,7 +257,7 @@ class DnsProxy(private val config: ProxyConfig) {
             packet.socketAddress = remoteAddress
 
             try {
-                client!!.send(packet)
+                client?.send(packet)
             } catch (e: IOException) {
                 Logger.e(TAG, "onDnsRequestReceived Error: ", e)
             }

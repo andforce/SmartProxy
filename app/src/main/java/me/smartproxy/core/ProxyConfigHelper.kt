@@ -5,12 +5,10 @@ import me.smartproxy.tunnel.Config
 import me.smartproxy.tunnel.httpconnect.HttpConnectConfig
 import me.smartproxy.tunnel.shadowsocks.ShadowsocksConfig
 import me.smartproxy.ui.utils.Logger
-import org.apache.http.client.HttpClient
-import org.apache.http.client.methods.HttpGet
-import org.apache.http.impl.client.DefaultHttpClient
-import org.apache.http.util.EntityUtils
 import java.io.FileInputStream
+import java.net.HttpURLConnection
 import java.net.InetSocketAddress
+import java.net.URL
 import java.util.Locale
 import java.util.regex.Pattern
 
@@ -153,22 +151,30 @@ object ProxyConfigHelper {
 
     @Throws(java.lang.Exception::class)
     private fun downloadConfig(url: String): Array<String> {
+        var connection: HttpURLConnection? = null
         try {
-            val client: HttpClient = DefaultHttpClient()
-            val requestGet = HttpGet(url)
+            val urlObj = URL(url)
+            connection = urlObj.openConnection() as HttpURLConnection
 
-            requestGet.addHeader("X-Android-MODEL", Build.MODEL)
-            requestGet.addHeader("X-Android-SDK_INT", Build.VERSION.SDK_INT.toString())
-            requestGet.addHeader("X-Android-RELEASE", Build.VERSION.RELEASE)
-            requestGet.setHeader("User-Agent", System.getProperty("http.agent"))
-            val response = client.execute(requestGet)
+            connection.setRequestProperty("X-Android-MODEL", Build.MODEL)
+            connection.setRequestProperty("X-Android-SDK_INT", Build.VERSION.SDK_INT.toString())
+            connection.setRequestProperty("X-Android-RELEASE", Build.VERSION.RELEASE)
+            connection.setRequestProperty("User-Agent", System.getProperty("http.agent"))
 
-            val configString = EntityUtils.toString(response.entity, "UTF-8")
-            val lines = configString.split("\\n".toRegex()).dropLastWhile { it.isEmpty() }
-                .toTypedArray()
-            return lines
-        } catch (e: java.lang.Exception) {
-            throw java.lang.Exception("Download config file from $url failed.")
+            val responseCode = connection.responseCode
+            if (responseCode == HttpURLConnection.HTTP_OK) {
+                val inputStream = connection.inputStream
+                val configString = inputStream.bufferedReader().use { it.readText() }
+                val lines = configString.split("\n").dropLastWhile { it.isEmpty() }
+                    .toTypedArray()
+                return lines
+            } else {
+                throw Exception("Download config file from $url failed. Response Code: $responseCode")
+            }
+        } catch (e: Exception) {
+            throw Exception("Download config file from $url failed.", e)
+        } finally {
+            connection?.disconnect()
         }
     }
 
@@ -183,7 +189,7 @@ object ProxyConfigHelper {
             while ((inputStream.read(buffer).also { count = it }) > 0) {
                 sBuilder.append(String(buffer, 0, count, charset("UTF-8")))
             }
-            return sBuilder.toString().split("\\n".toRegex()).dropLastWhile { it.isEmpty() }
+            return sBuilder.toString().split("\n").dropLastWhile { it.isEmpty() }
                 .toTypedArray()
         } catch (e: java.lang.Exception) {
             throw java.lang.Exception("Can't read config file: $path")
