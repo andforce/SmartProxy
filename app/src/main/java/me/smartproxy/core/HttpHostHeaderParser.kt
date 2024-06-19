@@ -55,6 +55,7 @@ object HttpHostHeaderParser {
     }
 
 
+    // SNI 是 Server Name Indication 的缩写，它是一个扩展协议，用于解决服务器需要在同一 IP 地址上提供多个 SSL 证书的问题。在 TLS 握手过程中，客户端会发送 SNI 信息，告诉服务器它想要连接到哪个主机。这样，服务器就可以返回正确的证书。在你的代码中，getSNI 方法就是用来从 TLS 客户端 Hello 包中解析出这个 SNI 信息的。
     private fun getSNI(buffer: ByteArray, offset: Int, count: Int): String? {
         var offsetValue = offset
         val limit = offsetValue + count

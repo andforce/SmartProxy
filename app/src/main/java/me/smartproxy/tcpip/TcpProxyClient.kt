@@ -38,7 +38,7 @@ class TcpProxyClient(pfd: ParcelFileDescriptor, buffer: ByteArray, private val v
                 natToTcpProxyServer(ipHeader, size)
             }
         } else {
-            Logger.e(TAG, "onIPPacketReceived, TCP: 收到非本地数据包, $ipHeader $tcpHeader")
+            Logger.e(TAG, "processTcpPacket, TCP: 收到非本地数据包, $ipHeader $tcpHeader")
         }
     }
 
@@ -49,7 +49,7 @@ class TcpProxyClient(pfd: ParcelFileDescriptor, buffer: ByteArray, private val v
             if (ENABLE_LOG) {
                 Logger.d(
                     TAG,
-                    "onIPPacketReceived: 转发给本地客户端, $ipHeader $tcpHeader"
+                    "natToRealClient: 转发给本地客户端, $ipHeader $tcpHeader"
                 )
             }
             ipHeader.sourceIP = ipHeader.destinationIP
@@ -63,7 +63,7 @@ class TcpProxyClient(pfd: ParcelFileDescriptor, buffer: ByteArray, private val v
         } else {
             Logger.d(
                 TAG,
-                "onIPPacketReceived: NoSession, $ipHeader $tcpHeader"
+                "natToRealClient: NoSession, $ipHeader $tcpHeader"
             )
         }
     }
@@ -96,8 +96,8 @@ class TcpProxyClient(pfd: ParcelFileDescriptor, buffer: ByteArray, private val v
                     dataOffset,
                     tcpDataSize
                 )
-                if (host != null) {
-                    session.remoteHost = host
+                host?.let {
+                    session.remoteHost = it
                 }
             }
 
@@ -105,11 +105,12 @@ class TcpProxyClient(pfd: ParcelFileDescriptor, buffer: ByteArray, private val v
             if (ENABLE_LOG) {
                 Logger.d(
                     TAG,
-                    "onIPPacketReceived: 转发给本地 TcpProxyServer 服务器, $ipHeader $tcpHeader"
+                    "natToTcpProxyServer: 转发给本地 TcpProxyServer 服务器, $ipHeader $tcpHeader"
                 )
             }
             ipHeader.sourceIP = ipHeader.destinationIP
             ipHeader.destinationIP = vpnLocalIpInt
+
             tcpHeader.destinationPort = localTcpServerPort
 
             CommonMethods.computeTCPChecksum(ipHeader, tcpHeader)

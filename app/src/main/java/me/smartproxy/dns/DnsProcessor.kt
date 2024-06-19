@@ -26,7 +26,7 @@ class DnsProcessor(buffer: ByteArray, private val vpnLocalIpInt: Int) {
         } else {
             Logger.e(
                 TAG,
-                "onIPPacketReceived, UDP: 收到非本地数据包, $header $udpHeader"
+                "processUdpPacket, UDP: 收到非本地数据包, $header $udpHeader"
             )
         }
     }
