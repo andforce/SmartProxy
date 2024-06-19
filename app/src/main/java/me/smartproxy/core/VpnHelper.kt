@@ -99,7 +99,7 @@ class VpnHelper {
                                     }
 
                                     else -> {
-                                        Logger.d(TAG, "startProcessPacket, 不支持的协议: $ipHeader")
+                                        Logger.i(TAG, "startProcessPacket, 不支持的协议: $ipHeader")
                                     }
                                 }
                             }

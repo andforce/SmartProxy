@@ -43,7 +43,7 @@ class DnsProxy(private val config: ProxyConfig) {
                 val service = LocalVpnService::class.getOrNull()
                 val protect = service?.protect(client)
 
-                Logger.e(TAG, "DNS Proxy, protect result: $protect")
+                Logger.d(TAG, "DNS Proxy, protect result: $protect")
 
                 val receiveBuffer = ByteArray(2000)
                 val ipHeader = IPHeader(receiveBuffer, 0)

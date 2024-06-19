@@ -28,34 +28,34 @@ class LocalVpnService : CoroutinesService() {
     override fun onCreate() {
         super.onCreate()
 
-        Logger.d(TAG, "VPNService created()")
+        Logger.d(TAG, "created()")
 
         serviceScope.launch {
             val config = VpnEstablishHelper.buildProxyConfig("")
-            Logger.d(TAG, "VPNService config: $config")
+            Logger.d(TAG, "config: $config")
 
             val pfd = VpnEstablishHelper.establishVPN(config)
-            Logger.d(TAG, "VPNService pfd: $pfd")
+            Logger.d(TAG, "pfd: $pfd")
             pfd?.let {
                 launch {
-                    Logger.d(TAG, "VPNService startDnsProxy pre")
+                    Logger.d(TAG, "startDnsProxy pre")
                     vpnViewModel.startDnsProxy(config)
-                    Logger.d(TAG, "VPNService startDnsProxy end")
+                    Logger.d(TAG, "startDnsProxy end")
                 }
 
                 launch {
-                    Logger.d(TAG, "VPNService startTcpProxy pre")
+                    Logger.d(TAG, "startTcpProxy pre")
                     vpnViewModel.startTcpProxy(config)
-                    Logger.d(TAG, "VPNService startTcpProxy end")
+                    Logger.d(TAG, "startTcpProxy end")
                 }
 
                 // 等待DNS和TCP代理启动
-                delay(500)
+                delay(100)
 
-                Logger.d(TAG, "VPNService startProcessPacket pre")
+                Logger.d(TAG, "startProcessPacket pre")
                 vpnViewModel.startProcessPacket(config, pfd)
             } ?: run {
-                Logger.e(TAG, "VPNService failed to establishVPN() pfd is null")
+                Logger.e(TAG, "failed to establishVPN() pfd is null")
                 vpnViewModel.tryStop()
             }
         }
@@ -63,13 +63,13 @@ class LocalVpnService : CoroutinesService() {
 
 
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
-        Logger.d(TAG, "VPNService onStartCommand")
+        Logger.d(TAG, "onStartCommand")
         return super.onStartCommand(intent, flags, startId)
     }
 
     override fun onDestroy() {
         super.onDestroy()
         GlobalContext.get().deleteScope(koinScope.id)
-        Logger.e(TAG, "VPNService destroyed")
+        Logger.e(TAG, "destroyed")
     }
 }
