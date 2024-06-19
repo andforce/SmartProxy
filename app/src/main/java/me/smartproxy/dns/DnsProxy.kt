@@ -268,7 +268,6 @@ class DnsProxy(private val config: ProxyConfig) {
         private const val TAG = "DnsProxy"
         private val IPDomainMaps = ConcurrentHashMap<Int, String>()
         private val DomainIPMaps = ConcurrentHashMap<String, Int>()
-        @JvmStatic
         fun reverseLookup(ip: Int): String? {
             return IPDomainMaps[ip]
         }

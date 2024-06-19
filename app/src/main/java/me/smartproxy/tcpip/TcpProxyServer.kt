@@ -93,7 +93,7 @@ class TcpProxyServer(private val config: ProxyConfig, port: Int) {
 
     private fun getDestAddress(localChannel: SocketChannel): InetSocketAddress? {
         val portKey = localChannel.socket().port.toShort()
-        val session = NatSessionManager.getSession(portKey.toInt())
+        val session = NatSessionManager.getSessionOrNull(portKey.toInt())
         if (session != null) {
             if (config.needProxy(session.remoteHost, session.remoteIP)) {
                 Logger.d(

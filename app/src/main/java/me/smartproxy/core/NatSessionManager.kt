@@ -1,7 +1,7 @@
 package me.smartproxy.core
 
 import android.util.SparseArray
-import me.smartproxy.dns.DnsProxy.Companion.reverseLookup
+import me.smartproxy.dns.DnsProxy
 import me.smartproxy.tcpip.CommonMethods
 
 object NatSessionManager : Pool<NatSession>() {
@@ -11,7 +11,7 @@ object NatSessionManager : Pool<NatSession>() {
 
     private val sessionsCache: SparseArray<NatSession> = SparseArray()
 
-    fun getSession(portKey: Int): NatSession? {
+    fun getSessionOrNull(portKey: Int): NatSession? {
         return sessionsCache[portKey]
     }
 
@@ -40,24 +40,22 @@ object NatSessionManager : Pool<NatSession>() {
             clearExpiredSessions() //清理过期的会话。
         }
 
-        val session = take()
-        session.lastNanoTime = System.nanoTime()
-        session.remoteIP = remoteIP
-        session.remotePort = remotePort
-
-        if (ProxyConfig.isFakeIP(remoteIP)) {
-            session.remoteHost = reverseLookup(remoteIP)
+        val session = take().apply {
+            this.lastNanoTime = System.nanoTime()
+            this.remoteIP = remoteIP
+            this.remotePort = remotePort
+            if (ProxyConfig.isFakeIP(remoteIP)) {
+                this.remoteHost = DnsProxy.reverseLookup(remoteIP)
+            }
+            if (this.remoteHost.isNullOrEmpty()) {
+                this.remoteHost = CommonMethods.ipIntToString(remoteIP)
+            }
+            this.bytesSent = 0
+            this.packetSent = 0
+        }.also {
+            sessionsCache.put(portKey, it)
         }
 
-        if (session.remoteHost == null) {
-            session.remoteHost = CommonMethods.ipIntToString(remoteIP)
-        }
-
-        session.bytesSent = 0
-        session.packetSent = 0
-
-
-        sessionsCache.put(portKey, session)
         return session
     }
 

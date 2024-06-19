@@ -26,7 +26,7 @@ class TcpProxyClient(pfd: ParcelFileDescriptor, buffer: ByteArray, private val v
     }
 
 
-    fun onTCPPacketReceived(ipHeader: IPHeader, size: Int) {
+    fun processTcpPacket(ipHeader: IPHeader, size: Int) {
         tcpHeader.offset = ipHeader.headerLength
 
         if (ipHeader.sourceIP == vpnLocalIpInt) {
@@ -44,7 +44,7 @@ class TcpProxyClient(pfd: ParcelFileDescriptor, buffer: ByteArray, private val v
 
     private fun natToRealClient(ipHeader: IPHeader, size: Int) {
         val session =
-            NatSessionManager.getSession(tcpHeader.destinationPort.toInt())
+            NatSessionManager.getSessionOrNull(tcpHeader.destinationPort.toInt())
         if (session != null) {
             if (ENABLE_LOG) {
                 Logger.d(
@@ -70,7 +70,7 @@ class TcpProxyClient(pfd: ParcelFileDescriptor, buffer: ByteArray, private val v
 
     private fun natToTcpProxyServer(ipHeader: IPHeader, size: Int) {
         val portKey = tcpHeader.sourcePort.toInt()
-        var session = NatSessionManager.getSession(portKey)
+        var session = NatSessionManager.getSessionOrNull(portKey)
         if (session == null || session.remoteIP != ipHeader.destinationIP || session.remotePort != tcpHeader.destinationPort) {
             session = NatSessionManager.createSession(
                 portKey,

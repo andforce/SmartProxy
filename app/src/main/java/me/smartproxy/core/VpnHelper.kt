@@ -90,7 +90,7 @@ class VpnHelper {
                                 }
                                 when (ipHeader.protocol) {
                                     IPData.TCP -> {
-                                        tcpClient?.onTCPPacketReceived(ipHeader, size)
+                                        tcpClient?.processTcpPacket(ipHeader, size)
                                     }
 
                                     IPData.UDP -> {
