@@ -38,15 +38,19 @@ class LocalVpnService : CoroutinesService() {
 
             val pfd = VpnEstablishHelper.establishVPN(config)
             Logger.d(TAG, "pfd: $pfd")
-            pfd?.use {
+            pfd?.let {
                 val fis = FileInputStream(it.fileDescriptor)
                 val fos = FileOutputStream(it.fileDescriptor)
+
+                delay(1000)
 
                 launch {
                     Logger.d(TAG, "startDnsProxy pre")
                     vpnViewModel.startDnsProxy(config, fos)
                     Logger.d(TAG, "startDnsProxy end")
                 }
+
+                delay(1000)
 
                 launch {
                     Logger.d(TAG, "startTcpProxy pre")
@@ -55,7 +59,7 @@ class LocalVpnService : CoroutinesService() {
                 }
 
                 // 等待DNS和TCP代理启动
-                delay(100)
+                delay(1000)
 
                 Logger.d(TAG, "startProcessPacket pre")
                 vpnViewModel.startProcessPacket(config, fis, fos)

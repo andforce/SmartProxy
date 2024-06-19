@@ -111,7 +111,7 @@ class VpnHelper {
                                 IPData.UDP -> {
                                     // 转发DNS数据包：
                                     if (DNS_SERVER) {
-                                        dnsServerHelper?.onUDP(dnsServer?.port ?: -100, ipHeader)
+                                        dnsServerHelper?.onUDP(dnsServer!!.port, ipHeader)
                                     } else {
                                         dnsProcessor?.processUdpPacket(ipHeader, dnsProxy)
                                     }

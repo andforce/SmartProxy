@@ -20,9 +20,9 @@ import me.smartproxy.tcpip.IPHeader;
 import me.smartproxy.tcpip.UDPHeader;
 
 
-public class UDPServer {
+public class UDPServer implements Runnable{
     private static final String TAG = "UDPServer";
-    public static final String udpServerLocalIP = "198.198.198.102";
+    public static final String udpServerLocalIP = "10.8.0.21";
     public static final int udpServerLocalIPInt = CommonMethods.ipStringToInt(udpServerLocalIP);
     public int port;
     public String vpnLocalIP;
@@ -61,6 +61,12 @@ public class UDPServer {
     }
 
     public void start() {
+        Thread udpThread = new Thread(this);
+        udpThread.setName("UDPServer - Thread");
+        udpThread.start();
+    }
+
+    private void startServer() {
         Log.d(TAG, "UDP服务器启动, 端口为: " + port);
         try {
             while (!isStopped) {
@@ -91,7 +97,7 @@ public class UDPServer {
                 } else {
                     Log.d(TAG, "UDPServer收到外部消息: " + socketAddress);
                     //如果消息来自外部, 转进来
-                    NatSession session = new NatSession();
+                    NatSession session = UDPNatSessionManager.INSTANCE.take();
                     session.setRemoteIP(CommonMethods.ipStringToInt(hostAddress));
                     session.setRemotePort((short) socketPort);
                     short port = UDPNatSessionManager.INSTANCE.getPort(session);
@@ -156,5 +162,10 @@ public class UDPServer {
         } catch (IOException e) {
             Log.e(TAG, "发送UDP数据包失败:" + e);
         }
+    }
+
+    @Override
+    public void run() {
+        startServer();
     }
 }

@@ -10,6 +10,7 @@ import java.util.regex.Matcher;
 import me.smartproxy.core.ProxyConfig;
 import me.smartproxy.core.UDPNatSessionManager;
 import me.smartproxy.tcpip.CommonMethods;
+import me.smartproxy.tcpip.IPData;
 import me.smartproxy.tcpip.IPHeader;
 import me.smartproxy.tcpip.UDPHeader;
 
@@ -29,7 +30,7 @@ public class LocalServerHelper {
     private UDPHeader m_UDPHeader;
 
 
-    private FileOutputStream vpnOutput;
+    private final FileOutputStream vpnOutput;
     public LocalServerHelper(ProxyConfig config, FileOutputStream vpnOutput, byte[] buffer) {
         this.vpnOutput = vpnOutput;
         this.config = config;
@@ -40,19 +41,6 @@ public class LocalServerHelper {
     }
 
 
-//    UDPServer udpServer;
-//
-//    private FileOutputStream vpnOutput;
-//
-//    public void createServer(LocalVpnService vpnService, FileOutputStream fos, byte[] buffer) {
-//
-//        this.vpnOutput = fos;
-//
-//        udpServer = new UDPServer(vpnService, vpnLocalIP, vpnOutput);
-//        udpServer.start();
-//    }
-
-
     public void onUDP(int udpServerPort, IPHeader ipHeader) {
         onUDPPacketReceived(udpServerPort, ipHeader, m_UDPHeader, m_DNSBuffer);
     }
@@ -60,7 +48,8 @@ public class LocalServerHelper {
     private void onUDPPacketReceived(int udpServerPort, IPHeader ipHeader, UDPHeader udpHeader, ByteBuffer dnsBuffer) {
 
 
-        Log.d(TAG + "_UDP", "从TUN读取到UDP消息: " + CommonMethods.ipIntToString(ipHeader.getSourceIP()) + ":" + udpHeader.getSourcePortInt() + " -> " + CommonMethods.ipIntToString(ipHeader.getDestinationIP()) + ":" + udpHeader.getDestinationPortInt());
+        Log.d(TAG + "_UDP", "从TUN读取到UDP消息: " + CommonMethods.ipIntToString(ipHeader.getSourceIP()) + ":" + udpHeader.getSourcePortInt()
+                + " -> " + CommonMethods.ipIntToString(ipHeader.getDestinationIP()) + ":" + udpHeader.getDestinationPortInt());
 
         int dstIP = ipHeader.getDestinationIP();
 
@@ -100,6 +89,8 @@ public class LocalServerHelper {
 
                 if (isNeedPollution) {
 
+                    Log.d(TAG + "_UDP", "======================= isNeedPollution:" + isNeedPollution);
+
                     createDNSResponseToAQuery(udpHeader.getData(), dnsPacket, ipAddr);
 
                     ipHeader.setTotalLength(20 + 8 + dnsPacket.getSize());
@@ -138,12 +129,13 @@ public class LocalServerHelper {
                     ipHeader.setDestinationIP(vpnLocalIpInt);
                     udpHeader.setDestinationPort((short) udpServerPort);
 
-                    //ipHeader.setProtocol(IPHeader.UDP);
+                    ipHeader.setProtocol(IPData.UDP);
                     CommonMethods.computeUDPChecksum(ipHeader, udpHeader);
 
 
                     vpnOutput.write(ipHeader.getData(), ipHeader.getOffset(), ipHeader.getTotalLength());
                     vpnOutput.flush();
+                    Log.d(TAG + "_UDP", "write data to vpnOutput");
                 }
             } catch (Exception e) {
                 Log.d(TAG + "_UDP", "当前udp包不是DNS报文");

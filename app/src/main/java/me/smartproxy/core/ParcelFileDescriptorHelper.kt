@@ -9,26 +9,28 @@ object ParcelFileDescriptorHelper {
 
     private const val TAG = "ParcelFileDescriptorHelper"
 
-    fun establish(vpnService: VpnService, config: ProxyConfig, localIP: String) : ParcelFileDescriptor? {
-        val builder: VpnService.Builder = vpnService.Builder()
+    fun establish(builder: VpnService.Builder, config: ProxyConfig) : ParcelFileDescriptor? {
 
         //builder.setMtu(...);
-        builder.addAddress(localIP, 24)
+        builder.addAddress(config.defaultLocalIP.address, 24)
 
         //builder.addRoute("0.0.0.0", 0);
-        builder.setSession("PureHost")
+        builder.setSession("ParcelFileDescriptorHelper")
 
         //builder.addDnsServer("222.66.251.8");
         if (ConfigReader.dnsList.isEmpty()) {
-            ConfigReader.initDNS(vpnService.applicationContext)
+            val context = LocalVpnService::class.getOrNull()
+            ConfigReader.initDNS(context!!.applicationContext)
             Log.d(TAG, "根据系统默认DNS初始化...")
         } else {
             Log.d(TAG, "根据提供的DNS初始化...")
         }
+
         for (dns in ConfigReader.dnsList) {
             builder.addDnsServer(dns!!)
-            builder.addRoute(dns!!, 32)
+            builder.addRoute(dns, 32)
         }
+
         ConfigReader.dnsList.clear()
 
         //        try{

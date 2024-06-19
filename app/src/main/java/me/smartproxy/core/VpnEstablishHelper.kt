@@ -47,11 +47,11 @@ object VpnEstablishHelper {
                 Logger.e(TAG, "establishVPN: LocalVpnService is null")
                 return@withContext null
             }
+            val builder: VpnService.Builder = service.Builder()
 
             if (false) {
-                ParcelFileDescriptorHelper.establish(service, config, config.defaultLocalIP.address)
+                ParcelFileDescriptorHelper.establish(builder, config)
             } else {
-                val builder: VpnService.Builder = service.Builder()
                 builder.setMtu(config.mtu)
 
                 Logger.d(VpnHelper.TAG, "setMtu: " + config.mtu)
@@ -104,8 +104,8 @@ object VpnEstablishHelper {
                         "addRoute: " + CommonMethods.ipIntToString(ProxyConfig.FAKE_NETWORK_IP) + "/16"
                     )
                 } else {
-//                builder.addRoute("0.0.0.0", 0)
-//                Logger.d(VpnHelper.TAG, "addDefaultRoute:0.0.0.0/0")
+                    builder.addRoute("0.0.0.0", 0)
+                    Logger.d(VpnHelper.TAG, "addDefaultRoute:0.0.0.0/0")
                 }
 
                 builder.setSession(config.sessionName)
