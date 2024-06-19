@@ -35,6 +35,9 @@ open class MainActivity : RequestVpnPermissionActivity() {
 
         binding.scrollViewLog.fullScroll(ScrollView.FOCUS_DOWN)
 
+        binding.buttonGet.setOnClickListener {
+            HttpGetTest().get()
+        }
 
         lifecycleScope.launch {
             vpnViewModel.vpnPermissionRequestResult.collectLatest {
