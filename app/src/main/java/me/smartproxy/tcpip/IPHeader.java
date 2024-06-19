@@ -4,8 +4,8 @@ import androidx.annotation.NonNull;
 
 public class IPHeader {
 
-    private byte[] data;
-    private int offset;
+    private final byte[] data;
+    private final int offset;
 
     public IPHeader(byte[] data, int offset) {
         this.data = data;
@@ -113,10 +113,16 @@ public class IPHeader {
         CommonMethods.writeInt(data, offset +  IPData.offset_dest_ip, value);
     }
 
+    public String debugInfo(int sourcePort, int destPort) {
+        return "IP: " + CommonMethods.ipIntToString(getSourceIP()) + ":" + sourcePort + " -> " + CommonMethods.ipIntToString(getDestinationIP()) + ":" + destPort
+                + " Length=" + getHeaderLength();
+    }
+
     @Override
     @NonNull
     public String toString() {
-        return CommonMethods.ipIntToString(getSourceIP()) + "->" + CommonMethods.ipIntToString(getDestinationIP()) + " Pro=" + getProtocol() + ",HLen=" + getHeaderLength();
+        return CommonMethods.ipIntToString(getSourceIP()) + " -> " + CommonMethods.ipIntToString(getDestinationIP())
+                + " Protocol=" + getProtocol() + ", HeaderLength=" + getHeaderLength();
     }
 
 }

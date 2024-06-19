@@ -55,12 +55,20 @@ public class TCPHeader {
         return CommonMethods.readShort(data, offset + offset_src_port);
     }
 
+    public int getSourcePortInt() {
+        return getSourcePort() & 0xFFFF;
+    }
+
     public void setSourcePort(short value) {
         CommonMethods.writeShort(data, offset + offset_src_port, value);
     }
 
     public short getDestinationPort() {
         return CommonMethods.readShort(data, offset + offset_dest_port);
+    }
+
+    public int getDestinationPortInt() {
+        return getDestinationPort() & 0xFFFF;
     }
 
     public void setDestinationPort(short value) {
@@ -107,12 +115,16 @@ public class TCPHeader {
         if ((getFlags() & URG) == URG) {
             sb.append("URG ");
         }
-        return sb.toString();
+        return sb.toString().trim();
+    }
+
+    public String debugInfo() {
+        return "TCP: [" + parseAction() + "] SeqID:" + getSeqID() + " <---> AckID:" + getAckID();
     }
 
     @NonNull
     @Override
     public String toString() {
-        return parseAction() + (getSourcePort() & 0xFFFF) + "->" + (getDestinationPort() & 0xFFFF) + " " + getSeqID() + ":" + getAckID();
+        return "TCP: " + parseAction() + getSourcePortInt() + " -> " + getDestinationPortInt() + " SeqID:" + getSeqID() + " <---> AckID:" + getAckID();
     }
 }

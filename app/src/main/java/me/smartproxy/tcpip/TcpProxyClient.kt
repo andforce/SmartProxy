@@ -6,6 +6,7 @@ import me.smartproxy.core.NatSessionManager
 import me.smartproxy.ui.utils.Logger
 import java.io.FileOutputStream
 import java.io.IOException
+import kotlin.experimental.and
 
 class TcpProxyClient(pfd: ParcelFileDescriptor, buffer: ByteArray, private val vpnLocalIpInt: Int, private val localTcpServerPort: Short) {
 
@@ -49,7 +50,7 @@ class TcpProxyClient(pfd: ParcelFileDescriptor, buffer: ByteArray, private val v
             if (ENABLE_LOG) {
                 Logger.d(
                     TAG,
-                    "natToRealClient: 转发给本地客户端, $ipHeader $tcpHeader"
+                    "natToLocalRealClient: ${ipHeader.debugInfo(tcpHeader.sourcePortInt, tcpHeader.destinationPortInt)} ${tcpHeader.debugInfo()}"
                 )
             }
             ipHeader.sourceIP = ipHeader.destinationIP
@@ -103,9 +104,9 @@ class TcpProxyClient(pfd: ParcelFileDescriptor, buffer: ByteArray, private val v
 
             // 转发给本地 TcpProxyServer 服务器
             if (ENABLE_LOG) {
-                Logger.d(
+                Logger.i(
                     TAG,
-                    "natToTcpProxyServer: 转发给本地 TcpProxyServer 服务器, $ipHeader $tcpHeader"
+                    "natTo_TcpProxyServer: ${ipHeader.debugInfo(tcpHeader.sourcePortInt, tcpHeader.destinationPortInt)} ${tcpHeader.debugInfo()}"
                 )
             }
             ipHeader.sourceIP = ipHeader.destinationIP
