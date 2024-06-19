@@ -19,6 +19,10 @@ class Question {
     }
 
     companion object {
+        const val A_RECORD: Short = 1      // A记录查询，即查询域名对应的IPv4地址。
+        const val NS_RECORD: Short = 2     // 表示NS记录查询，即查询域名服务器。
+        const val CNAME_RECORD: Short = 5  // 表示CNAME记录查询，即查询规范名称。
+
         fun recycle(q: Question) {
             QuestionPool.recycle(q)
         }

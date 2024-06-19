@@ -189,8 +189,8 @@ class DnsProxy(private val config: ProxyConfig) {
         dnsPacket: DnsPacket
     ): Boolean {
         val question = dnsPacket.questions[0]
-        Logger.d(TAG, "DNS Qeury " + question.domain)
-        if (question.type.toInt() == 1) {
+        Logger.d(TAG, "DNS Query " + question.domain)
+        if (question.type == Question.A_RECORD) {
             if (config.needProxy(question.domain, getIPFromCache(question.domain))) {
                 val fakeIP = getOrCreateFakeIP(question.domain)
                 tamperDnsResponse(ipHeader.data, dnsPacket, fakeIP)

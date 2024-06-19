@@ -235,8 +235,9 @@ public class ProxyConfig {
             }
         }
 
-        if (isFakeIP(ip))
+        if (isFakeIP(ip)) {
             return true;
+        }
 
         if (outsideChinaUseProxy && ip != 0) {
             return !ChinaIpMaskManager.INSTANCE.isIPInChina(ip);

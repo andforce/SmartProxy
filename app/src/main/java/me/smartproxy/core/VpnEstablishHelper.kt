@@ -63,6 +63,25 @@ object VpnEstablishHelper {
                 Logger.d(VpnHelper.TAG, "addDnsServer: " + dns.address)
             }
 
+            val dnsMap = DNSUtils.findAndroidPropDNS(service.applicationContext)
+            for ((name, host) in dnsMap) {
+                //Logger.d(VpnHelper.TAG, "findAndroidPropDNS: $name -> $host")
+
+                if (DNSUtils.isIPv4Address(host)) {
+                    builder.addDnsServer(host)
+                    Logger.d(VpnHelper.TAG, "addDnsServer: $host")
+
+                    builder.addRoute(host, 32)
+                    Logger.d(VpnHelper.TAG, "addRoute by DNS: $host/32")
+                } else {
+                    Logger.d(
+                        VpnHelper.TAG,
+                        "addRoute by DNS, 暂时忽略 IPv6 类型的DNS: $host"
+                    )
+                }
+            }
+
+
             if (config.routeList.isNotEmpty()) {
                 for (routeAddress in config.routeList) {
                     builder.addRoute(routeAddress.address, routeAddress.prefixLength)
@@ -80,21 +99,6 @@ object VpnEstablishHelper {
             } else {
                 builder.addRoute("0.0.0.0", 0)
                 Logger.d(VpnHelper.TAG, "addDefaultRoute:0.0.0.0/0")
-            }
-
-            val dnsMap = DNSUtils.findAndroidPropDNS(service.applicationContext)
-            for ((name, host) in dnsMap) {
-                Logger.d(VpnHelper.TAG, "findAndroidPropDNS: $name -> $host")
-
-                if (DNSUtils.isIPv4Address(host)) {
-                    builder.addRoute(host, 32)
-                    Logger.d(VpnHelper.TAG, "addRoute by DNS: $host/32")
-                } else {
-                    Logger.d(
-                        VpnHelper.TAG,
-                        "addRoute by DNS, 暂时忽略 IPv6 类型的DNS: $host"
-                    )
-                }
             }
 
             builder.setSession(config.sessionName)
