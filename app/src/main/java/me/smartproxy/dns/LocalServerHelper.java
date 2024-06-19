@@ -60,7 +60,7 @@ public class LocalServerHelper {
     private void onUDPPacketReceived(int udpServerPort, IPHeader ipHeader, UDPHeader udpHeader, ByteBuffer dnsBuffer) {
 
 
-        Log.d(TAG + "_UDP", "从TUN读取到UDP消息:: " + CommonMethods.ipIntToString(ipHeader.getSourceIP()) + ":" + udpHeader.getSourcePortInt() + " -> " + CommonMethods.ipIntToString(ipHeader.getDestinationIP()) + ":" + udpHeader.getDestinationPortInt());
+        Log.d(TAG + "_UDP", "从TUN读取到UDP消息: " + CommonMethods.ipIntToString(ipHeader.getSourceIP()) + ":" + udpHeader.getSourcePortInt() + " -> " + CommonMethods.ipIntToString(ipHeader.getDestinationIP()) + ":" + udpHeader.getDestinationPortInt());
 
         int dstIP = ipHeader.getDestinationIP();
 

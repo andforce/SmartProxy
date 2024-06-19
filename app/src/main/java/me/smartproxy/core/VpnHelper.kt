@@ -24,6 +24,7 @@ class VpnHelper {
     companion object {
         const val TAG = "VpnHelper"
         const val IS_ENABLE_REMOTE_PROXY: Boolean = false
+        const val DNS_SERVER = false
     }
 
     private val viewModel: LocalVpnViewModel by lazy {
@@ -43,8 +44,6 @@ class VpnHelper {
 
     private var proxyConfig: ProxyConfig? = null
     private var tcpProxy: TcpProxyServer? = null
-
-    private val DNS_SERVER = false
 
     private var dnsProxy: DnsProxy? = null
     private var dnsServer: UDPServer? = null

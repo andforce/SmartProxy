@@ -20,33 +20,27 @@ import me.smartproxy.tcpip.IPHeader;
 import me.smartproxy.tcpip.UDPHeader;
 
 
-public class UDPServer implements Runnable {
+public class UDPServer {
     private static final String TAG = "UDPServer";
-    public static final String udpServerLocalIP = "10.8.0.100";
+    public static final String udpServerLocalIP = "198.198.198.102";
     public static final int udpServerLocalIPInt = CommonMethods.ipStringToInt(udpServerLocalIP);
     public int port;
     public String vpnLocalIP;
 
-    final int MAX_LENGTH = 1024 * 20;
-    byte[] receMsgs = new byte[MAX_LENGTH];
+    private boolean isStopped = false;
+
+    byte[] receMsgs = new byte[20000];
 
     DatagramSocket udpDatagramSocket;
     DatagramPacket datagramPacket;
     DatagramPacket sendPacket;
 
-    Thread udpThread;
 
     private FileOutputStream vpnOutput;
 
-    public void start() {
-        udpThread = new Thread(this);
-        udpThread.setName("UDPServer - Thread");
-        udpThread.start();
-    }
-
     public void stop() {
+        isStopped = true;
         udpDatagramSocket.close();
-        udpThread.interrupt();
     }
 
     public UDPServer(LocalVpnService vpnService, String vpnLocalIP, FileOutputStream vpnOutput) {
@@ -60,17 +54,16 @@ public class UDPServer implements Runnable {
             datagramPacket = new DatagramPacket(receMsgs, 28, receMsgs.length - 28);
 
             SocketAddress socketAddress = udpDatagramSocket.getLocalSocketAddress();
-            Log.d(TAG, "UDP服务器启动, 地址为: ==============>\t" + socketAddress);
+            Log.d(TAG, "UDP服务器启动, 地址为: ==============>\t" + socketAddress + " port: " + port);
         } catch (SocketException e) {
             Log.e(TAG, "创建udpDatagramSocket失败", e);
         }
     }
 
-
-    private void service() {
+    public void start() {
         Log.d(TAG, "UDP服务器启动, 端口为: " + port);
         try {
-            while (udpThread != null && !udpThread.isInterrupted()) {
+            while (!isStopped) {
                 Log.d(TAG, "阻塞等待，UDP消息");
                 udpDatagramSocket.receive(datagramPacket);
 
@@ -163,10 +156,5 @@ public class UDPServer implements Runnable {
         } catch (IOException e) {
             Log.e(TAG, "发送UDP数据包失败:" + e);
         }
-    }
-
-    @Override
-    public void run() {
-        service();
     }
 }
