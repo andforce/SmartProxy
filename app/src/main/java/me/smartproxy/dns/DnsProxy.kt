@@ -58,12 +58,14 @@ class DnsProxy(private val config: ProxyConfig) {
 
                 while (this.client != null && client.isClosed.not()) {
                     packet.length = receiveBuffer.size - 28
+                    Logger.d(TAG, "Waiting for DNS Packet............")
                     client.receive(packet)
 
                     dnsBuffer.clear()
                     dnsBuffer.limit(packet.length)
                     try {
                         DnsPacket.takeFromPoll(dnsBuffer)?.let {
+                            Logger.d(TAG, "DNS packet received $ipHeader $udpHeader $it")
                             onDnsResponseReceived(ipHeader, udpHeader, it)
                             // 放入池中
                             DnsPacket.recycle(it)
@@ -93,7 +95,7 @@ class DnsProxy(private val config: ProxyConfig) {
         return 0
     }
 
-    private fun tamperDnsResponse(rawPacket: ByteArray, dnsPacket: DnsPacket, newIP: Int) {
+    private fun modifyDnsResponse(rawPacket: ByteArray, dnsPacket: DnsPacket, newIP: Int) {
         val question = dnsPacket.questions[0]
 
         dnsPacket.dnsHeader.resourceCount = 1.toShort()
@@ -123,18 +125,32 @@ class DnsProxy(private val config: ProxyConfig) {
 
             DomainIPMaps[domainString] = fakeIP!!
             IPDomainMaps[fakeIP] = domainString
+
+            Logger.d(TAG, "getOrCreateFakeIP(), create new FakeDns: $domainString=>" + CommonMethods.ipIntToString(fakeIP))
+        } else {
+            Logger.d(TAG, "getOrCreateFakeIP(), FakeDns: $domainString=>" + CommonMethods.ipIntToString(fakeIP))
         }
         return fakeIP
     }
 
     private fun dnsPollution(rawPacket: ByteArray, dnsPacket: DnsPacket): Boolean {
+        Logger.d(TAG, "开始处理DNS污染问题。。。")
+
         if (dnsPacket.dnsHeader.questionCount > 0) {
             val question = dnsPacket.questions[0]
-            if (question.type.toInt() == 1) {
+            val isARecord = question.type == Question.A_RECORD
+
+            Logger.d(TAG, "dnsPollution, isARecord:$isARecord,  查询的域名:${question.domain}")
+
+            if (isARecord) {
                 val realIP = getFirstIP(dnsPacket)
-                if (config.needProxy(question.domain, realIP)) {
+                val isNeedProxy = config.needProxy(question.domain, realIP)
+
+                Logger.d(TAG, "dnsPollution, real DNS IP: ${CommonMethods.ipIntToString(realIP)}, isNeedProxy: $isNeedProxy")
+
+                if (isNeedProxy) {
                     val fakeIP = getOrCreateFakeIP(question.domain)
-                    tamperDnsResponse(rawPacket, dnsPacket, fakeIP)
+                    modifyDnsResponse(rawPacket, dnsPacket, fakeIP)
                     Logger.d(
                         TAG,
                         "FakeDns: " + question.domain + "=>" + CommonMethods.ipIntToString(realIP) + "(" + CommonMethods.ipIntToString(
@@ -144,6 +160,8 @@ class DnsProxy(private val config: ProxyConfig) {
                     return true
                 }
             }
+        } else {
+            Logger.d(TAG, "dnsPollution, questionCount is 0")
         }
         return false
     }
@@ -161,20 +179,27 @@ class DnsProxy(private val config: ProxyConfig) {
             }
         }
 
-        if (state != null) {
+        state?.let {
             //DNS污染，默认污染海外网站
             dnsPollution(udpHeader.data, dnsPacket)
 
-            dnsPacket.dnsHeader.ID = state!!.clientQueryID
-            ipHeader.sourceIP = state!!.remoteIP
-            ipHeader.destinationIP = state!!.clientIP
+            dnsPacket.dnsHeader.ID = it.clientQueryID
+
+            ipHeader.sourceIP = it.remoteIP
+            ipHeader.destinationIP = it.clientIP
             ipHeader.protocol = IPData.UDP
             ipHeader.totalLength = 20 + 8 + dnsPacket.size
-            udpHeader.sourcePort = state!!.remotePort
-            udpHeader.destinationPort = state!!.clientPort
+
+            udpHeader.sourcePort = it.remotePort
+            udpHeader.destinationPort = it.clientPort
             udpHeader.totalLength = 8 + dnsPacket.size
 
+
+            Logger.d(TAG, "DNS back sendUDPPacket() ${ipHeader.debugInfo(udpHeader.sourcePortInt, udpHeader.destinationPortInt)} $udpHeader")
+
             localVpnViewModel.sendUDPPacket(ipHeader, udpHeader)
+        } ?: run {
+            Logger.d(TAG, "DNS back state is null.")
         }
     }
 
@@ -189,12 +214,17 @@ class DnsProxy(private val config: ProxyConfig) {
         dnsPacket: DnsPacket
     ): Boolean {
         val question = dnsPacket.questions[0]
-        Logger.d(TAG, "DNS Query " + question.domain)
-        if (question.type == Question.A_RECORD) {
-            if (config.needProxy(question.domain, getIPFromCache(question.domain))) {
-                val fakeIP = getOrCreateFakeIP(question.domain)
-                tamperDnsResponse(ipHeader.data, dnsPacket, fakeIP)
+        val isARecord = question.type == Question.A_RECORD
+        Logger.d(TAG, "DNS Query " + question.domain + " type: " + question.type + " isARecord: " + isARecord)
 
+        if (isARecord) {
+            val needProxy = config.needProxy(question.domain, getIPFromCache(question.domain))
+            Logger.d(TAG, "DNS Query " + question.domain + " needProxy: " + needProxy)
+
+            if (needProxy) {
+
+                val fakeIP = getOrCreateFakeIP(question.domain)
+                modifyDnsResponse(ipHeader.data, dnsPacket, fakeIP)
                 Logger.d(
                     TAG,
                     "interceptDns FakeDns: " + question.domain + "=>" + CommonMethods.ipIntToString(
@@ -207,9 +237,11 @@ class DnsProxy(private val config: ProxyConfig) {
                 ipHeader.sourceIP = ipHeader.destinationIP
                 ipHeader.destinationIP = sourceIP
                 ipHeader.totalLength = 20 + 8 + dnsPacket.size
+
                 udpHeader.sourcePort = udpHeader.destinationPort
                 udpHeader.destinationPort = sourcePort
                 udpHeader.totalLength = 8 + dnsPacket.size
+
                 localVpnViewModel.sendUDPPacket(ipHeader, udpHeader)
                 return true
             }
@@ -230,7 +262,11 @@ class DnsProxy(private val config: ProxyConfig) {
     }
 
     fun onDnsRequestReceived(ipHeader: IPHeader, udpHeader: UDPHeader, dnsPacket: DnsPacket) {
-        if (!interceptDns(ipHeader, udpHeader, dnsPacket)) {
+        val intercept = interceptDns(ipHeader, udpHeader, dnsPacket)
+
+        Logger.d(TAG, "DNS Request intercept: $intercept")
+
+        if (!intercept) {
             //转发DNS
             val state = QueryState()
             state.clientQueryID = dnsPacket.dnsHeader.ID
@@ -257,9 +293,11 @@ class DnsProxy(private val config: ProxyConfig) {
             packet.socketAddress = remoteAddress
 
             try {
+                Logger.d(TAG, "DNS Request send() ${ipHeader.debugInfo(udpHeader.sourcePortInt, udpHeader.destinationPortInt)} $udpHeader")
+
                 client?.send(packet)
             } catch (e: IOException) {
-                Logger.e(TAG, "onDnsRequestReceived Error: ", e)
+                Logger.e(TAG, "DNS Request Error: ", e)
             }
         }
     }
