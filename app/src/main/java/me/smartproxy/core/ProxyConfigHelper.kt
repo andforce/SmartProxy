@@ -120,7 +120,6 @@ object ProxyConfigHelper {
             if (domainString[0] == '.') {
                 domainString = domainString.substring(1)
             }
-            //m_DomainMap.put(domainString, state)
             c.addDomainMap(domainString, state)
         }
     }

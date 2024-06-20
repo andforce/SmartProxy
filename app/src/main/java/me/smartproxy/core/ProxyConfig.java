@@ -21,6 +21,8 @@ public class ProxyConfig {
     private ArrayList<IPAddress> dnsList = new ArrayList<>();
     private ArrayList<IPAddress> routeList = new ArrayList<>();
     private ArrayList<Config> proxyList = new ArrayList<>();
+
+    // 保存域名的状态，true表示需要代理，false表示不需要代理
     private HashMap<String, Boolean> domainMap = new HashMap<>();
 
     private int dnsTtl;
