@@ -22,6 +22,19 @@ class DnsFlags {
         fValues = fValues or ((this.Rcode and 0x0F) shl 8)
         return fValues.toShort()
     }
+
+    override fun toString(): String {
+        return "DnsFlags{" +
+                "QR=" + QR +
+                ", OpCode=" + OpCode +
+                ", AA=" + AA +
+                ", TC=" + TC +
+                ", RD=" + RD +
+                ", RA=" + RA +
+                ", Zero=" + Zero +
+                ", Rcode=" + Rcode +
+                '}'
+    }
 }
 
 fun parse(value: Short): DnsFlags {

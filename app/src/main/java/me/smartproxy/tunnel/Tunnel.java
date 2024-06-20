@@ -75,6 +75,8 @@ public abstract class Tunnel {
 
 
     protected boolean write(ByteBuffer buffer, boolean copyRemainData) throws Exception {
+
+        Logger.i("Tunnel", "write(), 通过innerChannel， 发送到目标服务器" );
         int bytesSent;
         while (buffer.hasRemaining()) {
             bytesSent = innerChannel.write(buffer);
@@ -125,8 +127,14 @@ public abstract class Tunnel {
             if (bytesRead > 0) {
                 buffer.flip();
                 afterReceived(buffer);//先让子类处理，例如解密数据。
+                Logger.i("Tunnel", "onReadable(), 先让子类处理，例如解密数据。");
+
                 if (isTunnelEstablished() && buffer.hasRemaining()) {//将读到的数据，转发给兄弟。
+                    Logger.i("Tunnel", "onReadable(), 将读到的数据，转发给兄弟。");
+
+                    Logger.i("Tunnel", "onReadable(), 发送之前，先让子类处理，例如做加密等。");
                     brotherTunnel.beforeSend(buffer);//发送之前，先让子类处理，例如做加密等。
+                    Logger.i("Tunnel", "onReadable(), 子类处理，完毕，开始发送到目标服务器。");
                     if (!brotherTunnel.write(buffer, true)) {
                         key.cancel();//兄弟吃不消，就取消读取事件。
                         Logger.e("Tunnel", serverEP + " can not read more.");
@@ -148,13 +156,18 @@ public abstract class Tunnel {
 
     public void onWritable(SelectionKey key) {
         try {
+            Logger.i("Tunnel", "onWritable(), 发送之前，先让子类处理，例如做加密等。");
             this.beforeSend(sendRemainBuffer);//发送之前，先让子类处理，例如做加密等。
+
+            Logger.i("Tunnel", "onWritable(), 子类处理，完毕，开始发送到目标服务器。");
             if (this.write(sendRemainBuffer, false)) {//如果剩余数据已经发送完毕
                 key.cancel();//取消写事件。
                 if (isTunnelEstablished()) {
                     brotherTunnel.beginReceive();//这边数据发送完毕，通知兄弟可以收数据了。
+                    Logger.i("Tunnel", "onWritable(), 这边数据发送完毕，通知兄弟可以收数据了。");
                 } else {
                     this.beginReceive();//开始接收代理服务器响应数据
+                    Logger.i("Tunnel", "onWritable(), 开始接收代理服务器响应数据");
                 }
             }
         } catch (Exception e) {

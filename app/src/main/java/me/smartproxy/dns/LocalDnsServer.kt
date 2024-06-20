@@ -71,7 +71,7 @@ class LocalDnsServer(private val config: ProxyConfig, buffer: ByteArray, private
                     dnsBuffer.limit(packet.length)
                     try {
                         DnsPacket.takeFromPoll(dnsBuffer)?.let {
-                            Logger.d(TAG, "从远端真实的DNS服务器接收到 UDP 数据包，开始处理。 $ipHeader $udpHeader $it")
+                            Logger.d(TAG, "从远端真实的DNS服务器接收到 UDP 数据包，开始处理。$it")
                             onReceiveUdpFromRemoteServer(ipHeader, udpHeader, it)
                             // 放入池中
                             DnsPacket.recycle(it)
@@ -120,7 +120,7 @@ class LocalDnsServer(private val config: ProxyConfig, buffer: ByteArray, private
             udpHeader.totalLength = 8 + dnsPacket.size
 
 
-            Logger.d(TAG, "DNS back sendUDPPacket() ${ipHeader.debugInfo(udpHeader.sourcePortInt, udpHeader.destinationPortInt)} $udpHeader")
+            Logger.d(TAG, "onReceiveUdpFromRemoteServer() 写入 Out Stream，${ipHeader.debugInfo(udpHeader.sourcePortInt, udpHeader.destinationPortInt)} $udpHeader")
 
             localVpnViewModel.sendUDPPacket(ipHeader, udpHeader)
         } ?: run {
@@ -171,7 +171,7 @@ class LocalDnsServer(private val config: ProxyConfig, buffer: ByteArray, private
         }
     }
 
-    private fun getFirstIP(dnsPacket: DnsPacket): Int {
+    private fun getFirstIPInt(dnsPacket: DnsPacket): Int {
 
         for (i in 0 until dnsPacket.dnsHeader.resourceCount) {
             val resource = dnsPacket.resources[i]
@@ -240,7 +240,7 @@ class LocalDnsServer(private val config: ProxyConfig, buffer: ByteArray, private
             Logger.d(TAG, "dnsPollution, isARecord:$isARecord,  查询的域名:${question.domain}")
 
             if (isARecord) {
-                val realIP = getFirstIP(dnsPacket)
+                val realIP = getFirstIPInt(dnsPacket)
                 val isNeedProxy = config.needProxy(question.domain, realIP)
 
                 Logger.d(TAG, "dnsPollution, real DNS IP: ${CommonMethods.ipIntToString(realIP)}, isNeedProxy: $isNeedProxy")

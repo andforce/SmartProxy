@@ -33,7 +33,7 @@ class TcpProxyClient(private var vpnOutputStream: FileOutputStream?, buffer: Byt
                 natToRealClient(ipHeader, size)
             } else {
                 // 添加端口映射
-                natToTcpProxyServer(ipHeader, size)
+                natToLocalTcpServer(ipHeader, size)
             }
         } else {
             Logger.e(TAG, "processTcpPacket, TCP: 收到非本地数据包, $ipHeader $tcpHeader")
@@ -66,7 +66,7 @@ class TcpProxyClient(private var vpnOutputStream: FileOutputStream?, buffer: Byt
         }
     }
 
-    private fun natToTcpProxyServer(ipHeader: IPHeader, size: Int) {
+    private fun natToLocalTcpServer(ipHeader: IPHeader, size: Int) {
         val portKey = tcpHeader.sourcePort.toInt()
         var session = NatSessionManager.getSessionOrNull(portKey)
         if (session == null || session.remoteIP != ipHeader.destinationIP || session.remotePort != tcpHeader.destinationPort) {
@@ -103,7 +103,7 @@ class TcpProxyClient(private var vpnOutputStream: FileOutputStream?, buffer: Byt
             if (ENABLE_LOG) {
                 Logger.i(
                     TAG,
-                    "natTo_TcpProxyServer: ${ipHeader.debugInfo(tcpHeader.sourcePortInt, tcpHeader.destinationPortInt)} ${tcpHeader.debugInfo()}"
+                    "natTo_LocalTcpServer: ${ipHeader.debugInfo(tcpHeader.sourcePortInt, tcpHeader.destinationPortInt)} ${tcpHeader.debugInfo()}"
                 )
             }
             ipHeader.sourceIP = ipHeader.destinationIP

@@ -1,5 +1,6 @@
 package me.smartproxy.dns
 
+import me.smartproxy.tcpip.CommonMethods
 import java.nio.ByteBuffer
 
 class DnsPacket {
@@ -17,6 +18,34 @@ class DnsPacket {
         aResources.clear()
         eResources.clear()
         size = 0
+    }
+
+    private fun readIpFormData() : String {
+        val sb = StringBuilder()
+        sb.append('[')
+
+        for (i in 0 until dnsHeader.resourceCount) {
+            val resource = resources[i]
+            if (resource.type == Question.A_RECORD) {
+                val ipInt = CommonMethods.readInt(resource.data, 0)
+                val result =  "ip $i : ${CommonMethods.ipIntToString(ipInt)}"
+                sb.append(result).append(", ")
+            }
+        }
+        sb.append(']')
+        return sb.toString()
+    }
+
+    override fun toString(): String {
+        return "DnsPacket{" +
+                "dnsHeader=" + dnsHeader +
+                ", questions=" + questions +
+                ", resources=" + readIpFormData() +
+                ", aResources=" + aResources +
+                ", eResources=" + eResources +
+                ", size=" + size +
+                '}'
+
     }
 
     companion object {

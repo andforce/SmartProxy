@@ -60,6 +60,17 @@ class DnsHeader {
     }
 
 
+    override fun toString(): String {
+        return "DnsHeader{" +
+                "ID=" + ID +
+                ", Flags=" + Flags +
+                ", questionCount=" + questionCount +
+                ", resourceCount=" + resourceCount +
+                ", aResourceCount=" + aResourceCount +
+                ", eResourceCount=" + eResourceCount +
+                '}'
+    }
+
     companion object {
         fun recycle(header: DnsHeader) {
             DnsHeaderPool.recycle(header)

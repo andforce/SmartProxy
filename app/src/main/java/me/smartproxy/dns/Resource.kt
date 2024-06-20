@@ -15,6 +15,19 @@ class Resource {
 
     var length = 0
 
+    override fun toString(): String {
+        return "Resource{" +
+                "domain='" + domain + '\'' +
+                ", type=" + type +
+                ", clazz=" + clazz +
+                ", ttl=" + ttl +
+                ", dataLength=" + dataLength +
+                ", data=" + data +
+                ", offset=" + offset +
+                ", length=" + length +
+                '}'
+    }
+
     companion object {
         fun recycle(r: Resource) {
             r.domain = ""

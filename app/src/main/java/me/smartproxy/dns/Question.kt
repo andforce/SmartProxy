@@ -18,6 +18,16 @@ class Question {
         this.length = buffer.position() - this.offset
     }
 
+    override fun toString(): String {
+        return "Question{" +
+                "domain='" + domain + '\'' +
+                ", type=" + type +
+                ", clazz=" + clazz +
+                ", length=" + length +
+                ", offset=" + offset +
+                '}'
+
+    }
     companion object {
         const val A_RECORD: Short = 1      // A记录查询，即查询域名对应的IPv4地址。
         const val NS_RECORD: Short = 2     // 表示NS记录查询，即查询域名服务器。
