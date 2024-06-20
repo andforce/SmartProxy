@@ -14,8 +14,8 @@ public class HttpGetTest {
             @Override
             public void run() {
                 try {
-                    URL url = new URL("https://weibo.com/newlogin?tabtype=list&gid=" + SystemClock.uptimeMillis()  + "&openLoginLayer=0&url=https%3A%2F%2Fweibo.com%2F");
-                    //URL url = new URL("https://httpbin.org/get");
+                    //URL url = new URL("https://weibo.com/newlogin?tabtype=list&gid=" + SystemClock.uptimeMillis()  + "&openLoginLayer=0&url=https%3A%2F%2Fweibo.com%2F");
+                    URL url = new URL("https://httpbin.org/get");
                     HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 
                     // Set request method to GET

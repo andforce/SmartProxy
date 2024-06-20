@@ -4,8 +4,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import me.smartproxy.core.viewmodel.LocalVpnViewModel
-import me.smartproxy.dns.DnsProcessor
-import me.smartproxy.dns.DnsProxy
+import me.smartproxy.dns.LocalDnsServer
 import me.smartproxy.dns.LocalServerHelper
 import me.smartproxy.dns.UDPServer
 import me.smartproxy.tcpip.CommonMethods
@@ -37,7 +36,6 @@ class VpnHelper {
 
 
     private var tcpClient: TcpProxyClient? = null
-    private var dnsProcessor: DnsProcessor? = null
 
     private val packetBuffer = ByteArray(20000)
     private val ipHeader = IPHeader(packetBuffer, 0)
@@ -45,24 +43,27 @@ class VpnHelper {
     private var proxyConfig: ProxyConfig? = null
     private var tcpProxy: TcpProxyServer? = null
 
-    private var dnsProxy: DnsProxy? = null
+    private var localDnsServer: LocalDnsServer? = null
     private var dnsServer: UDPServer? = null
     private var dnsServerHelper: LocalServerHelper? = null
 
     suspend fun startDnsProxy(config: ProxyConfig, fos: FileOutputStream) {
+
+        vpnLocalIpInt = CommonMethods.ipStringToInt(config.defaultLocalIP.address)
+
         if (DNS_SERVER) {
             val server = LocalVpnService::class.getOrNull()
             dnsServer = UDPServer(server, config.defaultLocalIP.address, fos)
             dnsServerHelper = LocalServerHelper(config, fos, packetBuffer)
         } else {
-            dnsProxy = DnsProxy(config)
+            localDnsServer = LocalDnsServer(config, packetBuffer, vpnLocalIpInt)
         }
 
         withContext(Dispatchers.IO) {
             if (DNS_SERVER) {
                 dnsServer?.start()
             } else {
-                dnsProxy?.start()
+                localDnsServer?.start()
             }
         }
     }
@@ -82,9 +83,6 @@ class VpnHelper {
 
             proxyConfig?.startTimer()
 
-
-            vpnLocalIpInt = CommonMethods.ipStringToInt(config.defaultLocalIP.address)
-
             isRunning = true
 
             // 更新状态
@@ -93,7 +91,6 @@ class VpnHelper {
             runCatching {
                 tcpProxy?.let { tcpProxy ->
                     tcpClient = TcpProxyClient(fos, packetBuffer, vpnLocalIpInt, tcpProxy.tcpServerPort)
-                    dnsProcessor = DnsProcessor(packetBuffer, vpnLocalIpInt)
 
                     fis.use { fis ->
                         var size: Int
@@ -113,7 +110,7 @@ class VpnHelper {
                                     if (DNS_SERVER) {
                                         dnsServerHelper?.onUDP(dnsServer!!.port, ipHeader)
                                     } else {
-                                        dnsProcessor?.processUdpPacket(ipHeader, dnsProxy)
+                                        localDnsServer?.processUdpPacket(ipHeader)
                                     }
                                 }
 
@@ -149,8 +146,8 @@ class VpnHelper {
             dnsServer?.stop()
             dnsServer = null
         } else {
-            dnsProxy?.stop()
-            dnsProxy = null
+            localDnsServer?.stop()
+            localDnsServer = null
         }
 
         viewModel.updateVpnStatus(0)
@@ -161,8 +158,8 @@ class VpnHelper {
             dnsServer?.stop()
             dnsServer = null
         } else {
-            dnsProxy?.stop()
-            dnsProxy = null
+            localDnsServer?.stop()
+            localDnsServer = null
         }
 
         tcpProxy?.stop()

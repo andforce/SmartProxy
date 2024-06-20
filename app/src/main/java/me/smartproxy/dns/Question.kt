@@ -24,6 +24,11 @@ class Question {
         const val CNAME_RECORD: Short = 5  // 表示CNAME记录查询，即查询规范名称。
 
         fun recycle(q: Question) {
+            q.domain = ""
+            q.type = 0
+            q.clazz = 0
+            q.length = 0
+            q.offset = 0
             QuestionPool.recycle(q)
         }
 

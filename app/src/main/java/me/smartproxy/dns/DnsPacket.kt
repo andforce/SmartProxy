@@ -11,11 +11,12 @@ class DnsPacket {
 
     var size: Int = 0
 
-    fun clear() {
+    private fun clear() {
         questions.clear()
         resources.clear()
         aResources.clear()
         eResources.clear()
+        size = 0
     }
 
     companion object {
@@ -39,7 +40,9 @@ class DnsPacket {
                 DnsHeader.recycle(it)
             }
 
-            DnsPacketPool.recycle(packet)
+            packet.clear().also {
+                DnsPacketPool.recycle(packet)
+            }
         }
 
         fun takeFromPoll(buffer: ByteBuffer): DnsPacket? {
@@ -52,9 +55,7 @@ class DnsPacket {
                 return null
             }
 
-            val packet = DnsPacketPool.take().also {
-                it.clear()
-            }
+            val packet = DnsPacketPool.take()
             packet.size = buffer.limit()
             packet.dnsHeader = DnsHeader.takeFromPoll(buffer)
 

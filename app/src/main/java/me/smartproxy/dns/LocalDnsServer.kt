@@ -1,11 +1,13 @@
 package me.smartproxy.dns
 
+import android.util.Log
 import android.util.SparseArray
 import me.smartproxy.core.LocalVpnService
 import me.smartproxy.core.ProxyConfig
 import me.smartproxy.core.QueryState
 import me.smartproxy.core.getOrNull
 import me.smartproxy.core.viewmodel.LocalVpnViewModel
+import me.smartproxy.dns.Question.Companion.A_RECORD
 import me.smartproxy.tcpip.CommonMethods
 import me.smartproxy.tcpip.IPData
 import me.smartproxy.tcpip.IPHeader
@@ -19,29 +21,35 @@ import java.net.InetSocketAddress
 import java.nio.ByteBuffer
 import java.util.concurrent.ConcurrentHashMap
 
-class DnsProxy(private val config: ProxyConfig) {
+class LocalDnsServer(private val config: ProxyConfig, buffer: ByteArray, private val vpnLocalIpInt: Int) {
+
+    private val udpHeader = UDPHeader(buffer, 20)
+    private val dnsBuffer: ByteBuffer =
+        (ByteBuffer.wrap(buffer).position(28) as ByteBuffer).slice()
+
+
     private val localVpnViewModel = get<LocalVpnViewModel>(LocalVpnViewModel::class.java)
 
     var stopped: Boolean = false
-    private var client: DatagramSocket?
+    private var datagramSocket: DatagramSocket?
     private var queryID: Short = 0
     private val queryArray = SparseArray<QueryState>()
 
     init {
-        client = DatagramSocket(0)
+        datagramSocket = DatagramSocket(0)
     }
 
     fun stop() {
         stopped = true
-        client?.close()
-        client = null
+        datagramSocket?.close()
+        datagramSocket = null
     }
 
     fun start() {
         try {
-            client?.let { client->
+            datagramSocket?.let { dSocket->
                 val service = LocalVpnService::class.getOrNull()
-                val protect = service?.protect(client)
+                val protect = service?.protect(dSocket)
 
                 Logger.d(TAG, "DNS Proxy, protect result: $protect")
 
@@ -56,17 +64,17 @@ class DnsProxy(private val config: ProxyConfig) {
 
                 val packet = DatagramPacket(receiveBuffer, 28, receiveBuffer.size - 28)
 
-                while (this.client != null && client.isClosed.not()) {
+                while (dSocket.isClosed.not()) {
                     packet.length = receiveBuffer.size - 28
-                    Logger.d(TAG, "Waiting for DNS Packet............")
-                    client.receive(packet)
+                    Logger.d(TAG, "阻塞等待，接受 UDP 数据包...")
+                    dSocket.receive(packet)
 
                     dnsBuffer.clear()
                     dnsBuffer.limit(packet.length)
                     try {
                         DnsPacket.takeFromPoll(dnsBuffer)?.let {
-                            Logger.d(TAG, "DNS packet received $ipHeader $udpHeader $it")
-                            onDnsResponseReceived(ipHeader, udpHeader, it)
+                            Logger.d(TAG, "从远端真实的DNS服务器接收到 UDP 数据包，开始处理。 $ipHeader $udpHeader $it")
+                            onReceiveUdpFromRemoteServer(ipHeader, udpHeader, it)
                             // 放入池中
                             DnsPacket.recycle(it)
                         } ?: run {
@@ -85,10 +93,94 @@ class DnsProxy(private val config: ProxyConfig) {
         }
     }
 
+    private fun onReceiveUdpFromRemoteServer(
+        ipHeader: IPHeader,
+        udpHeader: UDPHeader,
+        dnsPacket: DnsPacket
+    ) {
+        var state: QueryState?
+        synchronized(queryArray) {
+            state = queryArray[dnsPacket.dnsHeader.ID.toInt()]
+            if (state != null) {
+                queryArray.remove(dnsPacket.dnsHeader.ID.toInt())
+            }
+        }
+
+        state?.let {
+            //DNS污染，默认污染海外网站
+            dnsPollution(udpHeader.data, dnsPacket)
+
+            dnsPacket.dnsHeader.ID = it.clientQueryID
+
+            ipHeader.sourceIP = it.remoteIP
+            ipHeader.destinationIP = it.clientIP
+            ipHeader.protocol = IPData.UDP
+            ipHeader.totalLength = 20 + 8 + dnsPacket.size
+
+            udpHeader.sourcePort = it.remotePort
+            udpHeader.destinationPort = it.clientPort
+            udpHeader.totalLength = 8 + dnsPacket.size
+
+
+            Logger.d(TAG, "DNS back sendUDPPacket() ${ipHeader.debugInfo(udpHeader.sourcePortInt, udpHeader.destinationPortInt)} $udpHeader")
+
+            localVpnViewModel.sendUDPPacket(ipHeader, udpHeader)
+        } ?: run {
+            Logger.d(TAG, "DNS back state is null.")
+        }
+    }
+
+    fun processUdpPacket(header: IPHeader) {
+        udpHeader.offset = header.headerLength
+
+        Logger.e(
+            TAG,
+            "processUdpPacket, UDP: 收到数据包, $header $udpHeader")
+
+        if (header.sourceIP == vpnLocalIpInt && udpHeader.destinationPort.toInt() == 53) {
+            dnsBuffer.clear()
+            dnsBuffer.limit(header.dataLength - 8)
+            val dnsPacket = DnsPacket.takeFromPoll(dnsBuffer)
+            Logger.e(
+                TAG,
+                "processUdpPacket, UDP: 收到DNS数据包, $dnsPacket"
+            )
+            dnsPacket?.let {
+                if (dnsPacket.dnsHeader.questionCount > 0) {
+                    Logger.e(
+                        TAG,
+                        "processUdpPacket, UDP: DNS数据包无问题, onDnsRequestReceived(), questionCount is ${dnsPacket.dnsHeader.questionCount}"
+                    )
+
+                    this.onReadUdpFromVPNInputStream(header, udpHeader, dnsPacket)
+                } else {
+                    Logger.e(
+                        TAG,
+                        "processUdpPacket, UDP: DNS数据包无问题, questionCount is 0"
+                    )
+                }
+            }
+        } else {
+            Logger.e(
+                TAG,
+                "processUdpPacket, UDP: 收到非本地数据包, $header $udpHeader"
+            )
+        }
+    }
+
     private fun getFirstIP(dnsPacket: DnsPacket): Int {
+
         for (i in 0 until dnsPacket.dnsHeader.resourceCount) {
             val resource = dnsPacket.resources[i]
-            if (resource.type.toInt() == 1) {
+            if (resource.type == A_RECORD) {
+                val ipInt = CommonMethods.readInt(resource.data, 0)
+                Logger.d(TAG, "getFirstIP(), ip $i : ${CommonMethods.ipIntToString(ipInt)}")
+            }
+        }
+
+        for (i in 0 until dnsPacket.dnsHeader.resourceCount) {
+            val resource = dnsPacket.resources[i]
+            if (resource.type == A_RECORD) {
                 return CommonMethods.readInt(resource.data, 0)
             }
         }
@@ -166,43 +258,6 @@ class DnsProxy(private val config: ProxyConfig) {
         return false
     }
 
-    private fun onDnsResponseReceived(
-        ipHeader: IPHeader,
-        udpHeader: UDPHeader,
-        dnsPacket: DnsPacket
-    ) {
-        var state: QueryState?
-        synchronized(queryArray) {
-            state = queryArray[dnsPacket.dnsHeader.ID.toInt()]
-            if (state != null) {
-                queryArray.remove(dnsPacket.dnsHeader.ID.toInt())
-            }
-        }
-
-        state?.let {
-            //DNS污染，默认污染海外网站
-            dnsPollution(udpHeader.data, dnsPacket)
-
-            dnsPacket.dnsHeader.ID = it.clientQueryID
-
-            ipHeader.sourceIP = it.remoteIP
-            ipHeader.destinationIP = it.clientIP
-            ipHeader.protocol = IPData.UDP
-            ipHeader.totalLength = 20 + 8 + dnsPacket.size
-
-            udpHeader.sourcePort = it.remotePort
-            udpHeader.destinationPort = it.clientPort
-            udpHeader.totalLength = 8 + dnsPacket.size
-
-
-            Logger.d(TAG, "DNS back sendUDPPacket() ${ipHeader.debugInfo(udpHeader.sourcePortInt, udpHeader.destinationPortInt)} $udpHeader")
-
-            localVpnViewModel.sendUDPPacket(ipHeader, udpHeader)
-        } ?: run {
-            Logger.d(TAG, "DNS back state is null.")
-        }
-    }
-
     private fun getIPFromCache(domain: String): Int {
         val ip = DomainIPMaps[domain]
         return ip ?: 0
@@ -261,10 +316,10 @@ class DnsProxy(private val config: ProxyConfig) {
         }
     }
 
-    fun onDnsRequestReceived(ipHeader: IPHeader, udpHeader: UDPHeader, dnsPacket: DnsPacket) {
+    private fun onReadUdpFromVPNInputStream(ipHeader: IPHeader, udpHeader: UDPHeader, dnsPacket: DnsPacket) {
         val intercept = interceptDns(ipHeader, udpHeader, dnsPacket)
 
-        Logger.d(TAG, "DNS Request intercept: $intercept")
+        Logger.d(TAG, "onReadUdpFromVPNInputStream(), intercept:$intercept")
 
         if (!intercept) {
             //转发DNS
@@ -293,9 +348,9 @@ class DnsProxy(private val config: ProxyConfig) {
             packet.socketAddress = remoteAddress
 
             try {
-                Logger.d(TAG, "DNS Request send() ${ipHeader.debugInfo(udpHeader.sourcePortInt, udpHeader.destinationPortInt)} $udpHeader")
+                Logger.d(TAG, "通过 DatagramSocket 发送到远端真实的DNS服务器, 并等待数据返回。 ${ipHeader.debugInfo(udpHeader.sourcePortInt, udpHeader.destinationPortInt)} $udpHeader")
+                datagramSocket?.send(packet)
 
-                client?.send(packet)
             } catch (e: IOException) {
                 Logger.e(TAG, "DNS Request Error: ", e)
             }
@@ -303,7 +358,7 @@ class DnsProxy(private val config: ProxyConfig) {
     }
 
     companion object {
-        private const val TAG = "DnsProxy"
+        private const val TAG = "LocalDnsServer"
         private val IPDomainMaps = ConcurrentHashMap<Int, String>()
         private val DomainIPMaps = ConcurrentHashMap<String, Int>()
         fun reverseLookup(ip: Int): String? {

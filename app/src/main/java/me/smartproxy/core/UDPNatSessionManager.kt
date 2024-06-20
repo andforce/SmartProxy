@@ -1,7 +1,7 @@
 package me.smartproxy.core
 
 import android.util.SparseArray
-import me.smartproxy.dns.DnsProxy
+import me.smartproxy.dns.LocalDnsServer
 import me.smartproxy.tcpip.CommonMethods
 import java.util.concurrent.ConcurrentHashMap
 
@@ -53,7 +53,7 @@ object UDPNatSessionManager : Pool<NatSession>() {
             this.remoteIP = remoteIP
             this.remotePort = remotePort
             if (ProxyConfig.isFakeIP(remoteIP)) {
-                this.remoteHost = DnsProxy.reverseLookup(remoteIP)
+                this.remoteHost = LocalDnsServer.reverseLookup(remoteIP)
             }
             if (this.remoteHost.isNullOrEmpty()) {
                 this.remoteHost = CommonMethods.ipIntToString(remoteIP)
