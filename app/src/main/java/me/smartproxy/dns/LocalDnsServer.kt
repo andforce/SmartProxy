@@ -190,7 +190,7 @@ class LocalDnsServer(private val config: ProxyConfig, buffer: ByteArray, private
         return 0
     }
 
-    private fun modifyDnsResponse(rawPacket: ByteArray, dnsPacket: DnsPacket, fakeIP: Int) {
+    private fun createDNSResponseToAQuery(rawPacket: ByteArray, dnsPacket: DnsPacket, fakeIP: Int) {
         val question = dnsPacket.questions[0]
 
         dnsPacket.dnsHeader.resourceCount = 1.toShort()
@@ -247,7 +247,7 @@ class LocalDnsServer(private val config: ProxyConfig, buffer: ByteArray, private
 
                 if (isNeedProxy) {
                     val fakeIP = getOrCreateFakeIP(question.domain)
-                    modifyDnsResponse(rawPacket, dnsPacket, fakeIP)
+                    createDNSResponseToAQuery(rawPacket, dnsPacket, fakeIP)
                     Logger.d(
                         TAG,
                         "FakeDns: " + question.domain + "=>" + CommonMethods.ipIntToString(realIP) + "(" + CommonMethods.ipIntToString(
@@ -268,48 +268,6 @@ class LocalDnsServer(private val config: ProxyConfig, buffer: ByteArray, private
         return ip ?: 0
     }
 
-    private fun interceptDns(
-        ipHeader: IPHeader,
-        udpHeader: UDPHeader,
-        dnsPacket: DnsPacket
-    ): Boolean {
-        val question = dnsPacket.questions[0]
-        val isARecord = question.type == Question.A_RECORD
-        Logger.d(TAG, "interceptDns() " + question.domain + " type: " + question.type + " isARecord: " + isARecord)
-
-        if (isARecord) {
-            val needProxy = config.needProxy(question.domain, getIPFromCache(question.domain))
-            Logger.d(TAG, "interceptDns() " + question.domain + " needProxy: " + needProxy)
-
-            if (needProxy) {
-
-                val fakeIP = getOrCreateFakeIP(question.domain)
-                modifyDnsResponse(ipHeader.data, dnsPacket, fakeIP)
-                Logger.d(
-                    TAG,
-                    "interceptDns() FakeDns: " + question.domain + "=>" + CommonMethods.ipIntToString(
-                        fakeIP
-                    )
-                )
-
-                val sourceIP = ipHeader.sourceIP
-                val sourcePort = udpHeader.sourcePort
-                ipHeader.sourceIP = ipHeader.destinationIP
-                ipHeader.destinationIP = sourceIP
-                ipHeader.totalLength = 20 + 8 + dnsPacket.size
-
-                udpHeader.sourcePort = udpHeader.destinationPort
-                udpHeader.destinationPort = sourcePort
-                udpHeader.totalLength = 8 + dnsPacket.size
-
-                Logger.d(TAG, "interceptDns() 把构建的UDP包发给 VPN，sendUDPPacket() ${ipHeader.debugInfo(udpHeader.sourcePortInt, udpHeader.destinationPortInt)} $udpHeader")
-                localVpnViewModel.sendUDPPacket(ipHeader, udpHeader)
-                return true
-            }
-        }
-        return false
-    }
-
     private fun clearExpiredQueries() {
         val now = System.nanoTime()
         val timeOutNS = 10 * 1000000000L
@@ -326,11 +284,48 @@ class LocalDnsServer(private val config: ProxyConfig, buffer: ByteArray, private
 
         Logger.d(TAG, "onReadUdpFromVPNInputStream(), 进入 interceptDns(), 看是否需要拦截。 ${ipHeader.debugInfo(udpHeader.sourcePortInt, udpHeader.destinationPortInt)} $udpHeader")
 
-        val intercept = interceptDns(ipHeader, udpHeader, dnsPacket)
+        var intercept = false
 
-        Logger.d(TAG, "onReadUdpFromVPNInputStream(), intercept: $intercept")
+        val question = dnsPacket.questions[0]
+        val isARecord = question.type == Question.A_RECORD
+        Logger.d(TAG, "onReadUdpFromVPNInputStream() " + question.domain + " type: " + question.type + " isARecord: " + isARecord)
+
+        if (isARecord) {
+            val needProxy = config.needProxy(question.domain, getIPFromCache(question.domain))
+            Logger.d(TAG, "onReadUdpFromVPNInputStream() " + question.domain + " needProxy: " + needProxy)
+
+            if (needProxy) {
+                val fakeIP = getOrCreateFakeIP(question.domain)
+                createDNSResponseToAQuery(ipHeader.data, dnsPacket, fakeIP)
+                Logger.d(
+                    TAG,
+                    "onReadUdpFromVPNInputStream() FakeDns: " + question.domain + "=>" + CommonMethods.ipIntToString(
+                        fakeIP
+                    )
+                )
+
+                val sourceIP = ipHeader.sourceIP
+                val sourcePort = udpHeader.sourcePort
+                ipHeader.sourceIP = ipHeader.destinationIP
+                ipHeader.destinationIP = sourceIP
+                ipHeader.totalLength = 20 + 8 + dnsPacket.size
+
+                udpHeader.sourcePort = udpHeader.destinationPort
+                udpHeader.destinationPort = sourcePort
+                udpHeader.totalLength = 8 + dnsPacket.size
+
+                Logger.d(TAG, "onReadUdpFromVPNInputStream() 把构建的UDP包发给 VPN，sendUDPPacket() ${ipHeader.debugInfo(udpHeader.sourcePortInt, udpHeader.destinationPortInt)} $udpHeader")
+                localVpnViewModel.sendUDPPacket(ipHeader, udpHeader)
+
+                intercept = true
+            }
+        }
+
 
         if (!intercept) {
+
+            Logger.d(TAG, "onReadUdpFromVPNInputStream(), UDP没有被拦截处理，直接转发给本地UDP服务器")
+
             //转发DNS
             val state = QueryState()
             state.clientQueryID = dnsPacket.dnsHeader.ID
